@@ -7,6 +7,19 @@
 
 import { WebSocketServer, WebSocket } from 'ws';
 import type { Server } from 'http';
+import { v4 as uuidv4 } from 'uuid';
+import {
+  parseClientEvent,
+  handleClientEvent,
+  emitConnected,
+  emitAssistantStart,
+  emitAssistantChunk,
+  emitAssistantComplete,
+  emitDialUpdated,
+  emitError,
+} from './events.js';
+import { processDialInputHandler } from '../mcp/tools/processDial.js';
+import { validateDialValue } from '../services/dial-validation.js';
 
 /** Active WebSocket connections */
 const clients = new Set<WebSocket>();
@@ -37,7 +50,7 @@ export function createWebSocketServer(server: Server): WebSocketServer {
     });
 
     // Send welcome message
-    ws.send(JSON.stringify({ type: 'connected', message: 'MCP Bridge connected' }));
+    emitConnected(ws, 'MCP Bridge connected');
   });
 
   return wss;
@@ -46,22 +59,111 @@ export function createWebSocketServer(server: Server): WebSocketServer {
 /**
  * Handles incoming WebSocket messages.
  */
-function handleMessage(ws: WebSocket, data: Buffer): void {
-  try {
-    const message = JSON.parse(data.toString());
-    console.log('WebSocket message received:', message.type || 'unknown');
+async function handleMessage(ws: WebSocket, data: Buffer): Promise<void> {
+  // Parse the incoming event
+  const event = parseClientEvent(data);
 
-    // Echo back for now - real MCP handling will be added later
-    ws.send(JSON.stringify({
-      type: 'ack',
-      received: message.type || 'unknown',
-    }));
-  } catch {
-    ws.send(JSON.stringify({
-      type: 'error',
-      message: 'Invalid JSON message',
-    }));
+  if (!event) {
+    emitError(ws, 'INVALID_MESSAGE', 'Invalid or unrecognized message format');
+    return;
   }
+
+  console.log('WebSocket message received:', event.type);
+
+  // Handle the event with type-safe handlers
+  await handleClientEvent(ws, event, {
+    onUserMessage: async (payload) => {
+      const messageId = uuidv4();
+
+      // Signal that assistant is starting to respond
+      emitAssistantStart(ws, messageId);
+
+      try {
+        // Process the dial input
+        const result = await processDialInputHandler({
+          userMessage: payload.content,
+          currentDials: payload.currentDials,
+          conversationHistory: [],
+        });
+
+        // Stream the response in chunks for a more natural feel
+        // For now, send the whole message, but this allows for future streaming
+        const chunks = splitIntoChunks(result.assistantMessage, 50);
+        for (const chunk of chunks) {
+          emitAssistantChunk(ws, messageId, chunk);
+          // Small delay for streaming effect (optional)
+          await delay(20);
+        }
+
+        // Signal completion with dial updates
+        emitAssistantComplete(ws, messageId, result.dialUpdates, result.inlineWidgets);
+
+        // If there were high-confidence dial updates, emit them individually
+        if (result.dialUpdates) {
+          for (const update of result.dialUpdates) {
+            if (update.confidence === 'high') {
+              emitDialUpdated(ws, update.dialId, update.value, 'assistant');
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error processing user message:', error);
+        emitError(ws, 'PROCESSING_ERROR', 'Failed to process message');
+      }
+    },
+
+    onDialUpdate: async (payload) => {
+      // Validate the dial update
+      if (!validateDialValue(payload.dialId, payload.value)) {
+        emitError(ws, 'INVALID_VALUE', `Invalid value for dial: ${payload.dialId}`);
+        return;
+      }
+
+      // Emit confirmation
+      emitDialUpdated(ws, payload.dialId, payload.value, 'user');
+    },
+
+    onDialConfirm: async (payload) => {
+      // Log confirmation for now
+      console.log(`Dial ${payload.dialId} ${payload.accepted ? 'confirmed' : 'rejected'}`);
+
+      if (payload.accepted) {
+        // The dial has been confirmed - could trigger state update here
+        emitDialUpdated(ws, payload.dialId, undefined, 'user');
+      }
+    },
+  });
+}
+
+/**
+ * Split text into chunks for streaming
+ */
+function splitIntoChunks(text: string, maxLength: number): string[] {
+  const chunks: string[] = [];
+  let remaining = text;
+
+  while (remaining.length > 0) {
+    // Try to break at word boundary
+    let breakPoint = maxLength;
+    if (remaining.length > maxLength) {
+      const lastSpace = remaining.substring(0, maxLength).lastIndexOf(' ');
+      if (lastSpace > maxLength * 0.5) {
+        breakPoint = lastSpace + 1;
+      }
+    }
+
+    chunks.push(remaining.substring(0, breakPoint));
+    remaining = remaining.substring(breakPoint);
+  }
+
+  return chunks;
+}
+
+/**
+ * Simple delay helper
+ */
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 /**

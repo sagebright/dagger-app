@@ -11,6 +11,9 @@ export * from './database.js';
 // Re-export dial types
 export * from './dials.js';
 
+// Re-export MCP types
+export * from './mcp.js';
+
 /**
  * API health check response
  */

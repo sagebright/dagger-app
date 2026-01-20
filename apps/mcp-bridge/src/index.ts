@@ -13,6 +13,7 @@ import { createCorsMiddleware } from './middleware/cors.js';
 import { requestLogger } from './middleware/logger.js';
 import { createWebSocketServer } from './websocket/handler.js';
 import healthRouter from './routes/health.js';
+import chatRouter from './routes/chat.js';
 
 const app = express();
 
@@ -26,6 +27,7 @@ app.use(express.json());
 
 // Routes
 app.use('/health', healthRouter);
+app.use('/chat', chatRouter);
 
 // WebSocket server (shares same port via HTTP upgrade)
 const wss = createWebSocketServer(server);
