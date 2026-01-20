@@ -5,12 +5,20 @@
  * the web frontend and mcp-bridge backend.
  */
 
+// Re-export database types
+export * from './database.js';
+
 /**
  * API health check response
  */
 export interface HealthResponse {
   status: 'ok' | 'error';
   timestamp: string;
+  database?: {
+    connected: boolean;
+    latencyMs?: number;
+    error?: string;
+  };
 }
 
 /**
