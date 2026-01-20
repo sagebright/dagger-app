@@ -1,6 +1,8 @@
 # Dependencies
 node_modules/
 .pnpm-store/
+.npm/
+.yarn/
 
 # Build outputs
 dist/
