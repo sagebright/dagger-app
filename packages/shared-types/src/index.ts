@@ -8,6 +8,9 @@
 // Re-export database types
 export * from './database.js';
 
+// Re-export dial types
+export * from './dials.js';
+
 /**
  * API health check response
  */
