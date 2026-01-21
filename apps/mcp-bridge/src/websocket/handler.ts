@@ -35,7 +35,7 @@ const clients = new Set<WebSocket>();
  * Attaches to the existing HTTP server for upgrade handling.
  */
 export function createWebSocketServer(server: Server): WebSocketServer {
-  const wss = new WebSocketServer({ server });
+  const wss = new WebSocketServer({ server, path: '/ws' });
 
   wss.on('connection', (ws: WebSocket) => {
     clients.add(ws);
