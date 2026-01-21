@@ -15,16 +15,24 @@
  * - adversaries/items/echoes/complete: Coming soon
  */
 
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import type { DialId, CompiledNPC } from '@dagger-app/shared-types';
+import type { DialId, CompiledNPC, PartyTier, SessionLength, ThemeOption } from '@dagger-app/shared-types';
+import { THEME_OPTIONS } from '@dagger-app/shared-types';
 
 // Adventure components
 import { PhaseProgressBar, PhaseNavigation } from '@/components/adventure';
 
 // Phase 2 components
 import { ChatContainer } from '@/components/chat';
-import { DialSummaryPanel } from '@/components/dials';
+import {
+  DialSummaryPanel,
+  NumberStepper,
+  TierSelect,
+  SessionLengthSelect,
+  SpectrumSlider,
+  MultiSelectChips,
+} from '@/components/dials';
 
 // Phase 3 components
 import {
@@ -442,6 +450,130 @@ export function AdventurePage() {
   }, [dialsState]);
 
   // =============================================================================
+  // Dial Edit Widget Renderer
+  // =============================================================================
+
+  const renderEditWidget = useCallback((dialId: DialId): ReactNode => {
+    switch (dialId) {
+      case 'partySize':
+        return (
+          <NumberStepper
+            value={partySize}
+            min={2}
+            max={6}
+            onChange={(v) => setDial('partySize', v)}
+          />
+        );
+      case 'partyTier':
+        return (
+          <TierSelect
+            value={partyTier as PartyTier}
+            onChange={(v) => setDial('partyTier', v)}
+          />
+        );
+      case 'sceneCount':
+        return (
+          <NumberStepper
+            value={sceneCount}
+            min={3}
+            max={6}
+            onChange={(v) => setDial('sceneCount', v)}
+          />
+        );
+      case 'sessionLength':
+        return (
+          <SessionLengthSelect
+            value={sessionLength as SessionLength}
+            onChange={(v) => setDial('sessionLength', v)}
+          />
+        );
+      case 'tone':
+        return (
+          <SpectrumSlider
+            value={tone}
+            endpoints={{ low: 'Grim', high: 'Whimsical' }}
+            onChange={(v) => setDial('tone', v)}
+          />
+        );
+      case 'combatExplorationBalance':
+        return (
+          <SpectrumSlider
+            value={combatExplorationBalance}
+            endpoints={{ low: 'Combat', high: 'Exploration' }}
+            onChange={(v) => setDial('combatExplorationBalance', v)}
+          />
+        );
+      case 'npcDensity':
+        return (
+          <SpectrumSlider
+            value={npcDensity}
+            endpoints={{ low: 'Sparse', high: 'Rich' }}
+            onChange={(v) => setDial('npcDensity', v)}
+          />
+        );
+      case 'lethality':
+        return (
+          <SpectrumSlider
+            value={lethality}
+            endpoints={{ low: 'Forgiving', high: 'Deadly' }}
+            onChange={(v) => setDial('lethality', v)}
+          />
+        );
+      case 'emotionalRegister':
+        return (
+          <SpectrumSlider
+            value={emotionalRegister}
+            endpoints={{ low: 'Light', high: 'Heavy' }}
+            onChange={(v) => setDial('emotionalRegister', v)}
+          />
+        );
+      case 'themes':
+        return (
+          <MultiSelectChips
+            options={THEME_OPTIONS.map((t) => ({ id: t.id, label: t.label }))}
+            selected={themes}
+            maxSelections={3}
+            onChange={(selected: string[]) => {
+              // Handle theme changes - compare with current and add/remove
+              const currentSet = new Set<string>(themes);
+              const newSet = new Set<string>(selected);
+
+              // Remove themes that are no longer selected
+              themes.forEach((theme) => {
+                if (!newSet.has(theme)) {
+                  removeTheme(theme);
+                }
+              });
+
+              // Add new themes (cast is safe because options come from THEME_OPTIONS)
+              selected.forEach((theme) => {
+                if (!currentSet.has(theme)) {
+                  addTheme(theme as ThemeOption);
+                }
+              });
+            }}
+          />
+        );
+      default:
+        return null;
+    }
+  }, [
+    partySize,
+    partyTier,
+    sceneCount,
+    sessionLength,
+    tone,
+    combatExplorationBalance,
+    npcDensity,
+    lethality,
+    emotionalRegister,
+    themes,
+    setDial,
+    addTheme,
+    removeTheme,
+  ]);
+
+  // =============================================================================
   // Content Phase Handlers
   // =============================================================================
 
@@ -550,6 +682,7 @@ export function AdventurePage() {
                 onConfirmDial={handleConfirmDial}
                 onContinue={handleContinue}
                 editingDialId={editingDialId}
+                renderEditWidget={renderEditWidget}
               />
             </div>
           </div>
