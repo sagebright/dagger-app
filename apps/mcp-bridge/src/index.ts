@@ -15,6 +15,7 @@ import { createWebSocketServer } from './websocket/handler.js';
 import healthRouter from './routes/health.js';
 import chatRouter from './routes/chat.js';
 import contentRouter from './routes/content.js';
+import adventureRouter from './routes/adventure.js';
 
 const app = express();
 
@@ -30,6 +31,7 @@ app.use(express.json());
 app.use('/health', healthRouter);
 app.use('/chat', chatRouter);
 app.use('/content', contentRouter);
+app.use('/adventure', adventureRouter);
 
 // WebSocket server (shares same port via HTTP upgrade)
 const wss = createWebSocketServer(server);

@@ -7,6 +7,7 @@
 
 import express, { type Express } from 'express';
 import healthRouter from '../routes/health.js';
+import adventureRouter from '../routes/adventure.js';
 
 /**
  * Creates a test Express app with all routes configured.
@@ -39,6 +40,7 @@ export function createTestApp(): Express {
 
   // Routes
   app.use('/health', healthRouter);
+  app.use('/adventure', adventureRouter);
 
   return app;
 }
