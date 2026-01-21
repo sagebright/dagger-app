@@ -89,6 +89,7 @@ export function useChat({
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
   const intentionalCloseRef = useRef(false);
   const connectRef = useRef<() => void>(() => {});
+  const hasConnectedOnceRef = useRef(false);
 
   /** Handle incoming WebSocket message */
   const handleMessage = useCallback(
@@ -179,6 +180,7 @@ export function useChat({
     ws.onopen = () => {
       setConnectionStatus('connected');
       reconnectCountRef.current = 0;
+      hasConnectedOnceRef.current = true;
     };
 
     ws.onmessage = handleMessage;
@@ -192,8 +194,11 @@ export function useChat({
     };
 
     ws.onerror = () => {
-      // Error handling - onclose will be called after this
-      console.error('[useChat] WebSocket error');
+      // Only log error after we've successfully connected at least once
+      // to avoid noisy console errors on initial page load race condition
+      if (hasConnectedOnceRef.current) {
+        console.error('[useChat] WebSocket error');
+      }
     };
 
     wsRef.current = ws;
@@ -258,13 +263,22 @@ export function useChat({
     [addMessage]
   );
 
-  // Auto-connect on mount
+  // Auto-connect on mount with small delay to avoid race condition
+  // with Vite proxy/backend readiness
   useEffect(() => {
+    let connectionTimer: ReturnType<typeof setTimeout> | undefined;
+
     if (autoConnect) {
-      connect();
+      // Small delay to allow Vite proxy to be ready
+      connectionTimer = setTimeout(() => {
+        connect();
+      }, 100);
     }
 
     return () => {
+      if (connectionTimer) {
+        clearTimeout(connectionTimer);
+      }
       intentionalCloseRef.current = true;
       if (reconnectTimeoutRef.current) {
         clearTimeout(reconnectTimeoutRef.current);

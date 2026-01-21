@@ -90,9 +90,9 @@ describe('ChatContainer', () => {
       const user = userEvent.setup();
       render(<ChatContainer sessionId="test-session" />);
 
-      // Wait for WebSocket connection
+      // Wait for WebSocket connection (100ms delay + connection time)
       await act(async () => {
-        await new Promise((r) => setTimeout(r, 10));
+        await new Promise((r) => setTimeout(r, 150));
       });
 
       const textarea = screen.getByRole('textbox');
@@ -109,8 +109,9 @@ describe('ChatContainer', () => {
       const user = userEvent.setup();
       render(<ChatContainer sessionId="test-session" />);
 
+      // Wait for WebSocket connection (100ms delay + connection time)
       await act(async () => {
-        await new Promise((r) => setTimeout(r, 10));
+        await new Promise((r) => setTimeout(r, 150));
       });
 
       const textarea = screen.getByRole('textbox');
