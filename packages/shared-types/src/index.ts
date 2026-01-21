@@ -23,6 +23,9 @@ export * from './web-adventure.js';
 // Re-export export types
 export * from './export.js';
 
+// Re-export custom frame wizard types
+export * from './custom-frames.js';
+
 /**
  * API health check response
  */
