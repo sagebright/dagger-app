@@ -69,6 +69,38 @@ export function FramePanel({
   const selectFrame = useContentStore((state) => state.selectFrame);
   const confirmFrame = useContentStore((state) => state.confirmFrame);
   const clearFrame = useContentStore((state) => state.clearFrame);
+  const setAvailableFrames = useContentStore((state) => state.setAvailableFrames);
+  const setFramesLoading = useContentStore((state) => state.setFramesLoading);
+  const setFramesError = useContentStore((state) => state.setFramesError);
+
+  // Fetch frames from backend on mount
+  useEffect(() => {
+    const fetchFrames = async () => {
+      // Skip if already loading or frames are loaded
+      if (framesLoading || availableFrames.length > 0) {
+        return;
+      }
+
+      setFramesLoading(true);
+
+      try {
+        const response = await fetch('/api/content/frames');
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(errorText || `HTTP error ${response.status}`);
+        }
+
+        const data = await response.json();
+        setAvailableFrames(data.frames || []);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Failed to fetch frames';
+        setFramesError(message);
+      }
+    };
+
+    fetchFrames();
+  }, [availableFrames.length, framesLoading, setAvailableFrames, setFramesLoading, setFramesError]);
 
   // Show name suggestion after frame confirmation if adventure is unnamed
   useEffect(() => {
