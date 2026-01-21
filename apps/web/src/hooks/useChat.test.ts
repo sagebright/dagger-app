@@ -150,14 +150,14 @@ describe('useChat', () => {
       });
 
       expect(ws.send).toHaveBeenCalledWith(
-        expect.stringContaining('chat:send')
+        expect.stringContaining('chat:user_message')
       );
       expect(ws.send).toHaveBeenCalledWith(
         expect.stringContaining('Hello world')
       );
     });
 
-    it('includes sessionId in sent message', async () => {
+    it('includes currentDials in sent message', async () => {
       const { result } = renderHook(() =>
         useChat({ sessionId: 'my-session-123' })
       );
@@ -172,8 +172,9 @@ describe('useChat', () => {
         result.current.sendMessage('Hello');
       });
 
+      // Message should include currentDials in payload
       expect(ws.send).toHaveBeenCalledWith(
-        expect.stringContaining('my-session-123')
+        expect.stringContaining('currentDials')
       );
     });
 
@@ -197,7 +198,7 @@ describe('useChat', () => {
   });
 
   describe('receiving messages', () => {
-    it('handles stream:start message', async () => {
+    it('handles chat:assistant_start message', async () => {
       renderHook(() => useChat({ sessionId: 'test-session' }));
 
       await waitFor(() => {
@@ -207,13 +208,13 @@ describe('useChat', () => {
       const ws = MockWebSocket.getLastInstance()!;
 
       act(() => {
-        ws.simulateMessage({ type: 'stream:start', messageId: 'msg-123' });
+        ws.simulateMessage({ type: 'chat:assistant_start', payload: { messageId: 'msg-123' } });
       });
 
       expect(useChatStore.getState().isStreaming).toBe(true);
     });
 
-    it('handles stream:chunk message', async () => {
+    it('handles chat:assistant_chunk message', async () => {
       renderHook(() => useChat({ sessionId: 'test-session' }));
 
       await waitFor(() => {
@@ -224,12 +225,12 @@ describe('useChat', () => {
 
       // Start streaming first
       act(() => {
-        ws.simulateMessage({ type: 'stream:start', messageId: 'msg-123' });
+        ws.simulateMessage({ type: 'chat:assistant_start', payload: { messageId: 'msg-123' } });
       });
 
       // Then send chunk
       act(() => {
-        ws.simulateMessage({ type: 'stream:chunk', content: 'Hello ' });
+        ws.simulateMessage({ type: 'chat:assistant_chunk', payload: { messageId: 'msg-123', chunk: 'Hello ' } });
       });
 
       const messages = useChatStore.getState().messages;
@@ -237,7 +238,7 @@ describe('useChat', () => {
       expect(streamingMessage.content).toContain('Hello');
     });
 
-    it('handles stream:end message', async () => {
+    it('handles chat:assistant_complete message', async () => {
       renderHook(() => useChat({ sessionId: 'test-session' }));
 
       await waitFor(() => {
@@ -248,12 +249,12 @@ describe('useChat', () => {
 
       // Start streaming
       act(() => {
-        ws.simulateMessage({ type: 'stream:start', messageId: 'msg-123' });
+        ws.simulateMessage({ type: 'chat:assistant_start', payload: { messageId: 'msg-123' } });
       });
 
       // End streaming
       act(() => {
-        ws.simulateMessage({ type: 'stream:end', messageId: 'msg-123' });
+        ws.simulateMessage({ type: 'chat:assistant_complete', payload: { messageId: 'msg-123' } });
       });
 
       expect(useChatStore.getState().isStreaming).toBe(false);
@@ -269,7 +270,7 @@ describe('useChat', () => {
       const ws = MockWebSocket.getLastInstance()!;
 
       act(() => {
-        ws.simulateMessage({ type: 'connected', message: 'Welcome' });
+        ws.simulateMessage({ type: 'connected', payload: { message: 'Welcome' } });
       });
 
       expect(useChatStore.getState().connectionStatus).toBe('connected');
@@ -397,7 +398,7 @@ describe('useChat', () => {
       const ws = MockWebSocket.getLastInstance()!;
 
       act(() => {
-        ws.simulateMessage({ type: 'stream:start', messageId: 'msg-123' });
+        ws.simulateMessage({ type: 'chat:assistant_start', payload: { messageId: 'msg-123' } });
       });
 
       expect(result.current.isStreaming).toBe(true);

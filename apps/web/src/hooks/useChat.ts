@@ -11,6 +11,8 @@ import {
   type ChatMessage,
   type ConnectionStatus,
 } from '@/stores/chatStore';
+import { useDialsStore, type DialsState } from '@/stores/dialsStore';
+import type { DialId, DialUpdate, InlineWidget } from '@dagger-app/shared-types';
 
 export interface UseChatOptions {
   /** Session ID for this chat session */
@@ -38,19 +40,24 @@ export interface UseChatReturn {
   disconnect: () => void;
 }
 
-/** Server -> Client message types */
+/** Server -> Client message types (matching backend events.ts) */
 type ServerMessage =
-  | { type: 'connected'; message?: string }
-  | { type: 'stream:start'; messageId: string }
-  | { type: 'stream:chunk'; content: string }
-  | { type: 'stream:end'; messageId: string }
-  | { type: 'error'; message: string; code?: string }
-  | { type: 'ack'; received: string };
+  | { type: 'connected'; payload: { message: string } }
+  | { type: 'chat:assistant_start'; payload: { messageId: string } }
+  | { type: 'chat:assistant_chunk'; payload: { messageId: string; chunk: string } }
+  | { type: 'chat:assistant_complete'; payload: { messageId: string; dialUpdates?: DialUpdate[]; inlineWidgets?: InlineWidget[] } }
+  | { type: 'error'; payload: { code: string; message: string } }
+  | { type: 'dial:updated'; payload: { dialId: DialId; value: unknown; source: string } };
 
-/** Client -> Server message types */
+/** Dials payload format for WebSocket messages */
+type DialsPayload = Omit<DialsState, 'confirmedDials' | 'setDial' | 'confirmDial' | 'unconfirmDial' | 'resetDials' | 'resetDial' | 'addTheme' | 'removeTheme'> & {
+  confirmedDials: DialId[];
+};
+
+/** Client -> Server message types (matching backend events.ts) */
 type ClientMessage =
-  | { type: 'chat:send'; sessionId: string; content: string }
-  | { type: 'chat:cancel' };
+  | { type: 'chat:user_message'; payload: { content: string; currentDials: DialsPayload } }
+  | { type: 'chat:cancel'; payload: Record<string, never> };
 
 /** Get WebSocket URL based on environment */
 function getWebSocketUrl(): string {
@@ -60,11 +67,12 @@ function getWebSocketUrl(): string {
 }
 
 export function useChat({
-  sessionId,
+  sessionId: _sessionId, // Currently unused - dials state provides session context
   autoConnect = true,
   reconnectAttempts = 5,
   reconnectInterval = 3000,
 }: UseChatOptions): UseChatReturn {
+  void _sessionId; // Suppress unused warning - kept for API compatibility
   // Store state
   const messages = useChatStore((state) => state.messages);
   const isStreaming = useChatStore((state) => state.isStreaming);
@@ -93,24 +101,28 @@ export function useChat({
             setConnectionStatus('connected');
             break;
 
-          case 'stream:start':
+          case 'chat:assistant_start':
             startStreaming();
             break;
 
-          case 'stream:chunk':
-            appendToStreaming(data.content);
+          case 'chat:assistant_chunk':
+            appendToStreaming(data.payload.chunk);
             break;
 
-          case 'stream:end':
+          case 'chat:assistant_complete':
             finalizeStreaming();
+            // TODO: Handle dialUpdates and inlineWidgets if needed
+            if (data.payload.dialUpdates) {
+              console.log('[useChat] Dial updates:', data.payload.dialUpdates);
+            }
             break;
 
           case 'error':
-            console.error('[useChat] Server error:', data.message);
+            console.error('[useChat] Server error:', data.payload.message);
             break;
 
-          case 'ack':
-            // Acknowledgment received, no action needed
+          case 'dial:updated':
+            console.log('[useChat] Dial updated:', data.payload.dialId, data.payload.value);
             break;
 
           default:
@@ -216,16 +228,34 @@ export function useChat({
       // Add user message to store
       addMessage({ role: 'user', content: trimmed });
 
-      // Send via WebSocket
+      // Get current dials state for the message payload
+      const dialsState = useDialsStore.getState();
+      const currentDials: DialsPayload = {
+        partySize: dialsState.partySize,
+        partyTier: dialsState.partyTier,
+        sceneCount: dialsState.sceneCount,
+        sessionLength: dialsState.sessionLength,
+        tone: dialsState.tone,
+        combatExplorationBalance: dialsState.combatExplorationBalance,
+        npcDensity: dialsState.npcDensity,
+        lethality: dialsState.lethality,
+        emotionalRegister: dialsState.emotionalRegister,
+        themes: dialsState.themes,
+        confirmedDials: Array.from(dialsState.confirmedDials),
+      };
+
+      // Send via WebSocket with correct event format
       const message: ClientMessage = {
-        type: 'chat:send',
-        sessionId,
-        content: trimmed,
+        type: 'chat:user_message',
+        payload: {
+          content: trimmed,
+          currentDials,
+        },
       };
 
       wsRef.current.send(JSON.stringify(message));
     },
-    [sessionId, addMessage]
+    [addMessage]
   );
 
   // Auto-connect on mount

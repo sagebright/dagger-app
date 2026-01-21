@@ -133,7 +133,7 @@ describe('Phase 2 Integration Tests', () => {
 
         // Simulate stream start
         act(() => {
-          ws.simulateMessage({ type: 'stream:start', messageId: 'msg-123' });
+          ws.simulateMessage({ type: 'chat:assistant_start', payload: { messageId: 'msg-123' } });
         });
 
         // Typing indicator should be visible
@@ -154,21 +154,21 @@ describe('Phase 2 Integration Tests', () => {
 
         // Start streaming
         act(() => {
-          ws.simulateMessage({ type: 'stream:start', messageId: 'msg-123' });
+          ws.simulateMessage({ type: 'chat:assistant_start', payload: { messageId: 'msg-123' } });
         });
 
         // Send chunks
         act(() => {
-          ws.simulateMessage({ type: 'stream:chunk', content: 'Hello' });
+          ws.simulateMessage({ type: 'chat:assistant_chunk', payload: { messageId: 'msg-123', chunk: 'Hello' } });
         });
 
         act(() => {
-          ws.simulateMessage({ type: 'stream:chunk', content: ' world' });
+          ws.simulateMessage({ type: 'chat:assistant_chunk', payload: { messageId: 'msg-123', chunk: ' world' } });
         });
 
         // Complete streaming
         act(() => {
-          ws.simulateMessage({ type: 'stream:end', messageId: 'msg-123' });
+          ws.simulateMessage({ type: 'chat:assistant_complete', payload: { messageId: 'msg-123' } });
         });
 
         // Verify final content
