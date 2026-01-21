@@ -1010,4 +1010,96 @@ describe('Content Route', () => {
       expect(response.body.availableCategories).toEqual(['armor', 'consumable', 'item', 'weapon']);
     });
   });
+
+  // ===========================================================================
+  // Echo Routes (Phase 4.3)
+  // ===========================================================================
+
+  describe('POST /content/echoes/generate', () => {
+    const validRequest = {
+      categories: ['complications', 'rumors'],
+    };
+
+    it('should return 200 and generated echoes', async () => {
+      const response = await request(app)
+        .post('/content/echoes/generate')
+        .send(validRequest);
+
+      expect(response.status).toBe(200);
+      expect(response.body.messageId).toBeDefined();
+      expect(response.body.content).toBeDefined();
+      expect(response.body.echoes).toBeDefined();
+      expect(Array.isArray(response.body.echoes)).toBe(true);
+      expect(response.body.isComplete).toBe(true);
+    });
+
+    it('should generate echoes for all categories when none specified', async () => {
+      const response = await request(app)
+        .post('/content/echoes/generate')
+        .send({});
+
+      expect(response.status).toBe(200);
+      expect(response.body.echoes).toBeDefined();
+      // Should generate for all 5 categories
+      const categories = new Set(response.body.echoes.map((e: { category: string }) => e.category));
+      expect(categories.size).toBe(5);
+    });
+
+    it('should generate echoes for specified categories only', async () => {
+      const response = await request(app)
+        .post('/content/echoes/generate')
+        .send({ categories: ['complications', 'rumors'] });
+
+      expect(response.status).toBe(200);
+      const categories = new Set(response.body.echoes.map((e: { category: string }) => e.category));
+      expect(categories.has('complications')).toBe(true);
+      expect(categories.has('rumors')).toBe(true);
+      expect(categories.has('discoveries')).toBe(false);
+    });
+
+    it('should return 400 for invalid category', async () => {
+      const response = await request(app)
+        .post('/content/echoes/generate')
+        .send({ categories: ['invalid-category'] });
+
+      expect(response.status).toBe(400);
+      expect(response.body.code).toBe('INVALID_REQUEST');
+    });
+
+    it('should return valid echo structure', async () => {
+      const response = await request(app)
+        .post('/content/echoes/generate')
+        .send({ categories: ['complications'] });
+
+      expect(response.status).toBe(200);
+      expect(response.body.echoes.length).toBeGreaterThan(0);
+
+      const echo = response.body.echoes[0];
+      expect(echo.id).toBeDefined();
+      expect(echo.category).toBe('complications');
+      expect(echo.title).toBeDefined();
+      expect(echo.content).toBeDefined();
+      expect(echo.isConfirmed).toBe(false);
+      expect(echo.createdAt).toBeDefined();
+    });
+
+    it('should include message ID in response', async () => {
+      const response = await request(app)
+        .post('/content/echoes/generate')
+        .send({});
+
+      expect(response.status).toBe(200);
+      expect(response.body.messageId).toMatch(/^[a-f0-9-]+$/);
+    });
+
+    it('should include assistant message in response', async () => {
+      const response = await request(app)
+        .post('/content/echoes/generate')
+        .send({});
+
+      expect(response.status).toBe(200);
+      expect(typeof response.body.content).toBe('string');
+      expect(response.body.content.length).toBeGreaterThan(0);
+    });
+  });
 });

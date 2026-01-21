@@ -22,7 +22,7 @@ import { MemoryRouter } from 'react-router-dom';
 // Individual components for targeted testing
 import { ChatContainer } from '@/components/chat';
 import { DialSummaryPanel } from '@/components/dials';
-import { FramePanel, OutlinePanel } from '@/components/content';
+import { FramePanel, OutlinePanel, EchoGenerator, EchoCard } from '@/components/content';
 import { PhaseProgressBar, PhaseNavigation } from '@/components/adventure';
 
 // Stores
@@ -664,6 +664,164 @@ describe('Adventure Workflow Integration Tests', () => {
       expect(state.phaseHistory).toContain('dial-tuning');
       expect(state.phaseHistory).toContain('frame');
       expect(state.phaseHistory).toContain('outline');
+    });
+  });
+
+  // ===========================================================================
+  // 9. Echo Generator Integration (Phase 4.3)
+  // ===========================================================================
+
+  describe('9. Echo Generator Integration', () => {
+    const mockEchoes = [
+      {
+        id: 'echo-1',
+        category: 'complications' as const,
+        title: 'Bridge Collapse',
+        content: 'The ancient bridge crumbles.',
+        isConfirmed: false,
+        createdAt: '2024-01-01T00:00:00.000Z',
+      },
+      {
+        id: 'echo-2',
+        category: 'rumors' as const,
+        title: 'Treasure Whispers',
+        content: 'Locals speak of hidden gold.',
+        isConfirmed: true,
+        createdAt: '2024-01-01T00:00:00.000Z',
+      },
+    ];
+
+    it('exports EchoGenerator component', () => {
+      expect(EchoGenerator).toBeDefined();
+      expect(typeof EchoGenerator).toBe('function');
+    });
+
+    it('exports EchoCard component', () => {
+      expect(EchoCard).toBeDefined();
+      expect(typeof EchoCard).toBe('function');
+    });
+
+    it('renders EchoGenerator with echoes', () => {
+      const mockHandlers = {
+        onCategoryChange: vi.fn(),
+        onGenerate: vi.fn(),
+        onConfirm: vi.fn(),
+        onConfirmAll: vi.fn(),
+        onEdit: vi.fn(),
+        onRegenerate: vi.fn(),
+      };
+
+      render(
+        <EchoGenerator
+          echoes={mockEchoes}
+          activeCategory="complications"
+          isLoading={false}
+          streamingContent={null}
+          {...mockHandlers}
+        />
+      );
+
+      expect(screen.getByText('GM Creativity Echoes')).toBeInTheDocument();
+      expect(screen.getByText('Bridge Collapse')).toBeInTheDocument();
+    });
+
+    it('renders EchoCard with echo data', () => {
+      const mockHandlers = {
+        onConfirm: vi.fn(),
+        onEdit: vi.fn(),
+        onRegenerate: vi.fn(),
+      };
+
+      render(<EchoCard echo={mockEchoes[0]} {...mockHandlers} />);
+
+      expect(screen.getByText('Bridge Collapse')).toBeInTheDocument();
+      expect(screen.getByText(/ancient bridge crumbles/)).toBeInTheDocument();
+      expect(screen.getByText('complications')).toBeInTheDocument();
+    });
+
+    it('manages echo state in content store', () => {
+      storeAction(() => {
+        useContentStore.getState().setEchoes(mockEchoes);
+      });
+
+      const state = useContentStore.getState();
+      expect(state.echoes.length).toBe(2);
+      expect(state.echoes[0].title).toBe('Bridge Collapse');
+    });
+
+    it('confirms individual echoes via store', () => {
+      storeAction(() => {
+        useContentStore.getState().setEchoes(mockEchoes);
+        useContentStore.getState().confirmEcho('echo-1');
+      });
+
+      const state = useContentStore.getState();
+      const confirmedEcho = state.echoes.find(e => e.id === 'echo-1');
+      expect(confirmedEcho?.isConfirmed).toBe(true);
+    });
+
+    it('confirms all echoes via store', () => {
+      storeAction(() => {
+        useContentStore.getState().setEchoes(mockEchoes);
+        useContentStore.getState().confirmAllEchoes();
+      });
+
+      const state = useContentStore.getState();
+      expect(state.echoes.every(e => e.isConfirmed)).toBe(true);
+    });
+
+    it('tracks active echo category', () => {
+      storeAction(() => {
+        useContentStore.getState().setActiveEchoCategory('rumors');
+      });
+
+      expect(useContentStore.getState().activeEchoCategory).toBe('rumors');
+    });
+
+    it('handles echo loading state', () => {
+      storeAction(() => {
+        useContentStore.getState().setEchoLoading(true);
+      });
+
+      expect(useContentStore.getState().echoLoading).toBe(true);
+    });
+
+    it('handles echo streaming content', () => {
+      storeAction(() => {
+        useContentStore.getState().setEchoStreamingContent('Generating...');
+        useContentStore.getState().appendEchoStreamingContent(' More content');
+      });
+
+      expect(useContentStore.getState().echoStreamingContent).toBe('Generating... More content');
+    });
+
+    it('clears echoes via store', () => {
+      storeAction(() => {
+        useContentStore.getState().setEchoes(mockEchoes);
+        useContentStore.getState().clearEchoes();
+      });
+
+      expect(useContentStore.getState().echoes.length).toBe(0);
+    });
+
+    it('transitions to echoes phase from items', () => {
+      storeAction(() => {
+        useAdventureStore.getState().initSession('Test');
+        useAdventureStore.getState().setPhase('items');
+        useAdventureStore.getState().setPhase('echoes');
+      });
+
+      expect(useAdventureStore.getState().currentPhase).toBe('echoes');
+    });
+
+    it('persists echo state to localStorage', () => {
+      storeAction(() => {
+        useContentStore.getState().setEchoes(mockEchoes);
+      });
+
+      const stored = localStorage.getItem(CONTENT_STORAGE_KEY);
+      const parsed = JSON.parse(stored!);
+      expect(parsed.state.echoes.length).toBe(2);
     });
   });
 });

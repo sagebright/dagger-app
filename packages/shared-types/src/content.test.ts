@@ -22,6 +22,25 @@ import type {
   NPCErrorEvent,
   CompileNPCsRequest,
   CompileNPCsResponse,
+  // Echo types (Phase 4.3)
+  Echo,
+  EchoCategory,
+  GenerateEchoesInput,
+  GenerateEchoesOutput,
+  EchoClientEvent,
+  EchoServerEvent,
+  EchoGenerateEvent,
+  EchoEditEvent,
+  EchoConfirmEvent,
+  EchoRegenerateEvent,
+  EchoGenerateStartEvent,
+  EchoGenerateChunkEvent,
+  EchoGenerateCompleteEvent,
+  EchoUpdatedEvent,
+  EchoConfirmedEvent,
+  EchoErrorEvent,
+  GenerateEchoesRequest,
+  GenerateEchoesResponse,
 } from './content.js';
 
 // =============================================================================
@@ -429,6 +448,442 @@ describe('NPC API Types', () => {
 
       expect(response.messageId).toBe('msg-1');
       expect(response.npcs).toHaveLength(1);
+    });
+  });
+});
+
+// =============================================================================
+// Echo Types Tests (Phase 4.3)
+// =============================================================================
+
+describe('Echo Types', () => {
+  describe('EchoCategory', () => {
+    it('should accept all valid echo categories', () => {
+      const categories: EchoCategory[] = [
+        'complications',
+        'rumors',
+        'discoveries',
+        'intrusions',
+        'wonders',
+      ];
+
+      expect(categories).toHaveLength(5);
+      categories.forEach((cat) => {
+        expect(typeof cat).toBe('string');
+      });
+    });
+  });
+
+  describe('Echo interface', () => {
+    it('should accept valid echo with all fields', () => {
+      const echo: Echo = {
+        id: 'echo-1',
+        category: 'complications',
+        title: 'The Bridge Collapses',
+        content: 'The ancient bridge begins to crumble beneath the party\'s feet.',
+        tags: ['environmental', 'dramatic'],
+        isConfirmed: false,
+        createdAt: new Date().toISOString(),
+      };
+
+      expect(echo.id).toBe('echo-1');
+      expect(echo.category).toBe('complications');
+      expect(echo.title).toBe('The Bridge Collapses');
+      expect(echo.isConfirmed).toBe(false);
+    });
+
+    it('should accept echo without optional tags', () => {
+      const echo: Echo = {
+        id: 'echo-2',
+        category: 'rumors',
+        title: 'Whispers in the Tavern',
+        content: 'The locals speak of a hidden treasure in the old mine.',
+        isConfirmed: true,
+        createdAt: '2024-01-01T00:00:00.000Z',
+      };
+
+      expect(echo.tags).toBeUndefined();
+      expect(echo.isConfirmed).toBe(true);
+    });
+
+    it('should accept echoes for each category', () => {
+      const categories: EchoCategory[] = ['complications', 'rumors', 'discoveries', 'intrusions', 'wonders'];
+
+      categories.forEach((category) => {
+        const echo: Echo = {
+          id: `echo-${category}`,
+          category,
+          title: `Test ${category}`,
+          content: `Content for ${category}`,
+          isConfirmed: false,
+          createdAt: new Date().toISOString(),
+        };
+        expect(echo.category).toBe(category);
+      });
+    });
+  });
+});
+
+// =============================================================================
+// Echo MCP Tool Types Tests
+// =============================================================================
+
+describe('GenerateEchoes MCP Tool', () => {
+  describe('GenerateEchoesInput', () => {
+    it('should accept valid input with all context', () => {
+      const input: GenerateEchoesInput = {
+        frame: {
+          id: 'frame-1',
+          name: 'The Hollow Vigil',
+          description: 'A dark fantasy adventure',
+          themes: ['mystery', 'redemption'],
+          typicalAdversaries: ['undead'],
+          lore: 'Ancient lore...',
+          isCustom: true,
+        },
+        outline: {
+          id: 'outline-1',
+          title: 'Into the Hollow',
+          summary: 'An adventure summary',
+          scenes: [],
+          isConfirmed: true,
+          createdAt: '2024-01-01T00:00:00.000Z',
+          updatedAt: '2024-01-01T00:00:00.000Z',
+        },
+        npcs: [
+          {
+            id: 'npc-1',
+            name: 'Orik',
+            role: 'ally',
+            description: 'A guide',
+            appearance: 'Tall',
+            personality: 'Kind',
+            motivations: [],
+            connections: [],
+            sceneAppearances: ['scene-1'],
+          },
+        ],
+        dialsSummary: {
+          partySize: 4,
+          partyTier: 2,
+          tone: 'dark and mysterious',
+          themes: ['mystery', 'redemption'],
+        },
+        categories: ['complications', 'rumors'],
+      };
+
+      expect(input.frame.name).toBe('The Hollow Vigil');
+      expect(input.categories).toHaveLength(2);
+    });
+
+    it('should accept input requesting all categories', () => {
+      const input: GenerateEchoesInput = {
+        frame: {
+          id: 'frame-1',
+          name: 'Test',
+          description: 'Test',
+          themes: [],
+          typicalAdversaries: [],
+          lore: '',
+          isCustom: true,
+        },
+        outline: {
+          id: 'outline-1',
+          title: 'Test',
+          summary: 'Test',
+          scenes: [],
+          isConfirmed: true,
+          createdAt: '',
+          updatedAt: '',
+        },
+        npcs: [],
+        dialsSummary: {
+          partySize: 4,
+          partyTier: 1,
+          tone: null,
+          themes: [],
+        },
+      };
+
+      // Categories should be optional, defaulting to all
+      expect(input.categories).toBeUndefined();
+    });
+  });
+
+  describe('GenerateEchoesOutput', () => {
+    it('should accept valid output with generated echoes', () => {
+      const output: GenerateEchoesOutput = {
+        assistantMessage: 'I have generated 5 echoes across 2 categories.',
+        echoes: [
+          {
+            id: 'echo-1',
+            category: 'complications',
+            title: 'The Bridge Collapses',
+            content: 'Content here',
+            isConfirmed: false,
+            createdAt: new Date().toISOString(),
+          },
+          {
+            id: 'echo-2',
+            category: 'rumors',
+            title: 'Whispers',
+            content: 'Content here',
+            isConfirmed: false,
+            createdAt: new Date().toISOString(),
+          },
+        ],
+        isComplete: true,
+      };
+
+      expect(output.isComplete).toBe(true);
+      expect(output.echoes).toHaveLength(2);
+    });
+
+    it('should accept output with follow-up question', () => {
+      const output: GenerateEchoesOutput = {
+        assistantMessage: 'Need clarification.',
+        echoes: [],
+        isComplete: false,
+        followUpQuestion: 'Should I focus on combat-related echoes?',
+      };
+
+      expect(output.isComplete).toBe(false);
+      expect(output.followUpQuestion).toBeDefined();
+    });
+  });
+});
+
+// =============================================================================
+// Echo WebSocket Event Types Tests
+// =============================================================================
+
+describe('Echo WebSocket Events', () => {
+  describe('Client Events', () => {
+    it('should accept echo generate event', () => {
+      const event: EchoGenerateEvent = {
+        type: 'echo:generate',
+        payload: {
+          categories: ['complications', 'rumors'],
+        },
+      };
+
+      expect(event.type).toBe('echo:generate');
+      expect(event.payload.categories).toHaveLength(2);
+    });
+
+    it('should accept echo edit event', () => {
+      const event: EchoEditEvent = {
+        type: 'echo:edit',
+        payload: {
+          echoId: 'echo-1',
+          updates: {
+            title: 'Updated Title',
+            content: 'Updated content',
+          },
+        },
+      };
+
+      expect(event.type).toBe('echo:edit');
+      expect(event.payload.echoId).toBe('echo-1');
+    });
+
+    it('should accept echo confirm event', () => {
+      const event: EchoConfirmEvent = {
+        type: 'echo:confirm',
+        payload: {
+          echoId: 'echo-1',
+        },
+      };
+
+      expect(event.type).toBe('echo:confirm');
+    });
+
+    it('should accept echo regenerate event', () => {
+      const event: EchoRegenerateEvent = {
+        type: 'echo:regenerate',
+        payload: {
+          echoId: 'echo-1',
+          feedback: 'Make it more dramatic',
+        },
+      };
+
+      expect(event.type).toBe('echo:regenerate');
+      expect(event.payload.feedback).toBe('Make it more dramatic');
+    });
+
+    it('should form valid client event union', () => {
+      const events: EchoClientEvent[] = [
+        { type: 'echo:generate', payload: { categories: ['complications'] } },
+        { type: 'echo:edit', payload: { echoId: 'echo-1', updates: { title: 'Test' } } },
+        { type: 'echo:confirm', payload: { echoId: 'echo-1' } },
+        { type: 'echo:regenerate', payload: { echoId: 'echo-1', feedback: 'test' } },
+      ];
+
+      expect(events).toHaveLength(4);
+    });
+  });
+
+  describe('Server Events', () => {
+    it('should accept generate start event', () => {
+      const event: EchoGenerateStartEvent = {
+        type: 'echo:generate_start',
+        payload: {
+          messageId: 'msg-1',
+          categories: ['complications', 'rumors'],
+        },
+      };
+
+      expect(event.type).toBe('echo:generate_start');
+      expect(event.payload.categories).toHaveLength(2);
+    });
+
+    it('should accept generate chunk event', () => {
+      const event: EchoGenerateChunkEvent = {
+        type: 'echo:generate_chunk',
+        payload: {
+          messageId: 'msg-1',
+          chunk: 'Generating complication: The Bridge...',
+        },
+      };
+
+      expect(event.type).toBe('echo:generate_chunk');
+    });
+
+    it('should accept generate complete event', () => {
+      const event: EchoGenerateCompleteEvent = {
+        type: 'echo:generate_complete',
+        payload: {
+          messageId: 'msg-1',
+          echoes: [
+            {
+              id: 'echo-1',
+              category: 'complications',
+              title: 'Test',
+              content: 'Content',
+              isConfirmed: false,
+              createdAt: new Date().toISOString(),
+            },
+          ],
+          isComplete: true,
+        },
+      };
+
+      expect(event.type).toBe('echo:generate_complete');
+      expect(event.payload.echoes).toHaveLength(1);
+    });
+
+    it('should accept echo updated event', () => {
+      const event: EchoUpdatedEvent = {
+        type: 'echo:updated',
+        payload: {
+          echo: {
+            id: 'echo-1',
+            category: 'rumors',
+            title: 'Updated',
+            content: 'Updated content',
+            isConfirmed: false,
+            createdAt: new Date().toISOString(),
+          },
+        },
+      };
+
+      expect(event.type).toBe('echo:updated');
+    });
+
+    it('should accept echo confirmed event', () => {
+      const event: EchoConfirmedEvent = {
+        type: 'echo:confirmed',
+        payload: {
+          echoId: 'echo-1',
+        },
+      };
+
+      expect(event.type).toBe('echo:confirmed');
+    });
+
+    it('should accept echo error event', () => {
+      const event: EchoErrorEvent = {
+        type: 'echo:error',
+        payload: {
+          code: 'GENERATION_FAILED',
+          message: 'Failed to generate echoes',
+        },
+      };
+
+      expect(event.type).toBe('echo:error');
+      expect(event.payload.code).toBe('GENERATION_FAILED');
+    });
+
+    it('should form valid server event union', () => {
+      const events: EchoServerEvent[] = [
+        { type: 'echo:generate_start', payload: { messageId: 'msg-1', categories: ['complications'] } },
+        { type: 'echo:generate_chunk', payload: { messageId: 'msg-1', chunk: 'test' } },
+        { type: 'echo:generate_complete', payload: { messageId: 'msg-1', echoes: [], isComplete: true } },
+        {
+          type: 'echo:updated',
+          payload: {
+            echo: {
+              id: 'echo-1',
+              category: 'rumors',
+              title: 'Test',
+              content: '',
+              isConfirmed: false,
+              createdAt: '',
+            },
+          },
+        },
+        { type: 'echo:confirmed', payload: { echoId: 'echo-1' } },
+        { type: 'echo:error', payload: { code: 'ERROR', message: 'test' } },
+      ];
+
+      expect(events).toHaveLength(6);
+    });
+  });
+});
+
+// =============================================================================
+// Echo API Types Tests
+// =============================================================================
+
+describe('Echo API Types', () => {
+  describe('GenerateEchoesRequest', () => {
+    it('should accept valid request', () => {
+      const request: GenerateEchoesRequest = {
+        categories: ['complications', 'rumors', 'discoveries'],
+        conversationHistory: [{ role: 'user', content: 'Generate echoes' }],
+      };
+
+      expect(request.categories).toHaveLength(3);
+    });
+
+    it('should accept request without optional categories (defaults to all)', () => {
+      const request: GenerateEchoesRequest = {};
+
+      expect(request.categories).toBeUndefined();
+    });
+  });
+
+  describe('GenerateEchoesResponse', () => {
+    it('should accept valid response', () => {
+      const response: GenerateEchoesResponse = {
+        messageId: 'msg-1',
+        content: 'Here are the generated echoes.',
+        echoes: [
+          {
+            id: 'echo-1',
+            category: 'wonders',
+            title: 'Aurora of the Ancients',
+            content: 'A magical aurora appears in the sky.',
+            isConfirmed: false,
+            createdAt: new Date().toISOString(),
+          },
+        ],
+        isComplete: true,
+      };
+
+      expect(response.messageId).toBe('msg-1');
+      expect(response.echoes).toHaveLength(1);
+      expect(response.echoes[0].category).toBe('wonders');
     });
   });
 });

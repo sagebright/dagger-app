@@ -34,3 +34,7 @@ export { AdversarySelector, type AdversarySelectorProps } from './AdversarySelec
 // Item components (Phase 4.2)
 export { ItemCard, type ItemCardProps } from './ItemCard';
 export { ItemSelector, type ItemSelectorProps } from './ItemSelector';
+
+// Echo components (Phase 4.3)
+export { EchoCard, type EchoCardProps } from './EchoCard';
+export { EchoGenerator, type EchoGeneratorProps } from './EchoGenerator';

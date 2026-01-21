@@ -1600,3 +1600,256 @@ export interface GetItemsResponse {
   items: UnifiedItem[];
   availableCategories: ItemCategory[];
 }
+
+// =============================================================================
+// Echo Types (Phase 4.3)
+// =============================================================================
+
+/**
+ * The five categories of GM creativity tools
+ */
+export type EchoCategory = 'complications' | 'rumors' | 'discoveries' | 'intrusions' | 'wonders';
+
+/**
+ * An individual echo/prompt for GMs
+ */
+export interface Echo {
+  /** Unique identifier */
+  id: string;
+  /** Echo category */
+  category: EchoCategory;
+  /** Short descriptive title */
+  title: string;
+  /** Full echo content/description */
+  content: string;
+  /** Optional tags for filtering */
+  tags?: string[];
+  /** Whether the echo has been confirmed */
+  isConfirmed: boolean;
+  /** When the echo was created */
+  createdAt: string;
+}
+
+// =============================================================================
+// MCP Tool: generate_echoes
+// =============================================================================
+
+/**
+ * Input for the generate_echoes MCP tool
+ */
+export interface GenerateEchoesInput {
+  /** Adventure frame for context */
+  frame: SelectedFrame;
+  /** The adventure outline */
+  outline: Outline;
+  /** Compiled NPCs for reference */
+  npcs: NPC[];
+  /** Dial settings for context */
+  dialsSummary: {
+    partySize: number;
+    partyTier: 1 | 2 | 3 | 4;
+    tone: string | null;
+    themes: string[];
+  };
+  /** Specific categories to generate (defaults to all) */
+  categories?: EchoCategory[];
+  /** Optional feedback for regeneration */
+  feedback?: string;
+}
+
+/**
+ * Output from the generate_echoes MCP tool
+ */
+export interface GenerateEchoesOutput {
+  /** The assistant's response message */
+  assistantMessage: string;
+  /** Generated echoes */
+  echoes: Echo[];
+  /** Whether generation is complete */
+  isComplete: boolean;
+  /** Follow-up question if needed */
+  followUpQuestion?: string;
+}
+
+// =============================================================================
+// WebSocket Events for Echo
+// =============================================================================
+
+/**
+ * WebSocket event types for echo generation (client → server)
+ */
+export type EchoClientEventType =
+  | 'echo:generate'
+  | 'echo:edit'
+  | 'echo:confirm'
+  | 'echo:regenerate';
+
+/**
+ * WebSocket event types for echo generation (server → client)
+ */
+export type EchoServerEventType =
+  | 'echo:generate_start'
+  | 'echo:generate_chunk'
+  | 'echo:generate_complete'
+  | 'echo:updated'
+  | 'echo:confirmed'
+  | 'echo:error';
+
+// -----------------------------------------------------------------------------
+// Client Events (Frontend → Bridge)
+// -----------------------------------------------------------------------------
+
+/**
+ * User requests echo generation
+ */
+export interface EchoGenerateEvent {
+  type: 'echo:generate';
+  payload: {
+    categories?: EchoCategory[];
+  };
+}
+
+/**
+ * User edits an echo
+ */
+export interface EchoEditEvent {
+  type: 'echo:edit';
+  payload: {
+    echoId: string;
+    updates: Partial<Pick<Echo, 'title' | 'content' | 'tags'>>;
+  };
+}
+
+/**
+ * User confirms an echo
+ */
+export interface EchoConfirmEvent {
+  type: 'echo:confirm';
+  payload: {
+    echoId: string;
+  };
+}
+
+/**
+ * User requests regeneration of a specific echo
+ */
+export interface EchoRegenerateEvent {
+  type: 'echo:regenerate';
+  payload: {
+    echoId: string;
+    feedback?: string;
+  };
+}
+
+/**
+ * Union of all echo client events
+ */
+export type EchoClientEvent =
+  | EchoGenerateEvent
+  | EchoEditEvent
+  | EchoConfirmEvent
+  | EchoRegenerateEvent;
+
+// -----------------------------------------------------------------------------
+// Server Events (Bridge → Frontend)
+// -----------------------------------------------------------------------------
+
+/**
+ * Echo generation starting
+ */
+export interface EchoGenerateStartEvent {
+  type: 'echo:generate_start';
+  payload: {
+    messageId: string;
+    categories: EchoCategory[];
+  };
+}
+
+/**
+ * Streaming chunk of echo generation
+ */
+export interface EchoGenerateChunkEvent {
+  type: 'echo:generate_chunk';
+  payload: {
+    messageId: string;
+    chunk: string;
+  };
+}
+
+/**
+ * Echo generation complete
+ */
+export interface EchoGenerateCompleteEvent {
+  type: 'echo:generate_complete';
+  payload: {
+    messageId: string;
+    echoes: Echo[];
+    isComplete: boolean;
+    followUpQuestion?: string;
+  };
+}
+
+/**
+ * Echo updated after edit
+ */
+export interface EchoUpdatedEvent {
+  type: 'echo:updated';
+  payload: {
+    echo: Echo;
+  };
+}
+
+/**
+ * Echo confirmed
+ */
+export interface EchoConfirmedEvent {
+  type: 'echo:confirmed';
+  payload: {
+    echoId: string;
+  };
+}
+
+/**
+ * Echo error
+ */
+export interface EchoErrorEvent {
+  type: 'echo:error';
+  payload: {
+    code: string;
+    message: string;
+  };
+}
+
+/**
+ * Union of all echo server events
+ */
+export type EchoServerEvent =
+  | EchoGenerateStartEvent
+  | EchoGenerateChunkEvent
+  | EchoGenerateCompleteEvent
+  | EchoUpdatedEvent
+  | EchoConfirmedEvent
+  | EchoErrorEvent;
+
+// =============================================================================
+// Echo API Types
+// =============================================================================
+
+/**
+ * Request to generate echoes
+ */
+export interface GenerateEchoesRequest {
+  categories?: EchoCategory[];
+  conversationHistory?: Array<{ role: 'user' | 'assistant'; content: string }>;
+}
+
+/**
+ * Response from echo generation
+ */
+export interface GenerateEchoesResponse {
+  messageId: string;
+  content: string;
+  echoes: Echo[];
+  isComplete: boolean;
+  followUpQuestion?: string;
+}

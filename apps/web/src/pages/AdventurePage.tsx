@@ -52,11 +52,8 @@ import {
   selectCanProceedToOutline,
   selectCanProceedToScenes,
   selectCanProceedToNPCs,
-  selectCurrentScene,
-  selectSceneNavigation,
   selectAllScenesConfirmed,
   selectNPCs,
-  selectNPCStatus,
   selectConfirmedNPCIds,
   selectCanProceedToAdversaries,
 } from '@/stores/contentStore';
@@ -316,8 +313,23 @@ export function AdventurePage() {
   // Scene-specific state
   const scenes = useContentStore((state) => state.scenes);
   const currentSceneId = useContentStore((state) => state.currentSceneId);
-  const currentScene = useContentStore(selectCurrentScene);
-  const sceneNavState = useContentStore(selectSceneNavigation);
+  // Derive currentScene in component to avoid selector returning new object
+  const currentScene = useMemo(() => {
+    return scenes.find((s) => s.brief.id === currentSceneId) ?? null;
+  }, [scenes, currentSceneId]);
+  // Derive scene navigation in component to avoid selector returning new object
+  const sceneNavState = useMemo(() => {
+    const currentIndex = scenes.findIndex((s) => s.brief.id === currentSceneId);
+    if (currentIndex === -1) {
+      return { canGoPrevious: false, canGoNext: false, currentIndex: -1 };
+    }
+    const canGoPrevious = currentIndex > 0;
+    const canGoNext =
+      currentIndex < scenes.length - 1 &&
+      (scenes[currentIndex].status === 'confirmed' ||
+        scenes[currentIndex].status === 'draft');
+    return { canGoPrevious, canGoNext, currentIndex };
+  }, [scenes, currentSceneId]);
   const allScenesConfirmed = useContentStore(selectAllScenesConfirmed);
   const sceneLoading = useContentStore((state) => state.sceneLoading);
   const sceneError = useContentStore((state) => state.sceneError);
@@ -333,7 +345,11 @@ export function AdventurePage() {
   // NPC-specific state
   const npcs = useContentStore(selectNPCs);
   const confirmedNPCIds = useContentStore(selectConfirmedNPCIds);
-  const npcStatus = useContentStore(selectNPCStatus);
+  // Select individual primitives to avoid infinite re-renders from object selectors
+  const npcLoading = useContentStore((state) => state.npcLoading);
+  const npcError = useContentStore((state) => state.npcError);
+  const npcStreamingContent = useContentStore((state) => state.npcStreamingContent);
+  const refiningNPCId = useContentStore((state) => state.refiningNPCId);
 
   // NPC actions
   const confirmNPC = useContentStore((state) => state.confirmNPC);
@@ -619,10 +635,10 @@ export function AdventurePage() {
             onConfirmAll={handleNPCConfirmAll}
             onProceed={handleContinue}
             confirmedNPCIds={confirmedNPCIds}
-            isLoading={npcStatus.loading}
-            streamingContent={npcStatus.streamingContent}
-            refiningNPCId={npcStatus.refiningNPCId}
-            error={npcStatus.error}
+            isLoading={npcLoading}
+            streamingContent={npcStreamingContent}
+            refiningNPCId={refiningNPCId}
+            error={npcError}
             onRetry={handleNPCRetry}
             className="flex-1"
           />

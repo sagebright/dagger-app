@@ -60,11 +60,20 @@ import type {
   SelectedItem,
   UnifiedItem,
   ItemCategory,
+  // Echo types
+  EchoGenerateEvent,
+  EchoEditEvent,
+  EchoConfirmEvent,
+  EchoRegenerateEvent,
+  EchoClientEvent,
+  EchoServerEvent,
+  Echo,
+  EchoCategory,
 } from '@dagger-app/shared-types';
 
-// Combined event types that include dial, outline, scene, NPC, adversary, and item events
-type AllClientEvents = ClientEvent | OutlineClientEvent | SceneClientEvent | NPCClientEvent | AdversaryClientEvent | ItemClientEvent;
-type AllServerEvents = ServerEvent | OutlineServerEvent | SceneServerEvent | NPCServerEvent | AdversaryServerEvent | ItemServerEvent;
+// Combined event types that include dial, outline, scene, NPC, adversary, item, and echo events
+type AllClientEvents = ClientEvent | OutlineClientEvent | SceneClientEvent | NPCClientEvent | AdversaryClientEvent | ItemClientEvent | EchoClientEvent;
+type AllServerEvents = ServerEvent | OutlineServerEvent | SceneServerEvent | NPCServerEvent | AdversaryServerEvent | ItemServerEvent | EchoServerEvent;
 
 // =============================================================================
 // Event Handlers Configuration
@@ -103,6 +112,11 @@ export interface ClientEventHandlers {
   onItemDeselect?: (payload: ItemDeselectEvent['payload']) => Promise<void> | void;
   onItemUpdateQuantity?: (payload: ItemUpdateQuantityEvent['payload']) => Promise<void> | void;
   onItemConfirm?: (payload: ItemConfirmEvent['payload']) => Promise<void> | void;
+  // Echo events
+  onEchoGenerate?: (payload: EchoGenerateEvent['payload']) => Promise<void> | void;
+  onEchoEdit?: (payload: EchoEditEvent['payload']) => Promise<void> | void;
+  onEchoConfirm?: (payload: EchoConfirmEvent['payload']) => Promise<void> | void;
+  onEchoRegenerate?: (payload: EchoRegenerateEvent['payload']) => Promise<void> | void;
 }
 
 // =============================================================================
@@ -590,6 +604,91 @@ export function emitItemError(ws: WebSocket, code: string, message: string): voi
 }
 
 // =============================================================================
+// Echo Event Emitters (Phase 4.3)
+// =============================================================================
+
+/**
+ * Emit echo generation start event
+ */
+export function emitEchoGenerateStart(
+  ws: WebSocket,
+  messageId: string,
+  categories: EchoCategory[]
+): void {
+  emitToClient(ws, {
+    type: 'echo:generate_start',
+    payload: { messageId, categories },
+  });
+}
+
+/**
+ * Emit echo generation streaming chunk
+ */
+export function emitEchoGenerateChunk(ws: WebSocket, messageId: string, chunk: string): void {
+  emitToClient(ws, {
+    type: 'echo:generate_chunk',
+    payload: { messageId, chunk },
+  });
+}
+
+/**
+ * Emit echo generation complete
+ */
+export function emitEchoGenerateComplete(
+  ws: WebSocket,
+  messageId: string,
+  echoes: Echo[],
+  isComplete: boolean,
+  followUpQuestion?: string
+): void {
+  const payload: {
+    messageId: string;
+    echoes: Echo[];
+    isComplete: boolean;
+    followUpQuestion?: string;
+  } = { messageId, echoes, isComplete };
+
+  if (followUpQuestion) {
+    payload.followUpQuestion = followUpQuestion;
+  }
+
+  emitToClient(ws, {
+    type: 'echo:generate_complete',
+    payload,
+  });
+}
+
+/**
+ * Emit echo updated event
+ */
+export function emitEchoUpdated(ws: WebSocket, echo: Echo): void {
+  emitToClient(ws, {
+    type: 'echo:updated',
+    payload: { echo },
+  });
+}
+
+/**
+ * Emit echo confirmed event
+ */
+export function emitEchoConfirmed(ws: WebSocket, echoId: string): void {
+  emitToClient(ws, {
+    type: 'echo:confirmed',
+    payload: { echoId },
+  });
+}
+
+/**
+ * Emit echo error event
+ */
+export function emitEchoError(ws: WebSocket, code: string, message: string): void {
+  emitToClient(ws, {
+    type: 'echo:error',
+    payload: { code, message },
+  });
+}
+
+// =============================================================================
 // Client Event Handler
 // =============================================================================
 
@@ -751,6 +850,31 @@ export async function handleClientEvent(
       }
       break;
 
+    // Echo events
+    case 'echo:generate':
+      if (handlers.onEchoGenerate) {
+        await handlers.onEchoGenerate((event as EchoGenerateEvent).payload);
+      }
+      break;
+
+    case 'echo:edit':
+      if (handlers.onEchoEdit) {
+        await handlers.onEchoEdit((event as EchoEditEvent).payload);
+      }
+      break;
+
+    case 'echo:confirm':
+      if (handlers.onEchoConfirm) {
+        await handlers.onEchoConfirm((event as EchoConfirmEvent).payload);
+      }
+      break;
+
+    case 'echo:regenerate':
+      if (handlers.onEchoRegenerate) {
+        await handlers.onEchoRegenerate((event as EchoRegenerateEvent).payload);
+      }
+      break;
+
     default:
       emitError(ws, 'UNKNOWN_EVENT', `Unknown event type: ${(event as { type: string }).type}`);
   }
@@ -799,6 +923,11 @@ export function parseClientEvent(data: Buffer | string): AllClientEvents | null 
       'item:deselect',
       'item:update_quantity',
       'item:confirm',
+      // Echo events
+      'echo:generate',
+      'echo:edit',
+      'echo:confirm',
+      'echo:regenerate',
     ];
     if (!validTypes.includes(parsed.type)) {
       return null;

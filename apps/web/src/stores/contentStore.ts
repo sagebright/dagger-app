@@ -27,6 +27,8 @@ import type {
   SelectedItem,
   ItemFilterOptions,
   ItemCategory,
+  Echo,
+  EchoCategory,
 } from '@dagger-app/shared-types';
 import { isCustomFrame, isOutlineComplete } from '@dagger-app/shared-types';
 
@@ -115,6 +117,20 @@ export interface ContentState {
   /** Current filter options */
   itemFilters: ItemFilterOptions;
 
+  // Echo state (Phase 4.3)
+  /** Generated echoes (GM creativity tools) */
+  echoes: Echo[];
+  /** Set of confirmed echo IDs */
+  confirmedEchoIds: Set<string>;
+  /** Loading state for echo generation */
+  echoLoading: boolean;
+  /** Error message if echo generation failed */
+  echoError: string | null;
+  /** Streaming content during echo generation */
+  echoStreamingContent: string | null;
+  /** Currently active category tab */
+  activeEchoCategory: EchoCategory;
+
   // Actions - Frame
   setAvailableFrames: (frames: DaggerheartFrame[]) => void;
   selectFrame: (frame: SelectedFrame) => void;
@@ -184,6 +200,19 @@ export interface ContentState {
   setItemError: (error: string | null) => void;
   clearItems: () => void;
 
+  // Actions - Echo (Phase 4.3)
+  setEchoes: (echoes: Echo[]) => void;
+  addEcho: (echo: Echo) => void;
+  updateEcho: (echoId: string, updates: Partial<Echo>) => void;
+  confirmEcho: (echoId: string) => void;
+  confirmAllEchoes: () => void;
+  setActiveEchoCategory: (category: EchoCategory) => void;
+  setEchoLoading: (loading: boolean) => void;
+  setEchoError: (error: string | null) => void;
+  setEchoStreamingContent: (content: string | null) => void;
+  appendEchoStreamingContent: (chunk: string) => void;
+  clearEchoes: () => void;
+
   // Reset
   resetContent: () => void;
 }
@@ -231,6 +260,13 @@ const initialContentState = {
   itemError: null as string | null,
   availableItemCategories: [] as ItemCategory[],
   itemFilters: {} as ItemFilterOptions,
+  // Echo state
+  echoes: [] as Echo[],
+  confirmedEchoIds: new Set<string>(),
+  echoLoading: false,
+  echoError: null as string | null,
+  echoStreamingContent: null as string | null,
+  activeEchoCategory: 'complications' as EchoCategory,
 };
 
 // =============================================================================
@@ -976,6 +1012,117 @@ export const useContentStore = create<ContentState>()(
           );
         },
 
+        // =====================================================================
+        // Echo Actions (Phase 4.3)
+        // =====================================================================
+
+        /**
+         * Set all echoes
+         */
+        setEchoes: (echoes: Echo[]) => {
+          set({ echoes, echoError: null }, false, 'setEchoes');
+        },
+
+        /**
+         * Add a single echo
+         */
+        addEcho: (echo: Echo) => {
+          const { echoes } = get();
+          set({ echoes: [...echoes, echo] }, false, 'addEcho');
+        },
+
+        /**
+         * Update an existing echo
+         */
+        updateEcho: (echoId: string, updates: Partial<Echo>) => {
+          const { echoes } = get();
+          const updatedEchoes = echoes.map((echo) =>
+            echo.id === echoId ? { ...echo, ...updates } : echo
+          );
+          set({ echoes: updatedEchoes }, false, 'updateEcho');
+        },
+
+        /**
+         * Confirm an echo
+         */
+        confirmEcho: (echoId: string) => {
+          const { echoes, confirmedEchoIds } = get();
+          const updatedEchoes = echoes.map((echo) =>
+            echo.id === echoId ? { ...echo, isConfirmed: true } : echo
+          );
+          const newConfirmedIds = new Set(confirmedEchoIds);
+          newConfirmedIds.add(echoId);
+          set({ echoes: updatedEchoes, confirmedEchoIds: newConfirmedIds }, false, 'confirmEcho');
+        },
+
+        /**
+         * Confirm all echoes
+         */
+        confirmAllEchoes: () => {
+          const { echoes } = get();
+          const updatedEchoes = echoes.map((echo) => ({ ...echo, isConfirmed: true }));
+          const allIds = new Set(echoes.map((e) => e.id));
+          set({ echoes: updatedEchoes, confirmedEchoIds: allIds }, false, 'confirmAllEchoes');
+        },
+
+        /**
+         * Set active echo category tab
+         */
+        setActiveEchoCategory: (category: EchoCategory) => {
+          set({ activeEchoCategory: category }, false, 'setActiveEchoCategory');
+        },
+
+        /**
+         * Set echo loading state
+         */
+        setEchoLoading: (loading: boolean) => {
+          set({ echoLoading: loading }, false, 'setEchoLoading');
+        },
+
+        /**
+         * Set echo error state
+         */
+        setEchoError: (error: string | null) => {
+          set({ echoError: error, echoLoading: false }, false, 'setEchoError');
+        },
+
+        /**
+         * Set echo streaming content
+         */
+        setEchoStreamingContent: (content: string | null) => {
+          set({ echoStreamingContent: content }, false, 'setEchoStreamingContent');
+        },
+
+        /**
+         * Append to echo streaming content
+         */
+        appendEchoStreamingContent: (chunk: string) => {
+          const { echoStreamingContent } = get();
+          set(
+            { echoStreamingContent: (echoStreamingContent || '') + chunk },
+            false,
+            'appendEchoStreamingContent'
+          );
+        },
+
+        /**
+         * Clear all echoes
+         */
+        clearEchoes: () => {
+          set(
+            {
+              echoes: [],
+              confirmedEchoIds: new Set<string>(),
+              echoLoading: false,
+              echoError: null,
+              echoStreamingContent: null,
+              activeEchoCategory: 'complications',
+            },
+            false,
+            'clearEchoes'
+          );
+        },
+
         /**
          * Reset all content state
          */
@@ -985,7 +1132,7 @@ export const useContentStore = create<ContentState>()(
       }),
       {
         name: 'dagger-content-storage',
-        // Persist frame, outline, scene, NPC, adversary, and item state (not available data from DB)
+        // Persist frame, outline, scene, NPC, adversary, item, and echo state
         partialize: (state) => ({
           selectedFrame: state.selectedFrame,
           frameConfirmed: state.frameConfirmed,
@@ -1001,6 +1148,9 @@ export const useContentStore = create<ContentState>()(
           selectedItems: state.selectedItems,
           confirmedItemIds: Array.from(state.confirmedItemIds), // Convert Set to Array for serialization
           itemFilters: state.itemFilters,
+          echoes: state.echoes,
+          confirmedEchoIds: Array.from(state.confirmedEchoIds), // Convert Set to Array for serialization
+          activeEchoCategory: state.activeEchoCategory,
         }),
         // Custom storage to handle Set serialization
         storage: {
@@ -1019,6 +1169,10 @@ export const useContentStore = create<ContentState>()(
             // Convert confirmedItemIds back to Set
             if (parsed.state?.confirmedItemIds) {
               parsed.state.confirmedItemIds = new Set(parsed.state.confirmedItemIds);
+            }
+            // Convert confirmedEchoIds back to Set
+            if (parsed.state?.confirmedEchoIds) {
+              parsed.state.confirmedEchoIds = new Set(parsed.state.confirmedEchoIds);
             }
             return parsed;
           },
@@ -1614,3 +1768,99 @@ export const selectSelectedItemByKey = (
   state.selectedItems.find(
     (si) => si.item.data.name === itemName && si.item.category === category
   );
+
+// =============================================================================
+// Echo Selectors (Phase 4.3)
+// =============================================================================
+
+/**
+ * Get all echoes
+ */
+export const selectEchoes = (state: ContentState): Echo[] => state.echoes;
+
+/**
+ * Get echoes by category
+ */
+export const selectEchoesByCategory = (
+  state: ContentState,
+  category: EchoCategory
+): Echo[] => state.echoes.filter((e) => e.category === category);
+
+/**
+ * Get confirmed echo IDs
+ */
+export const selectConfirmedEchoIds = (state: ContentState): Set<string> =>
+  state.confirmedEchoIds;
+
+/**
+ * Get echo by ID
+ */
+export const selectEchoById = (state: ContentState, echoId: string): Echo | undefined =>
+  state.echoes.find((e) => e.id === echoId);
+
+/**
+ * Get count of confirmed echoes
+ */
+export const selectConfirmedEchoCount = (state: ContentState): number =>
+  state.confirmedEchoIds.size;
+
+/**
+ * Check if all echoes are confirmed
+ */
+export const selectAllEchoesConfirmed = (state: ContentState): boolean =>
+  state.echoes.length > 0 && state.confirmedEchoIds.size === state.echoes.length;
+
+/**
+ * Get echo loading/error status
+ */
+export const selectEchoStatus = (
+  state: ContentState
+): {
+  loading: boolean;
+  error: string | null;
+  streamingContent: string | null;
+  activeCategory: EchoCategory;
+} => ({
+  loading: state.echoLoading,
+  error: state.echoError,
+  streamingContent: state.echoStreamingContent,
+  activeCategory: state.activeEchoCategory,
+});
+
+/**
+ * Get echo summary for display
+ */
+export const selectEchoSummary = (
+  state: ContentState
+): { total: number; confirmed: number; pending: number; byCategory: Record<EchoCategory, number> } => {
+  const byCategory: Record<EchoCategory, number> = {
+    complications: 0,
+    rumors: 0,
+    discoveries: 0,
+    intrusions: 0,
+    wonders: 0,
+  };
+
+  state.echoes.forEach((echo) => {
+    byCategory[echo.category]++;
+  });
+
+  return {
+    total: state.echoes.length,
+    confirmed: state.confirmedEchoIds.size,
+    pending: state.echoes.length - state.confirmedEchoIds.size,
+    byCategory,
+  };
+};
+
+/**
+ * Get active echo category
+ */
+export const selectActiveEchoCategory = (state: ContentState): EchoCategory =>
+  state.activeEchoCategory;
+
+/**
+ * Check if user can proceed to complete phase
+ */
+export const selectCanProceedToComplete = (state: ContentState): boolean =>
+  state.echoes.length > 0 && state.confirmedEchoIds.size === state.echoes.length;
