@@ -5,7 +5,7 @@
  * Manages auto-scroll behavior and shows connection/typing states.
  */
 
-import { useRef, useCallback, useEffect, useState } from 'react';
+import { useRef, useCallback, useEffect, useState, memo } from 'react';
 import { useChat } from '@/hooks/useChat';
 import { MessageBubble } from './MessageBubble';
 import { ChatInput } from './ChatInput';
@@ -23,7 +23,7 @@ export interface ChatContainerProps {
   className?: string;
 }
 
-export function ChatContainer({
+function ChatContainerComponent({
   sessionId,
   // onDialUpdate will be used for inline dial widgets (future implementation)
   onDialUpdate: _onDialUpdate,
@@ -151,3 +151,6 @@ export function ChatContainer({
     </div>
   );
 }
+
+/** Memoized ChatContainer to prevent unnecessary re-renders during parent state updates */
+export const ChatContainer = memo(ChatContainerComponent);

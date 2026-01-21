@@ -8,7 +8,7 @@
  * Fantasy-themed styling.
  */
 
-import { useState, type ReactNode } from 'react';
+import { useState, memo, type ReactNode } from 'react';
 import type { DialId } from '@dagger-app/shared-types';
 import {
   CONCRETE_DIAL_METADATA,
@@ -87,7 +87,7 @@ function CollapsibleSection({
   );
 }
 
-export function DialSummaryPanel({
+function DialSummaryPanelComponent({
   dials,
   onConfirmToggle,
   onContinue,
@@ -170,3 +170,6 @@ export function DialSummaryPanel({
     </div>
   );
 }
+
+/** Memoized DialSummaryPanel to prevent unnecessary re-renders during parent state updates */
+export const DialSummaryPanel = memo(DialSummaryPanelComponent);
