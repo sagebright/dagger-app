@@ -11,6 +11,7 @@ import { v4 as uuidv4 } from 'uuid';
 import type { ChatRequest, ChatResponse, DialId } from '@dagger-app/shared-types';
 import { processDialInputHandler } from '../mcp/tools/processDial.js';
 import { validateDialValue, getDialValidationError } from '../services/dial-validation.js';
+import { sendError } from './helpers.js';
 
 const router: RouterType = Router();
 
@@ -29,11 +30,6 @@ interface DirectDialResponse {
   value: unknown;
 }
 
-interface ErrorResponse {
-  code: string;
-  message: string;
-}
-
 // =============================================================================
 // Routes
 // =============================================================================
@@ -49,20 +45,12 @@ router.post('/', async (req: Request, res: Response) => {
 
   // Validate request
   if (!body.message || typeof body.message !== 'string') {
-    const error: ErrorResponse = {
-      code: 'INVALID_REQUEST',
-      message: 'Message is required',
-    };
-    res.status(400).json(error);
+    sendError(res, 'INVALID_REQUEST', 'Message is required', 400);
     return;
   }
 
   if (!body.currentDials || typeof body.currentDials !== 'object') {
-    const error: ErrorResponse = {
-      code: 'INVALID_REQUEST',
-      message: 'Current dials state is required',
-    };
-    res.status(400).json(error);
+    sendError(res, 'INVALID_REQUEST', 'Current dials state is required', 400);
     return;
   }
 
@@ -87,11 +75,7 @@ router.post('/', async (req: Request, res: Response) => {
     res.json(response);
   } catch (error) {
     console.error('Chat processing error:', error);
-    const errorResponse: ErrorResponse = {
-      code: 'PROCESSING_ERROR',
-      message: 'Failed to process chat message',
-    };
-    res.status(500).json(errorResponse);
+    sendError(res, 'PROCESSING_ERROR', 'Failed to process chat message');
   }
 });
 
@@ -106,20 +90,12 @@ router.post('/dial', (req: Request, res: Response) => {
 
   // Validate request
   if (!body.dialId || typeof body.dialId !== 'string') {
-    const error: ErrorResponse = {
-      code: 'INVALID_REQUEST',
-      message: 'dialId is required',
-    };
-    res.status(400).json(error);
+    sendError(res, 'INVALID_REQUEST', 'dialId is required', 400);
     return;
   }
 
   if (body.value === undefined) {
-    const error: ErrorResponse = {
-      code: 'INVALID_REQUEST',
-      message: 'value is required',
-    };
-    res.status(400).json(error);
+    sendError(res, 'INVALID_REQUEST', 'value is required', 400);
     return;
   }
 
@@ -127,11 +103,7 @@ router.post('/dial', (req: Request, res: Response) => {
   const dialId = body.dialId as DialId;
   if (!validateDialValue(dialId, body.value)) {
     const validationError = getDialValidationError(dialId, body.value);
-    const error: ErrorResponse = {
-      code: 'INVALID_VALUE',
-      message: validationError || 'Invalid dial value',
-    };
-    res.status(400).json(error);
+    sendError(res, 'INVALID_VALUE', validationError || 'Invalid dial value', 400);
     return;
   }
 

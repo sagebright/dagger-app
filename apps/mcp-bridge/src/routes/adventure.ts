@@ -11,7 +11,7 @@
 
 import { Router } from 'express';
 import type { Request, Response, Router as RouterType } from 'express';
-import type { AdventureSnapshot, ApiError, WebAdventure } from '@dagger-app/shared-types';
+import type { AdventureSnapshot, WebAdventure } from '@dagger-app/shared-types';
 import {
   saveAdventure,
   loadAdventure,
@@ -20,6 +20,7 @@ import {
   markExported,
 } from '../services/web-adventure-queries.js';
 import { generateMarkdownHandler } from '../mcp/tools/generateMarkdown.js';
+import { sendError } from './helpers.js';
 
 const router: RouterType = Router();
 
@@ -49,22 +50,14 @@ function validateSnapshot(body: unknown): body is AdventureSnapshot {
 router.post('/save', async (req: Request, res: Response) => {
   // Validate request body
   if (!validateSnapshot(req.body)) {
-    const error: ApiError = {
-      code: 'VALIDATION_ERROR',
-      message: 'Missing required fields: sessionId, adventureName, currentPhase, phaseHistory',
-    };
-    res.status(400).json(error);
+    sendError(res, 'VALIDATION_ERROR', 'Missing required fields: sessionId, adventureName, currentPhase, phaseHistory', 400);
     return;
   }
 
   const result = await saveAdventure(req.body);
 
   if (result.error || !result.data) {
-    const error: ApiError = {
-      code: 'SAVE_FAILED',
-      message: result.error ?? 'Failed to save adventure',
-    };
-    res.status(500).json(error);
+    sendError(res, 'SAVE_FAILED', result.error ?? 'Failed to save adventure');
     return;
   }
 
@@ -86,11 +79,7 @@ router.get('/:sessionId', async (req: Request, res: Response) => {
   const result = await loadAdventure(sessionId);
 
   if (result.error) {
-    const error: ApiError = {
-      code: 'LOAD_FAILED',
-      message: result.error,
-    };
-    res.status(500).json(error);
+    sendError(res, 'LOAD_FAILED', result.error);
     return;
   }
 
@@ -118,11 +107,7 @@ router.get('/:sessionId/metadata', async (req: Request, res: Response) => {
   const result = await getAdventureMetadata(sessionId);
 
   if (result.error) {
-    const error: ApiError = {
-      code: 'METADATA_FAILED',
-      message: result.error,
-    };
-    res.status(500).json(error);
+    sendError(res, 'METADATA_FAILED', result.error);
     return;
   }
 
@@ -147,11 +132,7 @@ router.delete('/:sessionId', async (req: Request, res: Response) => {
   const result = await deleteAdventure(sessionId);
 
   if (!result.success) {
-    const error: ApiError = {
-      code: 'DELETE_FAILED',
-      message: result.error ?? 'Failed to delete adventure',
-    };
-    res.status(500).json(error);
+    sendError(res, 'DELETE_FAILED', result.error ?? 'Failed to delete adventure');
     return;
   }
 
@@ -173,20 +154,12 @@ router.post('/:sessionId/export', async (req: Request, res: Response) => {
   const loadResult = await loadAdventure(sessionId);
 
   if (loadResult.error) {
-    const error: ApiError = {
-      code: 'LOAD_FAILED',
-      message: loadResult.error,
-    };
-    res.status(500).json(error);
+    sendError(res, 'LOAD_FAILED', loadResult.error);
     return;
   }
 
   if (!loadResult.data) {
-    const error: ApiError = {
-      code: 'NOT_FOUND',
-      message: 'Adventure not found',
-    };
-    res.status(404).json(error);
+    sendError(res, 'NOT_FOUND', 'Adventure not found', 404);
     return;
   }
 

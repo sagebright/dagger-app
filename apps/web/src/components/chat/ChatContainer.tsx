@@ -11,6 +11,9 @@ import { MessageBubble } from './MessageBubble';
 import { ChatInput } from './ChatInput';
 import { TypingIndicator } from './TypingIndicator';
 
+/** Distance from bottom (in pixels) within which auto-scroll activates */
+const SCROLL_BOTTOM_THRESHOLD = 100;
+
 export interface ChatContainerProps {
   /** Session ID for this chat session */
   sessionId: string;
@@ -43,7 +46,7 @@ export function ChatContainer({
     if (!scrollContainerRef.current) return;
 
     const { scrollTop, scrollHeight, clientHeight } = scrollContainerRef.current;
-    const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
+    const isNearBottom = scrollHeight - scrollTop - clientHeight < SCROLL_BOTTOM_THRESHOLD;
 
     setUserScrolledUp(!isNearBottom);
   }, []);

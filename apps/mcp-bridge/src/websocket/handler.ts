@@ -21,6 +21,12 @@ import {
 import { processDialInputHandler } from '../mcp/tools/processDial.js';
 import { validateDialValue } from '../services/dial-validation.js';
 
+/** Maximum characters per chunk when streaming responses */
+const STREAM_CHUNK_SIZE = 50;
+
+/** Milliseconds delay between streaming chunks for natural feel */
+const STREAM_CHUNK_DELAY_MS = 20;
+
 /** Active WebSocket connections */
 const clients = new Set<WebSocket>();
 
@@ -88,11 +94,11 @@ async function handleMessage(ws: WebSocket, data: Buffer): Promise<void> {
 
         // Stream the response in chunks for a more natural feel
         // For now, send the whole message, but this allows for future streaming
-        const chunks = splitIntoChunks(result.assistantMessage, 50);
+        const chunks = splitIntoChunks(result.assistantMessage, STREAM_CHUNK_SIZE);
         for (const chunk of chunks) {
           emitAssistantChunk(ws, messageId, chunk);
           // Small delay for streaming effect (optional)
-          await delay(20);
+          await delay(STREAM_CHUNK_DELAY_MS);
         }
 
         // Signal completion with dial updates

@@ -1510,16 +1510,16 @@ export const selectConfirmedAdversaryIds = (state: ContentState): Set<string> =>
  */
 export const selectFilteredAdversaries = (state: ContentState): DaggerheartAdversary[] => {
   const { availableAdversaries, adversaryFilters } = state;
-  let filtered = availableAdversaries;
+  let filteredAdversaries = availableAdversaries;
 
   // Filter by tier
   if (adversaryFilters.tier !== undefined) {
-    filtered = filtered.filter((a) => a.tier === adversaryFilters.tier);
+    filteredAdversaries = filteredAdversaries.filter((a) => a.tier === adversaryFilters.tier);
   }
 
   // Filter by type
   if (adversaryFilters.type) {
-    filtered = filtered.filter(
+    filteredAdversaries = filteredAdversaries.filter(
       (a) => a.type?.toLowerCase() === adversaryFilters.type?.toLowerCase()
     );
   }
@@ -1527,7 +1527,7 @@ export const selectFilteredAdversaries = (state: ContentState): DaggerheartAdver
   // Filter by search term
   if (adversaryFilters.searchTerm) {
     const term = adversaryFilters.searchTerm.toLowerCase();
-    filtered = filtered.filter(
+    filteredAdversaries = filteredAdversaries.filter(
       (a) =>
         a.name.toLowerCase().includes(term) ||
         a.description?.toLowerCase().includes(term) ||
@@ -1535,7 +1535,7 @@ export const selectFilteredAdversaries = (state: ContentState): DaggerheartAdver
     );
   }
 
-  return filtered;
+  return filteredAdversaries;
 };
 
 /**
@@ -1642,11 +1642,11 @@ export const selectConfirmedItemIds = (state: ContentState): Set<string> =>
  */
 export const selectFilteredItems = (state: ContentState): UnifiedItem[] => {
   const { availableItems, itemFilters } = state;
-  let filtered = availableItems;
+  let filteredItems = availableItems;
 
   // Filter by tier (only for weapons/armor)
   if (itemFilters.tier !== undefined) {
-    filtered = filtered.filter((item) => {
+    filteredItems = filteredItems.filter((item) => {
       if (item.category === 'weapon') {
         return item.data.tier === itemFilters.tier;
       }
@@ -1660,13 +1660,13 @@ export const selectFilteredItems = (state: ContentState): UnifiedItem[] => {
 
   // Filter by category
   if (itemFilters.category) {
-    filtered = filtered.filter((item) => item.category === itemFilters.category);
+    filteredItems = filteredItems.filter((item) => item.category === itemFilters.category);
   }
 
   // Filter by search term
   if (itemFilters.searchTerm) {
     const term = itemFilters.searchTerm.toLowerCase();
-    filtered = filtered.filter((item) => {
+    filteredItems = filteredItems.filter((item) => {
       if (item.data.name.toLowerCase().includes(term)) return true;
       // Check description for items and consumables
       if ((item.category === 'item' || item.category === 'consumable') &&
@@ -1682,7 +1682,7 @@ export const selectFilteredItems = (state: ContentState): UnifiedItem[] => {
     });
   }
 
-  return filtered;
+  return filteredItems;
 };
 
 /**

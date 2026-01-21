@@ -37,17 +37,9 @@ import {
 } from '../services/daggerheart-queries.js';
 import { generateFrameHandler } from '../mcp/tools/generateFrame.js';
 import { generateOutlineHandler } from '../mcp/tools/generateOutline.js';
+import { sendError } from './helpers.js';
 
 const router: RouterType = Router();
-
-// =============================================================================
-// Types
-// =============================================================================
-
-interface ErrorResponse {
-  code: string;
-  message: string;
-}
 
 // =============================================================================
 // Routes
@@ -65,11 +57,7 @@ router.get('/frames', async (req: Request, res: Response) => {
     const result = await getFrames();
 
     if (result.error) {
-      const error: ErrorResponse = {
-        code: 'DATABASE_ERROR',
-        message: result.error,
-      };
-      res.status(500).json(error);
+      sendError(res, 'DATABASE_ERROR', result.error);
       return;
     }
 
@@ -90,11 +78,7 @@ router.get('/frames', async (req: Request, res: Response) => {
     res.json(response);
   } catch (error) {
     console.error('Error fetching frames:', error);
-    const errorResponse: ErrorResponse = {
-      code: 'INTERNAL_ERROR',
-      message: 'Failed to fetch frames',
-    };
-    res.status(500).json(errorResponse);
+    sendError(res, 'INTERNAL_ERROR', 'Failed to fetch frames');
   }
 });
 
@@ -109,31 +93,19 @@ router.get('/frames/:name', async (req: Request, res: Response) => {
     const result = await getFrameByName(name);
 
     if (result.error) {
-      const error: ErrorResponse = {
-        code: 'DATABASE_ERROR',
-        message: result.error,
-      };
-      res.status(500).json(error);
+      sendError(res, 'DATABASE_ERROR', result.error);
       return;
     }
 
     if (!result.data) {
-      const error: ErrorResponse = {
-        code: 'NOT_FOUND',
-        message: `Frame not found: ${name}`,
-      };
-      res.status(404).json(error);
+      sendError(res, 'NOT_FOUND', `Frame not found: ${name}`, 404);
       return;
     }
 
     res.json(result.data);
   } catch (error) {
     console.error('Error fetching frame:', error);
-    const errorResponse: ErrorResponse = {
-      code: 'INTERNAL_ERROR',
-      message: 'Failed to fetch frame',
-    };
-    res.status(500).json(errorResponse);
+    sendError(res, 'INTERNAL_ERROR', 'Failed to fetch frame');
   }
 });
 
@@ -147,20 +119,12 @@ router.post('/frame/generate', async (req: Request, res: Response) => {
 
   // Validate request
   if (!body.userMessage || typeof body.userMessage !== 'string') {
-    const error: ErrorResponse = {
-      code: 'INVALID_REQUEST',
-      message: 'userMessage is required',
-    };
-    res.status(400).json(error);
+    sendError(res, 'INVALID_REQUEST', 'userMessage is required', 400);
     return;
   }
 
   if (!body.dialsSummary || typeof body.dialsSummary !== 'object') {
-    const error: ErrorResponse = {
-      code: 'INVALID_REQUEST',
-      message: 'dialsSummary is required',
-    };
-    res.status(400).json(error);
+    sendError(res, 'INVALID_REQUEST', 'dialsSummary is required', 400);
     return;
   }
 
@@ -188,11 +152,7 @@ router.post('/frame/generate', async (req: Request, res: Response) => {
     res.json(response);
   } catch (error) {
     console.error('Frame generation error:', error);
-    const errorResponse: ErrorResponse = {
-      code: 'PROCESSING_ERROR',
-      message: 'Failed to generate frame',
-    };
-    res.status(500).json(errorResponse);
+    sendError(res, 'PROCESSING_ERROR', 'Failed to generate frame');
   }
 });
 
@@ -206,41 +166,25 @@ router.post('/outline/generate', async (req: Request, res: Response) => {
 
   // Validate request
   if (!body.frame || typeof body.frame !== 'object') {
-    const error: ErrorResponse = {
-      code: 'INVALID_REQUEST',
-      message: 'frame is required',
-    };
-    res.status(400).json(error);
+    sendError(res, 'INVALID_REQUEST', 'frame is required', 400);
     return;
   }
 
   if (!body.dialsSummary || typeof body.dialsSummary !== 'object') {
-    const error: ErrorResponse = {
-      code: 'INVALID_REQUEST',
-      message: 'dialsSummary is required',
-    };
-    res.status(400).json(error);
+    sendError(res, 'INVALID_REQUEST', 'dialsSummary is required', 400);
     return;
   }
 
   // Validate dialsSummary has required fields
   const { partySize, partyTier, sceneCount } = body.dialsSummary;
   if (typeof partySize !== 'number' || typeof partyTier !== 'number' || typeof sceneCount !== 'number') {
-    const error: ErrorResponse = {
-      code: 'INVALID_REQUEST',
-      message: 'dialsSummary must include partySize, partyTier, and sceneCount',
-    };
-    res.status(400).json(error);
+    sendError(res, 'INVALID_REQUEST', 'dialsSummary must include partySize, partyTier, and sceneCount', 400);
     return;
   }
 
   // Validate scene count range
   if (sceneCount < 3 || sceneCount > 6) {
-    const error: ErrorResponse = {
-      code: 'INVALID_REQUEST',
-      message: 'sceneCount must be between 3 and 6',
-    };
-    res.status(400).json(error);
+    sendError(res, 'INVALID_REQUEST', 'sceneCount must be between 3 and 6', 400);
     return;
   }
 
@@ -265,11 +209,7 @@ router.post('/outline/generate', async (req: Request, res: Response) => {
     res.json(response);
   } catch (error) {
     console.error('Outline generation error:', error);
-    const errorResponse: ErrorResponse = {
-      code: 'PROCESSING_ERROR',
-      message: 'Failed to generate outline',
-    };
-    res.status(500).json(errorResponse);
+    sendError(res, 'PROCESSING_ERROR', 'Failed to generate outline');
   }
 });
 
@@ -291,11 +231,7 @@ router.get('/adversaries', async (req: Request, res: Response) => {
     if (tier !== undefined && tier !== '') {
       const parsedTier = parseInt(tier as string, 10);
       if (isNaN(parsedTier) || parsedTier < 1 || parsedTier > 4) {
-        const error: ErrorResponse = {
-          code: 'INVALID_REQUEST',
-          message: 'tier must be a number between 1 and 4',
-        };
-        res.status(400).json(error);
+        sendError(res, 'INVALID_REQUEST', 'tier must be a number between 1 and 4', 400);
         return;
       }
       options.tier = parsedTier;
@@ -306,11 +242,7 @@ router.get('/adversaries', async (req: Request, res: Response) => {
     if (limit !== undefined && limit !== '') {
       const parsedLimit = parseInt(limit as string, 10);
       if (isNaN(parsedLimit) || parsedLimit < 1) {
-        const error: ErrorResponse = {
-          code: 'INVALID_REQUEST',
-          message: 'limit must be a positive number',
-        };
-        res.status(400).json(error);
+        sendError(res, 'INVALID_REQUEST', 'limit must be a positive number', 400);
         return;
       }
       options.limit = parsedLimit;
@@ -319,11 +251,7 @@ router.get('/adversaries', async (req: Request, res: Response) => {
     const result = await getAdversaries(options);
 
     if (result.error) {
-      const error: ErrorResponse = {
-        code: 'DATABASE_ERROR',
-        message: result.error,
-      };
-      res.status(500).json(error);
+      sendError(res, 'DATABASE_ERROR', result.error);
       return;
     }
 
@@ -339,11 +267,7 @@ router.get('/adversaries', async (req: Request, res: Response) => {
     res.json(response);
   } catch (error) {
     console.error('Error fetching adversaries:', error);
-    const errorResponse: ErrorResponse = {
-      code: 'INTERNAL_ERROR',
-      message: 'Failed to fetch adversaries',
-    };
-    res.status(500).json(errorResponse);
+    sendError(res, 'INTERNAL_ERROR', 'Failed to fetch adversaries');
   }
 });
 
@@ -358,11 +282,7 @@ router.get('/adversaries/types', async (_req: Request, res: Response) => {
     const result = await getAdversaries();
 
     if (result.error) {
-      const error: ErrorResponse = {
-        code: 'DATABASE_ERROR',
-        message: result.error,
-      };
-      res.status(500).json(error);
+      sendError(res, 'DATABASE_ERROR', result.error);
       return;
     }
 
@@ -372,11 +292,7 @@ router.get('/adversaries/types', async (_req: Request, res: Response) => {
     res.json(response);
   } catch (error) {
     console.error('Error fetching adversary types:', error);
-    const errorResponse: ErrorResponse = {
-      code: 'INTERNAL_ERROR',
-      message: 'Failed to fetch adversary types',
-    };
-    res.status(500).json(errorResponse);
+    sendError(res, 'INTERNAL_ERROR', 'Failed to fetch adversary types');
   }
 });
 
@@ -391,31 +307,19 @@ router.get('/adversaries/:name', async (req: Request, res: Response) => {
     const result = await getAdversaryByName(name);
 
     if (result.error) {
-      const error: ErrorResponse = {
-        code: 'DATABASE_ERROR',
-        message: result.error,
-      };
-      res.status(500).json(error);
+      sendError(res, 'DATABASE_ERROR', result.error);
       return;
     }
 
     if (!result.data) {
-      const error: ErrorResponse = {
-        code: 'NOT_FOUND',
-        message: `Adversary not found: ${name}`,
-      };
-      res.status(404).json(error);
+      sendError(res, 'NOT_FOUND', `Adversary not found: ${name}`, 404);
       return;
     }
 
     res.json(result.data);
   } catch (error) {
     console.error('Error fetching adversary:', error);
-    const errorResponse: ErrorResponse = {
-      code: 'INTERNAL_ERROR',
-      message: 'Failed to fetch adversary',
-    };
-    res.status(500).json(errorResponse);
+    sendError(res, 'INTERNAL_ERROR', 'Failed to fetch adversary');
   }
 });
 
@@ -440,11 +344,7 @@ router.get('/items', async (req: Request, res: Response) => {
     if (tier !== undefined && tier !== '') {
       parsedTier = parseInt(tier as string, 10);
       if (isNaN(parsedTier) || parsedTier < 1 || parsedTier > 4) {
-        const error: ErrorResponse = {
-          code: 'INVALID_REQUEST',
-          message: 'tier must be a number between 1 and 4',
-        };
-        res.status(400).json(error);
+        sendError(res, 'INVALID_REQUEST', 'tier must be a number between 1 and 4', 400);
         return;
       }
     }
@@ -453,11 +353,7 @@ router.get('/items', async (req: Request, res: Response) => {
     let filterCategory: ItemCategory | undefined;
     if (category && typeof category === 'string') {
       if (!VALID_ITEM_CATEGORIES.includes(category as ItemCategory)) {
-        const error: ErrorResponse = {
-          code: 'INVALID_REQUEST',
-          message: `category must be one of: ${VALID_ITEM_CATEGORIES.join(', ')}`,
-        };
-        res.status(400).json(error);
+        sendError(res, 'INVALID_REQUEST', `category must be one of: ${VALID_ITEM_CATEGORIES.join(', ')}`, 400);
         return;
       }
       filterCategory = category as ItemCategory;
@@ -468,11 +364,7 @@ router.get('/items', async (req: Request, res: Response) => {
     if (limit !== undefined && limit !== '') {
       parsedLimit = parseInt(limit as string, 10);
       if (isNaN(parsedLimit) || parsedLimit < 1) {
-        const error: ErrorResponse = {
-          code: 'INVALID_REQUEST',
-          message: 'limit must be a positive number',
-        };
-        res.status(400).json(error);
+        sendError(res, 'INVALID_REQUEST', 'limit must be a positive number', 400);
         return;
       }
     }
@@ -493,35 +385,19 @@ router.get('/items', async (req: Request, res: Response) => {
 
     // Check for errors
     if (itemsResult.error) {
-      const error: ErrorResponse = {
-        code: 'DATABASE_ERROR',
-        message: itemsResult.error,
-      };
-      res.status(500).json(error);
+      sendError(res, 'DATABASE_ERROR', itemsResult.error);
       return;
     }
     if (weaponsResult.error) {
-      const error: ErrorResponse = {
-        code: 'DATABASE_ERROR',
-        message: weaponsResult.error,
-      };
-      res.status(500).json(error);
+      sendError(res, 'DATABASE_ERROR', weaponsResult.error);
       return;
     }
     if (armorResult.error) {
-      const error: ErrorResponse = {
-        code: 'DATABASE_ERROR',
-        message: armorResult.error,
-      };
-      res.status(500).json(error);
+      sendError(res, 'DATABASE_ERROR', armorResult.error);
       return;
     }
     if (consumablesResult.error) {
-      const error: ErrorResponse = {
-        code: 'DATABASE_ERROR',
-        message: consumablesResult.error,
-      };
-      res.status(500).json(error);
+      sendError(res, 'DATABASE_ERROR', consumablesResult.error);
       return;
     }
 
@@ -564,11 +440,7 @@ router.get('/items', async (req: Request, res: Response) => {
     res.json(response);
   } catch (error) {
     console.error('Error fetching items:', error);
-    const errorResponse: ErrorResponse = {
-      code: 'INTERNAL_ERROR',
-      message: 'Failed to fetch items',
-    };
-    res.status(500).json(errorResponse);
+    sendError(res, 'INTERNAL_ERROR', 'Failed to fetch items');
   }
 });
 
@@ -583,6 +455,9 @@ const VALID_ECHO_CATEGORIES: EchoCategory[] = [
   'intrusions',
   'wonders',
 ];
+
+/** Number of echoes to generate per category */
+const ECHOES_PER_CATEGORY = 2;
 
 /**
  * Echo content templates for each category
@@ -639,11 +514,7 @@ router.post('/echoes/generate', async (req: Request, res: Response) => {
     // Validate all categories
     for (const cat of body.categories) {
       if (!VALID_ECHO_CATEGORIES.includes(cat as EchoCategory)) {
-        const error: ErrorResponse = {
-          code: 'INVALID_REQUEST',
-          message: `Invalid category: ${cat}. Must be one of: ${VALID_ECHO_CATEGORIES.join(', ')}`,
-        };
-        res.status(400).json(error);
+        sendError(res, 'INVALID_REQUEST', `Invalid category: ${cat}. Must be one of: ${VALID_ECHO_CATEGORIES.join(', ')}`, 400);
         return;
       }
     }
@@ -657,9 +528,9 @@ router.post('/echoes/generate', async (req: Request, res: Response) => {
 
     for (const category of categoriesToGenerate) {
       const templates = ECHO_TEMPLATES[category];
-      // Pick 2 random echoes from each category
+      // Pick random echoes from each category
       const shuffled = [...templates].sort(() => Math.random() - 0.5);
-      const selectedTemplates = shuffled.slice(0, 2);
+      const selectedTemplates = shuffled.slice(0, ECHOES_PER_CATEGORY);
 
       for (const template of selectedTemplates) {
         echoes.push({
@@ -687,11 +558,7 @@ router.post('/echoes/generate', async (req: Request, res: Response) => {
     res.json(response);
   } catch (error) {
     console.error('Echo generation error:', error);
-    const errorResponse: ErrorResponse = {
-      code: 'PROCESSING_ERROR',
-      message: 'Failed to generate echoes',
-    };
-    res.status(500).json(errorResponse);
+    sendError(res, 'PROCESSING_ERROR', 'Failed to generate echoes');
   }
 });
 
