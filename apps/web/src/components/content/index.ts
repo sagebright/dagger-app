@@ -38,3 +38,6 @@ export { ItemSelector, type ItemSelectorProps } from './ItemSelector';
 // Echo components (Phase 4.3)
 export { EchoCard, type EchoCardProps } from './EchoCard';
 export { EchoGenerator, type EchoGeneratorProps } from './EchoGenerator';
+
+// Export components (Phase 5.5)
+export { ExportPanel, type ExportPanelProps } from './ExportPanel';

@@ -46,7 +46,11 @@ import {
   SceneList,
   SceneNavigation,
   NPCList,
+  ExportPanel,
 } from '@/components/content';
+
+// Services
+import { exportAdventure, type ExportData } from '@/services/adventureService';
 
 // Stores
 import {
@@ -428,9 +432,19 @@ export function AdventurePage() {
 
   // Frame name for outline context
   const selectedFrame = useContentStore((state) => state.selectedFrame);
+  const currentOutline = useContentStore((state) => state.currentOutline);
+
+  // Export-related content store state
+  const selectedAdversaries = useContentStore((state) => state.selectedAdversaries);
+  const selectedItems = useContentStore((state) => state.selectedItems);
+  const echoes = useContentStore((state) => state.echoes);
 
   // Local state for editing dial in chat
   const [editingDialId, setEditingDialId] = useState<DialId | undefined>();
+
+  // Export state
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
 
   // =============================================================================
   // Phase Transition Handlers
@@ -684,6 +698,80 @@ export function AdventurePage() {
   }, []);
 
   // =============================================================================
+  // Export Handler
+  // =============================================================================
+
+  const handleExport = useCallback(async (exportSessionId: string, data: ExportData) => {
+    setIsExporting(true);
+    setExportError(null);
+
+    try {
+      const result = await exportAdventure(exportSessionId, data);
+
+      // Trigger browser download
+      const url = URL.createObjectURL(result.blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = result.filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      setExportError(
+        error instanceof Error ? error.message : 'Failed to export adventure'
+      );
+    } finally {
+      setIsExporting(false);
+    }
+  }, []);
+
+  // Build export data from current state
+  const exportData: ExportData = useMemo(() => ({
+    adventureName: adventureName ?? 'Untitled Adventure',
+    frame: selectedFrame ? {
+      name: selectedFrame.name,
+      description: selectedFrame.description,
+      themes: selectedFrame.themes,
+      lore: selectedFrame.lore,
+    } : undefined,
+    outline: currentOutline ? {
+      title: currentOutline.title,
+      briefs: currentOutline.scenes,
+    } : undefined,
+    scenes: scenes.map((s) => ({
+      id: s.brief.id,
+      title: s.brief.title,
+      content: s.draft ?? '',
+    })),
+    npcs: npcs.map((n) => ({
+      id: n.id,
+      name: n.name,
+      role: n.role,
+      description: n.description,
+      personality: n.personality,
+      motivations: n.motivations,
+    })),
+    adversaries: selectedAdversaries.map((a) => ({
+      id: a.adversary.id,
+      name: a.adversary.name,
+      tier: a.adversary.tier,
+      type: a.adversary.type,
+    })),
+    items: selectedItems.map((i) => ({
+      id: i.item.data.id,
+      name: i.item.data.name,
+      tier: 'tier' in i.item.data ? i.item.data.tier : null,
+      category: i.item.category,
+    })),
+    echoes: echoes.map((e) => ({
+      id: e.id,
+      category: e.category,
+      content: e.content,
+    })),
+  }), [adventureName, selectedFrame, currentOutline, scenes, npcs, selectedAdversaries, selectedItems, echoes]);
+
+  // =============================================================================
   // Determine if continue is allowed
   // =============================================================================
 
@@ -849,7 +937,24 @@ export function AdventurePage() {
         return <ComingSoonPhase phaseName="Echoes & GM Tools" />;
 
       case 'complete':
-        return <ComingSoonPhase phaseName="Export Adventure" />;
+        return (
+          <ExportPanel
+            sessionId={sessionId ?? ''}
+            adventureName={adventureName ?? 'Untitled Adventure'}
+            partySize={partySize}
+            partyTier={partyTier}
+            sceneCount={scenes.length}
+            npcCount={npcs.length}
+            adversaryCount={selectedAdversaries.length}
+            itemCount={selectedItems.length}
+            echoCount={echoes.length}
+            exportData={exportData}
+            onExport={handleExport}
+            isExporting={isExporting}
+            error={exportError}
+            className="flex-1"
+          />
+        );
 
       default:
         return <ComingSoonPhase phaseName="Unknown Phase" />;
