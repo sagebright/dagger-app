@@ -17,6 +17,9 @@ export * from './mcp.js';
 // Re-export content types
 export * from './content.js';
 
+// Re-export web adventure types
+export * from './web-adventure.js';
+
 /**
  * API health check response
  */
