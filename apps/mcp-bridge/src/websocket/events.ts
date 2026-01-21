@@ -24,11 +24,19 @@ import type {
   OutlineServerEvent,
   Outline,
   SceneBrief,
+  // Scene types
+  SceneGenerateEvent,
+  SceneFeedbackEvent,
+  SceneConfirmEvent,
+  SceneNavigateEvent,
+  SceneClientEvent,
+  SceneServerEvent,
+  SceneDraft,
 } from '@dagger-app/shared-types';
 
-// Combined event types that include both dial and outline events
-type AllClientEvents = ClientEvent | OutlineClientEvent;
-type AllServerEvents = ServerEvent | OutlineServerEvent;
+// Combined event types that include dial, outline, and scene events
+type AllClientEvents = ClientEvent | OutlineClientEvent | SceneClientEvent;
+type AllServerEvents = ServerEvent | OutlineServerEvent | SceneServerEvent;
 
 // =============================================================================
 // Event Handlers Configuration
@@ -46,6 +54,11 @@ export interface ClientEventHandlers {
   onOutlineFeedback?: (payload: OutlineFeedbackEvent['payload']) => Promise<void> | void;
   onOutlineConfirm?: (payload: OutlineConfirmEvent['payload']) => Promise<void> | void;
   onOutlineEditScene?: (payload: OutlineEditSceneEvent['payload']) => Promise<void> | void;
+  // Scene events
+  onSceneGenerate?: (payload: SceneGenerateEvent['payload']) => Promise<void> | void;
+  onSceneFeedback?: (payload: SceneFeedbackEvent['payload']) => Promise<void> | void;
+  onSceneConfirm?: (payload: SceneConfirmEvent['payload']) => Promise<void> | void;
+  onSceneNavigate?: (payload: SceneNavigateEvent['payload']) => Promise<void> | void;
 }
 
 // =============================================================================
@@ -247,6 +260,87 @@ export function emitSceneBriefUpdated(ws: WebSocket, scene: SceneBrief): void {
 }
 
 // =============================================================================
+// Scene Event Emitters (Phase 3.3)
+// =============================================================================
+
+/**
+ * Emit scene draft start event
+ */
+export function emitSceneDraftStart(ws: WebSocket, sceneId: string, messageId: string): void {
+  emitToClient(ws, {
+    type: 'scene:draft_start',
+    payload: { sceneId, messageId },
+  });
+}
+
+/**
+ * Emit scene draft streaming chunk
+ */
+export function emitSceneDraftChunk(
+  ws: WebSocket,
+  sceneId: string,
+  messageId: string,
+  chunk: string
+): void {
+  emitToClient(ws, {
+    type: 'scene:draft_chunk',
+    payload: { sceneId, messageId, chunk },
+  });
+}
+
+/**
+ * Emit scene draft complete
+ */
+export function emitSceneDraftComplete(
+  ws: WebSocket,
+  sceneId: string,
+  messageId: string,
+  isComplete: boolean,
+  sceneDraft?: SceneDraft,
+  followUpQuestion?: string
+): void {
+  const payload: {
+    sceneId: string;
+    messageId: string;
+    isComplete: boolean;
+    sceneDraft?: SceneDraft;
+    followUpQuestion?: string;
+  } = { sceneId, messageId, isComplete };
+
+  if (sceneDraft) {
+    payload.sceneDraft = sceneDraft;
+  }
+  if (followUpQuestion) {
+    payload.followUpQuestion = followUpQuestion;
+  }
+
+  emitToClient(ws, {
+    type: 'scene:draft_complete',
+    payload,
+  });
+}
+
+/**
+ * Emit scene confirmed event
+ */
+export function emitSceneConfirmed(ws: WebSocket, sceneId: string, sceneDraft: SceneDraft): void {
+  emitToClient(ws, {
+    type: 'scene:confirmed',
+    payload: { sceneId, sceneDraft },
+  });
+}
+
+/**
+ * Emit scene error event
+ */
+export function emitSceneError(ws: WebSocket, sceneId: string, code: string, message: string): void {
+  emitToClient(ws, {
+    type: 'scene:error',
+    payload: { sceneId, code, message },
+  });
+}
+
+// =============================================================================
 // Client Event Handler
 // =============================================================================
 
@@ -302,6 +396,31 @@ export async function handleClientEvent(
       }
       break;
 
+    // Scene events
+    case 'scene:generate':
+      if (handlers.onSceneGenerate) {
+        await handlers.onSceneGenerate((event as SceneGenerateEvent).payload);
+      }
+      break;
+
+    case 'scene:feedback':
+      if (handlers.onSceneFeedback) {
+        await handlers.onSceneFeedback((event as SceneFeedbackEvent).payload);
+      }
+      break;
+
+    case 'scene:confirm':
+      if (handlers.onSceneConfirm) {
+        await handlers.onSceneConfirm((event as SceneConfirmEvent).payload);
+      }
+      break;
+
+    case 'scene:navigate':
+      if (handlers.onSceneNavigate) {
+        await handlers.onSceneNavigate((event as SceneNavigateEvent).payload);
+      }
+      break;
+
     default:
       emitError(ws, 'UNKNOWN_EVENT', `Unknown event type: ${(event as { type: string }).type}`);
   }
@@ -329,6 +448,11 @@ export function parseClientEvent(data: Buffer | string): AllClientEvents | null 
       'outline:feedback',
       'outline:confirm',
       'outline:edit_scene',
+      // Scene events
+      'scene:generate',
+      'scene:feedback',
+      'scene:confirm',
+      'scene:navigate',
     ];
     if (!validTypes.includes(parsed.type)) {
       return null;

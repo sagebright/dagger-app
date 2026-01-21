@@ -527,3 +527,357 @@ export interface GenerateOutlineResponse {
   isComplete: boolean;
   followUpQuestion?: string;
 }
+
+// =============================================================================
+// Scene Types (Phase 3.3)
+// =============================================================================
+
+/**
+ * Extracted NPC from a scene
+ */
+export interface ExtractedNPC {
+  /** NPC name */
+  name: string;
+  /** Role in the scene/story */
+  role: string;
+  /** Scene where NPC appears */
+  sceneId: string;
+  /** Optional description */
+  description?: string;
+}
+
+/**
+ * Extracted adversary from a scene
+ */
+export interface ExtractedAdversary {
+  /** Adversary name */
+  name: string;
+  /** Type (minion, standard, solo, etc.) */
+  type: string;
+  /** Suggested tier */
+  tier: number;
+  /** Scene where adversary appears */
+  sceneId: string;
+  /** Optional notes */
+  notes?: string;
+}
+
+/**
+ * Extracted item from a scene
+ */
+export interface ExtractedItem {
+  /** Item name */
+  name: string;
+  /** Suggested tier for the item */
+  suggestedTier: number;
+  /** Scene where item is found */
+  sceneId: string;
+  /** Optional description */
+  description?: string;
+}
+
+/**
+ * Key moment within a scene
+ */
+export interface KeyMoment {
+  /** Moment title */
+  title: string;
+  /** Description of what happens */
+  description: string;
+}
+
+/**
+ * Full scene draft with all content sections
+ */
+export interface SceneDraft {
+  /** Scene identifier */
+  sceneId: string;
+  /** Scene number (1-indexed) */
+  sceneNumber: number;
+  /** Scene title */
+  title: string;
+  /** Opening text/hook */
+  introduction: string;
+  /** Key moments/beats in the scene */
+  keyMoments: KeyMoment[];
+  /** How the scene concludes or transitions */
+  resolution: string;
+  /** GM guidance based on party tier */
+  tierGuidance: string;
+  /** Tone guidance notes */
+  toneNotes?: string;
+  /** Whether this is the climactic scene */
+  isClimactic?: boolean;
+
+  // Scene-type specific content
+  /** Combat-specific notes (initiative, tactics) */
+  combatNotes?: string;
+  /** Environment description for exploration */
+  environmentDetails?: string;
+  /** Discovery opportunities in the scene */
+  discoveryOpportunities?: string[];
+  /** Social challenges and approaches */
+  socialChallenges?: string;
+  /** Puzzle mechanics and hints */
+  puzzleDetails?: string;
+  /** Major revelation content */
+  revelationContent?: string;
+
+  /** Entities extracted for later phases */
+  extractedEntities: {
+    npcs: ExtractedNPC[];
+    adversaries: ExtractedAdversary[];
+    items: ExtractedItem[];
+  };
+}
+
+/**
+ * Scene status in the workflow
+ */
+export type SceneStatus = 'pending' | 'generating' | 'draft' | 'confirmed';
+
+/**
+ * Full scene with workflow state
+ */
+export interface Scene {
+  /** Scene brief from outline */
+  brief: SceneBrief;
+  /** Current draft (if generated) */
+  draft: SceneDraft | null;
+  /** Scene status */
+  status: SceneStatus;
+  /** When the scene was confirmed */
+  confirmedAt?: string;
+}
+
+// =============================================================================
+// MCP Tool: generate_scene_draft
+// =============================================================================
+
+/**
+ * Input for the generate_scene_draft MCP tool
+ */
+export interface GenerateSceneInput {
+  /** The scene brief to expand */
+  sceneBrief: SceneBrief;
+  /** The adventure frame for context */
+  frame: SelectedFrame;
+  /** The full outline for narrative continuity */
+  outline: Outline;
+  /** Current dial settings */
+  dialsSummary: {
+    partySize: number;
+    partyTier: 1 | 2 | 3 | 4;
+    sceneCount: number;
+    sessionLength: string;
+    tone: string | null;
+    themes: string[];
+    combatExplorationBalance: string | null;
+    lethality: string | null;
+  };
+  /** User feedback for revision */
+  feedback?: string;
+  /** Previous draft (if revising) */
+  previousDraft?: SceneDraft;
+}
+
+/**
+ * Output from the generate_scene_draft MCP tool
+ */
+export interface GenerateSceneOutput {
+  /** The assistant's response message */
+  assistantMessage: string;
+  /** The generated scene draft */
+  sceneDraft?: SceneDraft;
+  /** Whether the draft is complete */
+  isComplete: boolean;
+  /** Follow-up questions if needed */
+  followUpQuestion?: string;
+}
+
+// =============================================================================
+// WebSocket Events for Scene
+// =============================================================================
+
+/**
+ * WebSocket event types for scene generation (client → server)
+ */
+export type SceneClientEventType =
+  | 'scene:generate'
+  | 'scene:feedback'
+  | 'scene:confirm'
+  | 'scene:navigate';
+
+/**
+ * WebSocket event types for scene generation (server → client)
+ */
+export type SceneServerEventType =
+  | 'scene:draft_start'
+  | 'scene:draft_chunk'
+  | 'scene:draft_complete'
+  | 'scene:confirmed'
+  | 'scene:error';
+
+// -----------------------------------------------------------------------------
+// Client Events (Frontend → Bridge)
+// -----------------------------------------------------------------------------
+
+/**
+ * User requests scene generation
+ */
+export interface SceneGenerateEvent {
+  type: 'scene:generate';
+  payload: {
+    sceneId: string;
+    sceneBrief: SceneBrief;
+    frame: SelectedFrame;
+    outline: Outline;
+    dialsSummary: GenerateSceneInput['dialsSummary'];
+  };
+}
+
+/**
+ * User provides feedback on scene draft
+ */
+export interface SceneFeedbackEvent {
+  type: 'scene:feedback';
+  payload: {
+    sceneId: string;
+    feedback: string;
+    currentDraft: SceneDraft;
+  };
+}
+
+/**
+ * User confirms scene draft
+ */
+export interface SceneConfirmEvent {
+  type: 'scene:confirm';
+  payload: {
+    sceneId: string;
+    sceneDraft: SceneDraft;
+  };
+}
+
+/**
+ * User navigates between scenes
+ */
+export interface SceneNavigateEvent {
+  type: 'scene:navigate';
+  payload: {
+    targetSceneId: string;
+    direction: 'next' | 'previous' | 'direct';
+  };
+}
+
+/**
+ * Union of all scene client events
+ */
+export type SceneClientEvent =
+  | SceneGenerateEvent
+  | SceneFeedbackEvent
+  | SceneConfirmEvent
+  | SceneNavigateEvent;
+
+// -----------------------------------------------------------------------------
+// Server Events (Bridge → Frontend)
+// -----------------------------------------------------------------------------
+
+/**
+ * Scene generation starting
+ */
+export interface SceneDraftStartEvent {
+  type: 'scene:draft_start';
+  payload: {
+    sceneId: string;
+    messageId: string;
+  };
+}
+
+/**
+ * Streaming chunk of scene content
+ */
+export interface SceneDraftChunkEvent {
+  type: 'scene:draft_chunk';
+  payload: {
+    sceneId: string;
+    messageId: string;
+    chunk: string;
+  };
+}
+
+/**
+ * Scene generation complete
+ */
+export interface SceneDraftCompleteEvent {
+  type: 'scene:draft_complete';
+  payload: {
+    sceneId: string;
+    messageId: string;
+    sceneDraft?: SceneDraft;
+    isComplete: boolean;
+    followUpQuestion?: string;
+  };
+}
+
+/**
+ * Scene confirmed
+ */
+export interface SceneConfirmedEvent {
+  type: 'scene:confirmed';
+  payload: {
+    sceneId: string;
+    sceneDraft: SceneDraft;
+  };
+}
+
+/**
+ * Scene error
+ */
+export interface SceneErrorEvent {
+  type: 'scene:error';
+  payload: {
+    sceneId: string;
+    code: string;
+    message: string;
+  };
+}
+
+/**
+ * Union of all scene server events
+ */
+export type SceneServerEvent =
+  | SceneDraftStartEvent
+  | SceneDraftChunkEvent
+  | SceneDraftCompleteEvent
+  | SceneConfirmedEvent
+  | SceneErrorEvent;
+
+// =============================================================================
+// Scene API Types
+// =============================================================================
+
+/**
+ * Request to generate a scene
+ */
+export interface GenerateSceneRequest {
+  sceneId: string;
+  sceneBrief: SceneBrief;
+  frame: SelectedFrame;
+  outline: Outline;
+  dialsSummary: GenerateSceneInput['dialsSummary'];
+  feedback?: string;
+  previousDraft?: SceneDraft;
+}
+
+/**
+ * Response from scene generation
+ */
+export interface GenerateSceneResponse {
+  sceneId: string;
+  messageId: string;
+  content: string;
+  sceneDraft?: SceneDraft;
+  isComplete: boolean;
+  followUpQuestion?: string;
+}

@@ -16,6 +16,9 @@ import type {
   FrameDraft,
   Outline,
   SceneBrief,
+  Scene,
+  SceneDraft,
+  SceneStatus,
 } from '@dagger-app/shared-types';
 import { isCustomFrame, isOutlineComplete } from '@dagger-app/shared-types';
 
@@ -46,6 +49,18 @@ export interface ContentState {
   /** Whether the outline has been confirmed */
   outlineConfirmed: boolean;
 
+  // Scene state (Phase 3.3)
+  /** All scenes from confirmed outline */
+  scenes: Scene[];
+  /** Currently active scene ID */
+  currentSceneId: string | null;
+  /** Loading state for scene generation */
+  sceneLoading: boolean;
+  /** Error message if scene generation failed */
+  sceneError: string | null;
+  /** Streaming content during generation */
+  sceneStreamingContent: string | null;
+
   // Actions - Frame
   setAvailableFrames: (frames: DaggerheartFrame[]) => void;
   selectFrame: (frame: SelectedFrame) => void;
@@ -63,6 +78,20 @@ export interface ContentState {
   clearOutline: () => void;
   setOutlineLoading: (loading: boolean) => void;
   setOutlineError: (error: string | null) => void;
+
+  // Actions - Scene (Phase 3.3)
+  initializeScenesFromOutline: () => void;
+  setCurrentScene: (sceneId: string) => void;
+  setSceneStatus: (sceneId: string, status: SceneStatus) => void;
+  setSceneDraft: (sceneId: string, draft: SceneDraft) => void;
+  confirmScene: (sceneId: string) => void;
+  setSceneLoading: (loading: boolean) => void;
+  setSceneError: (error: string | null) => void;
+  setSceneStreamingContent: (content: string | null) => void;
+  appendSceneStreamingContent: (chunk: string) => void;
+  navigateToNextScene: () => void;
+  navigateToPreviousScene: () => void;
+  clearScenes: () => void;
 
   // Reset
   resetContent: () => void;
@@ -82,6 +111,12 @@ const initialContentState = {
   outlineLoading: false,
   outlineError: null as string | null,
   outlineConfirmed: false,
+  // Scene state
+  scenes: [] as Scene[],
+  currentSceneId: null as string | null,
+  sceneLoading: false,
+  sceneError: null as string | null,
+  sceneStreamingContent: null as string | null,
 };
 
 // =============================================================================
@@ -256,6 +291,167 @@ export const useContentStore = create<ContentState>()(
           set({ outlineError: error, outlineLoading: false }, false, 'setOutlineError');
         },
 
+        // =====================================================================
+        // Scene Actions (Phase 3.3)
+        // =====================================================================
+
+        /**
+         * Initialize scenes from confirmed outline
+         */
+        initializeScenesFromOutline: () => {
+          const { currentOutline } = get();
+          if (!currentOutline) return;
+
+          const scenes: Scene[] = currentOutline.scenes.map((brief) => ({
+            brief,
+            draft: null,
+            status: 'pending' as SceneStatus,
+          }));
+
+          const firstSceneId = scenes[0]?.brief.id ?? null;
+
+          set(
+            {
+              scenes,
+              currentSceneId: firstSceneId,
+              sceneError: null,
+              sceneStreamingContent: null,
+            },
+            false,
+            'initializeScenesFromOutline'
+          );
+        },
+
+        /**
+         * Set current active scene
+         */
+        setCurrentScene: (sceneId: string) => {
+          set({ currentSceneId: sceneId, sceneError: null }, false, 'setCurrentScene');
+        },
+
+        /**
+         * Set scene status
+         */
+        setSceneStatus: (sceneId: string, status: SceneStatus) => {
+          const { scenes } = get();
+          const updatedScenes = scenes.map((scene) =>
+            scene.brief.id === sceneId ? { ...scene, status } : scene
+          );
+          set({ scenes: updatedScenes }, false, 'setSceneStatus');
+        },
+
+        /**
+         * Set scene draft
+         */
+        setSceneDraft: (sceneId: string, draft: SceneDraft) => {
+          const { scenes } = get();
+          const updatedScenes = scenes.map((scene) =>
+            scene.brief.id === sceneId
+              ? { ...scene, draft, status: 'draft' as SceneStatus }
+              : scene
+          );
+          set(
+            { scenes: updatedScenes, sceneLoading: false, sceneStreamingContent: null },
+            false,
+            'setSceneDraft'
+          );
+        },
+
+        /**
+         * Confirm a scene
+         */
+        confirmScene: (sceneId: string) => {
+          const { scenes } = get();
+          const updatedScenes = scenes.map((scene) =>
+            scene.brief.id === sceneId
+              ? { ...scene, status: 'confirmed' as SceneStatus, confirmedAt: new Date().toISOString() }
+              : scene
+          );
+          set({ scenes: updatedScenes }, false, 'confirmScene');
+        },
+
+        /**
+         * Set scene loading state
+         */
+        setSceneLoading: (loading: boolean) => {
+          set({ sceneLoading: loading }, false, 'setSceneLoading');
+        },
+
+        /**
+         * Set scene error state
+         */
+        setSceneError: (error: string | null) => {
+          set({ sceneError: error, sceneLoading: false }, false, 'setSceneError');
+        },
+
+        /**
+         * Set scene streaming content
+         */
+        setSceneStreamingContent: (content: string | null) => {
+          set({ sceneStreamingContent: content }, false, 'setSceneStreamingContent');
+        },
+
+        /**
+         * Append to scene streaming content
+         */
+        appendSceneStreamingContent: (chunk: string) => {
+          const { sceneStreamingContent } = get();
+          set(
+            { sceneStreamingContent: (sceneStreamingContent || '') + chunk },
+            false,
+            'appendSceneStreamingContent'
+          );
+        },
+
+        /**
+         * Navigate to next scene
+         */
+        navigateToNextScene: () => {
+          const { scenes, currentSceneId } = get();
+          const currentIndex = scenes.findIndex((s) => s.brief.id === currentSceneId);
+          if (currentIndex < scenes.length - 1) {
+            const nextScene = scenes[currentIndex + 1];
+            set(
+              { currentSceneId: nextScene.brief.id, sceneError: null, sceneStreamingContent: null },
+              false,
+              'navigateToNextScene'
+            );
+          }
+        },
+
+        /**
+         * Navigate to previous scene
+         */
+        navigateToPreviousScene: () => {
+          const { scenes, currentSceneId } = get();
+          const currentIndex = scenes.findIndex((s) => s.brief.id === currentSceneId);
+          if (currentIndex > 0) {
+            const prevScene = scenes[currentIndex - 1];
+            set(
+              { currentSceneId: prevScene.brief.id, sceneError: null, sceneStreamingContent: null },
+              false,
+              'navigateToPreviousScene'
+            );
+          }
+        },
+
+        /**
+         * Clear all scenes
+         */
+        clearScenes: () => {
+          set(
+            {
+              scenes: [],
+              currentSceneId: null,
+              sceneLoading: false,
+              sceneError: null,
+              sceneStreamingContent: null,
+            },
+            false,
+            'clearScenes'
+          );
+        },
+
         /**
          * Reset all content state
          */
@@ -265,12 +461,14 @@ export const useContentStore = create<ContentState>()(
       }),
       {
         name: 'dagger-content-storage',
-        // Persist frame and outline state (not available frames from DB)
+        // Persist frame, outline, and scene state (not available frames from DB)
         partialize: (state) => ({
           selectedFrame: state.selectedFrame,
           frameConfirmed: state.frameConfirmed,
           currentOutline: state.currentOutline,
           outlineConfirmed: state.outlineConfirmed,
+          scenes: state.scenes,
+          currentSceneId: state.currentSceneId,
         }),
       }
     ),
@@ -411,4 +609,80 @@ export const selectOutlineSummary = (
     sceneCount: state.currentOutline.scenes.length,
     isConfirmed: state.outlineConfirmed,
   };
+};
+
+// =============================================================================
+// Scene Selectors (Phase 3.3)
+// =============================================================================
+
+/**
+ * Get all scenes
+ */
+export const selectScenes = (state: ContentState): Scene[] => state.scenes;
+
+/**
+ * Get current scene
+ */
+export const selectCurrentScene = (state: ContentState): Scene | null =>
+  state.scenes.find((s) => s.brief.id === state.currentSceneId) ?? null;
+
+/**
+ * Get current scene ID
+ */
+export const selectCurrentSceneId = (state: ContentState): string | null =>
+  state.currentSceneId;
+
+/**
+ * Get scene by ID
+ */
+export const selectSceneById = (state: ContentState, sceneId: string): Scene | undefined =>
+  state.scenes.find((s) => s.brief.id === sceneId);
+
+/**
+ * Get count of confirmed scenes
+ */
+export const selectConfirmedSceneCount = (state: ContentState): number =>
+  state.scenes.filter((s) => s.status === 'confirmed').length;
+
+/**
+ * Check if all scenes are confirmed
+ */
+export const selectAllScenesConfirmed = (state: ContentState): boolean =>
+  state.scenes.length > 0 && state.scenes.every((s) => s.status === 'confirmed');
+
+/**
+ * Get scene loading/error status
+ */
+export const selectSceneStatus = (
+  state: ContentState
+): { loading: boolean; error: string | null; streamingContent: string | null } => ({
+  loading: state.sceneLoading,
+  error: state.sceneError,
+  streamingContent: state.sceneStreamingContent,
+});
+
+/**
+ * Check if user can proceed to NPC phase
+ */
+export const selectCanProceedToNPCs = (state: ContentState): boolean =>
+  state.scenes.length > 0 && state.scenes.every((s) => s.status === 'confirmed');
+
+/**
+ * Get navigation state for current scene
+ */
+export const selectSceneNavigation = (
+  state: ContentState
+): { canGoPrevious: boolean; canGoNext: boolean; currentIndex: number } => {
+  const currentIndex = state.scenes.findIndex((s) => s.brief.id === state.currentSceneId);
+  if (currentIndex === -1) {
+    return { canGoPrevious: false, canGoNext: false, currentIndex: -1 };
+  }
+
+  const canGoPrevious = currentIndex > 0;
+  const canGoNext =
+    currentIndex < state.scenes.length - 1 &&
+    (state.scenes[currentIndex].status === 'confirmed' ||
+      state.scenes[currentIndex].status === 'draft');
+
+  return { canGoPrevious, canGoNext, currentIndex };
 };
