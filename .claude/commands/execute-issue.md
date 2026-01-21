@@ -269,6 +269,198 @@ For each task:
 
 ---
 
+## 5.1 Clean Code Standards (During Implementation)
+
+### Naming Conventions
+
+| Element | Convention | Example |
+|---------|------------|---------|
+| Variables | Descriptive, noun-based | `userCount`, `isLoading`, `errorMessage` |
+| Functions | Verb + noun, action-based | `fetchUserData()`, `validateEmail()`, `calculateTotal()` |
+| Booleans | is/has/should/can prefix | `isVisible`, `hasPermission`, `shouldRefresh` |
+| Constants | SCREAMING_SNAKE_CASE | `MAX_RETRY_COUNT`, `API_BASE_URL` |
+| Components | PascalCase, descriptive | `UserProfileCard`, `LoadingSpinner` |
+| Hooks | use prefix | `useAuth`, `useFormValidation` |
+| Test files | *.test.ts or *.spec.ts | `UserService.test.ts` |
+
+### Function Guidelines
+
+| Guideline | Limit | Action if Exceeded |
+|-----------|-------|-------------------|
+| Max lines | 20-30 | Extract helper function |
+| Max parameters | 3 | Use options object |
+| Nesting depth | 3 levels | Use early returns/extract |
+| Cyclomatic complexity | Low | Split into smaller functions |
+
+**Function Design Principles:**
+- **Single responsibility:** One reason to change
+- **Pure when possible:** Same input → same output, no side effects
+- **Early returns:** Use guard clauses to reduce nesting
+- **Descriptive names:** Function name describes what it does, not how
+
+### Code Smells Checklist
+
+During implementation, actively watch for and fix:
+
+| Smell | Detection | Fix |
+|-------|-----------|-----|
+| Long function | >30 lines | Extract smaller functions |
+| Long parameter list | >3 params | Use options object `{ name, email, role }` |
+| Nested callbacks | >2 levels | Use async/await or extract |
+| Repeated code | 2+ identical blocks | Extract to shared function |
+| Magic numbers | Literal `86400`, `100` | Create named constant |
+| Comments explaining "what" | `// loop through users` | Rename variable/function for clarity |
+| Boolean parameters | `process(data, true)` | Use options object or separate functions |
+| Long if/else chains | 4+ branches | Use early returns, lookup table, or strategy |
+| Dead code | Unreachable/unused | Delete it |
+| Inconsistent naming | `user` vs `userData` vs `userInfo` | Standardize across codebase |
+
+### Error Handling Patterns
+
+**Do:**
+```typescript
+// Specific, actionable error messages
+throw new Error(`User ${userId} not found in organization ${orgId}`);
+
+// Early validation with clear errors
+if (!email.includes('@')) {
+  throw new ValidationError('Email must contain @ symbol');
+}
+
+// Typed errors for different failure modes
+class NotFoundError extends Error { }
+class ValidationError extends Error { }
+```
+
+**Don't:**
+```typescript
+// Vague errors
+throw new Error('Something went wrong');
+
+// Silent failures
+catch (e) { return null; }
+
+// Generic catch-all
+catch (e) { console.log(e); }
+```
+
+---
+
+## 5.2 Safe Refactoring Patterns
+
+When refactoring during implementation, follow these patterns:
+
+### Extract Function
+
+**When:** Code block >10 lines with single purpose
+
+**Steps:**
+1. Identify cohesive block of code
+2. Create function with descriptive name (verb + noun)
+3. Identify all variables used → become parameters
+4. Identify result → becomes return value
+5. Replace original block with function call
+6. Run tests to verify behavior unchanged
+
+**Example:**
+```typescript
+// Before
+const total = items.reduce((sum, item) => {
+  const price = item.price * item.quantity;
+  const discount = item.discount ? price * item.discount : 0;
+  return sum + price - discount;
+}, 0);
+
+// After
+const total = calculateOrderTotal(items);
+
+function calculateOrderTotal(items: OrderItem[]): number {
+  return items.reduce((sum, item) => {
+    const lineTotal = calculateLineTotal(item);
+    return sum + lineTotal;
+  }, 0);
+}
+```
+
+### Rename for Clarity
+
+**When:** Name doesn't reveal intent
+
+**Steps:**
+1. Identify unclear name (`d`, `temp`, `data`, `info`)
+2. Ask: "What does this represent?"
+3. Choose name that answers the question
+4. Use IDE rename (Ctrl/Cmd + Shift + R) - not find/replace
+5. Run tests to verify no broken references
+
+**Examples:**
+| Before | After | Reason |
+|--------|-------|--------|
+| `d` | `discountPercentage` | Reveals what the value represents |
+| `temp` | `sortedUsers` | Describes the transformation |
+| `data` | `apiResponse` | Indicates the source |
+| `handleClick` | `submitRegistration` | Describes the action |
+
+### Replace Magic Number/String
+
+**When:** Literal value with hidden meaning
+
+**Steps:**
+1. Identify magic value (`86400`, `'pending'`, `0.15`)
+2. Determine what it represents
+3. Create named constant at module/file scope
+4. Replace all occurrences
+5. Run tests
+
+**Example:**
+```typescript
+// Before
+if (Date.now() - lastLogin > 86400000) { ... }
+
+// After
+const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
+if (Date.now() - lastLogin > MILLISECONDS_PER_DAY) { ... }
+```
+
+### Simplify Conditionals
+
+**When:** Complex boolean expressions or deep nesting
+
+**Techniques:**
+1. **Extract to named variable:**
+   ```typescript
+   // Before
+   if (user.role === 'admin' && user.isActive && !user.isSuspended) { ... }
+
+   // After
+   const canAccessAdminPanel = user.role === 'admin' && user.isActive && !user.isSuspended;
+   if (canAccessAdminPanel) { ... }
+   ```
+
+2. **Use early returns (guard clauses):**
+   ```typescript
+   // Before
+   function processUser(user) {
+     if (user) {
+       if (user.isActive) {
+         if (user.hasPermission) {
+           // actual logic 20 lines deep
+         }
+       }
+     }
+   }
+
+   // After
+   function processUser(user) {
+     if (!user) return;
+     if (!user.isActive) return;
+     if (!user.hasPermission) return;
+     // actual logic at top level
+   }
+   ```
+
+---
+
 ## 6. Validation Sequence (Label-Aware)
 
 ### Quick validation (all issues):
@@ -368,6 +560,8 @@ Where `[type]` is: `fix` (bug), `feat` (enhancement), `refactor` (refactor), `te
 
 ## 8. Compliance Check
 
+### Process Compliance
+
 ```
 □ File size: No files over 500 lines
 □ Security: Input validation on user inputs
@@ -375,6 +569,25 @@ Where `[type]` is: `fix` (bug), `feat` (enhancement), `refactor` (refactor), `te
 □ Build: pnpm build passes
 □ Lint: pnpm lint passes
 ```
+
+### Clean Code Compliance
+
+Before committing, verify all new/modified code meets these standards:
+
+```
+□ Naming: Variables and functions have self-documenting names
+□ Functions: No function exceeds 30 lines
+□ Parameters: No function has >3 parameters (use options object if needed)
+□ Nesting: No code nested >3 levels deep
+□ DRY: No copy-pasted code blocks (extract shared logic)
+□ Comments: Comments explain "why", not "what" (code is self-documenting)
+□ Constants: No magic numbers or strings (use named constants)
+□ Errors: Error messages are specific and actionable
+□ Dead code: No commented-out code or unused variables
+□ Consistency: Naming patterns match existing codebase conventions
+```
+
+**If any check fails:** Fix before committing. Do not proceed with technical debt.
 
 ---
 

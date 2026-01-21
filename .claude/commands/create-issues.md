@@ -289,6 +289,49 @@ When writing issue tasks, follow Clean Code principles:
 4. **Simplicity** - Are tasks broken down to minimum complexity?
 5. **Maintainability** - Can someone unfamiliar execute these tasks?
 
+### Task Naming Guidelines
+
+Use clear, imperative language for tasks:
+
+| Do | Don't |
+|----|-------|
+| "Extract validation logic to `useFormValidation` hook" | "Handle validation" |
+| "Add `isLoading` state to prevent double submission" | "Improve form" |
+| "Rename `data` parameter to `userProfile` for clarity" | "Update naming" |
+| "Split `handleSubmit` into `validateForm` and `submitForm`" | "Refactor submit" |
+
+**Verbs to use:** Add, Create, Extract, Fix, Implement, Refactor, Remove, Rename, Replace, Split
+**Verbs to avoid:** Handle, Improve, Update, Work on, Deal with
+
+### Include Quality Expectations in Tasks
+
+When a task involves code changes, include specific quality targets:
+
+```markdown
+- [ ] Extract `calculateTotal` to separate utility function (max 20 lines)
+- [ ] Rename `d` variable to `discountPercentage` for clarity
+- [ ] Split `processOrder` into validation, calculation, and persistence functions
+- [ ] Replace magic number `86400` with `SECONDS_PER_DAY` constant
+```
+
+### Anti-Pattern Detection
+
+Before creating the issue, verify tasks will NOT introduce:
+
+| Anti-Pattern | Check |
+|--------------|-------|
+| God functions | No single function >30 lines planned |
+| Magic values | Numbers/strings will be named constants |
+| Deep nesting | No logic >3 levels of indentation |
+| Long signatures | No function with >3 parameters (use options object) |
+| Copy-paste code | Similar logic extracted to shared function |
+| Vague names | All new names reveal intent |
+
+If a task might introduce these, rewrite it to explicitly address the concern:
+
+❌ "Add discount calculation"
+✅ "Add `calculateDiscount(price, percentage)` function with early return for zero percentage"
+
 ---
 
 ## Error Handling
