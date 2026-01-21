@@ -16,6 +16,7 @@ import healthRouter from './routes/health.js';
 import chatRouter from './routes/chat.js';
 import contentRouter from './routes/content.js';
 import adventureRouter from './routes/adventure.js';
+import customFramesRouter from './routes/custom-frames.js';
 
 const app = express();
 
@@ -32,6 +33,7 @@ app.use('/health', healthRouter);
 app.use('/chat', chatRouter);
 app.use('/content', contentRouter);
 app.use('/adventure', adventureRouter);
+app.use('/api/custom-frames', customFramesRouter);
 
 // WebSocket server (shares same port via HTTP upgrade)
 const wss = createWebSocketServer(server);

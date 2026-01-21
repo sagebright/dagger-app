@@ -8,6 +8,7 @@
 import express, { type Express } from 'express';
 import healthRouter from '../routes/health.js';
 import adventureRouter from '../routes/adventure.js';
+import customFramesRouter from '../routes/custom-frames.js';
 
 /**
  * Creates a test Express app with all routes configured.
@@ -41,6 +42,7 @@ export function createTestApp(): Express {
   // Routes
   app.use('/health', healthRouter);
   app.use('/adventure', adventureRouter);
+  app.use('/api/custom-frames', customFramesRouter);
 
   return app;
 }
