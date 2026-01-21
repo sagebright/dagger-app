@@ -24,7 +24,7 @@ export interface FrameActions {
 export function createFrameActions(set: SetState, get: GetState): FrameActions {
   return {
     setAvailableFrames: (frames: DaggerheartFrame[]) => {
-      set({ availableFrames: frames, framesError: null }, false, 'setAvailableFrames');
+      set({ availableFrames: frames, framesError: null, framesLoading: false }, false, 'setAvailableFrames');
     },
 
     selectFrame: (frame: SelectedFrame) => {
