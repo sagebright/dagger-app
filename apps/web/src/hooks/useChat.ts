@@ -236,7 +236,7 @@ export function useChat({
         sceneCount: dialsState.sceneCount,
         sessionLength: dialsState.sessionLength,
         tone: dialsState.tone,
-        combatExplorationBalance: dialsState.combatExplorationBalance,
+        pillarBalance: dialsState.pillarBalance,
         npcDensity: dialsState.npcDensity,
         lethality: dialsState.lethality,
         emotionalRegister: dialsState.emotionalRegister,

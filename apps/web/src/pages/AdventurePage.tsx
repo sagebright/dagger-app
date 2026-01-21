@@ -17,7 +17,20 @@
 
 import { useState, useCallback, useEffect, useMemo, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import type { DialId, CompiledNPC, PartyTier, SessionLength, ThemeOption } from '@dagger-app/shared-types';
+import type {
+  DialId,
+  CompiledNPC,
+  PartyTier,
+  SessionLength,
+  ThemeOption,
+  PartySize,
+  SceneCount,
+  ToneOption,
+  NPCDensityOption,
+  LethalityOption,
+  EmotionalRegisterOption,
+  PillarBalance,
+} from '@dagger-app/shared-types';
 import { THEME_OPTIONS } from '@dagger-app/shared-types';
 
 // Adventure components
@@ -324,7 +337,7 @@ export function AdventurePage() {
   const sceneCount = useDialsStore((state) => state.sceneCount);
   const sessionLength = useDialsStore((state) => state.sessionLength);
   const tone = useDialsStore((state) => state.tone);
-  const combatExplorationBalance = useDialsStore((state) => state.combatExplorationBalance);
+  const pillarBalance = useDialsStore((state) => state.pillarBalance);
   const npcDensity = useDialsStore((state) => state.npcDensity);
   const lethality = useDialsStore((state) => state.lethality);
   const emotionalRegister = useDialsStore((state) => state.emotionalRegister);
@@ -346,7 +359,7 @@ export function AdventurePage() {
     sceneCount,
     sessionLength,
     tone,
-    combatExplorationBalance,
+    pillarBalance,
     npcDensity,
     lethality,
     emotionalRegister,
@@ -365,7 +378,7 @@ export function AdventurePage() {
     sceneCount,
     sessionLength,
     tone,
-    combatExplorationBalance,
+    pillarBalance,
     npcDensity,
     lethality,
     emotionalRegister,
@@ -538,8 +551,8 @@ export function AdventurePage() {
           <NumberStepper
             value={partySize}
             min={2}
-            max={6}
-            onChange={(v) => setDial('partySize', v)}
+            max={5}
+            onChange={(v) => setDial('partySize', v as PartySize)}
           />
         );
       case 'partyTier':
@@ -555,7 +568,7 @@ export function AdventurePage() {
             value={sceneCount}
             min={3}
             max={6}
-            onChange={(v) => setDial('sceneCount', v)}
+            onChange={(v) => setDial('sceneCount', v as SceneCount)}
           />
         );
       case 'sessionLength':
@@ -566,43 +579,56 @@ export function AdventurePage() {
           />
         );
       case 'tone':
+        // TODO: Replace with OptionButtonGroup in dial UI overhaul (#46)
         return (
           <SpectrumSlider
-            value={tone}
+            value={tone as string | null}
             endpoints={{ low: 'Grim', high: 'Whimsical' }}
-            onChange={(v) => setDial('tone', v)}
+            onChange={(v) => setDial('tone', v as ToneOption)}
           />
         );
-      case 'combatExplorationBalance':
+      case 'pillarBalance':
+        // TODO: Replace with PillarBalanceSelector in dial UI overhaul (#46)
         return (
           <SpectrumSlider
-            value={combatExplorationBalance}
+            value={pillarBalance ? `${pillarBalance.primary}-focused` : null}
             endpoints={{ low: 'Combat', high: 'Exploration' }}
-            onChange={(v) => setDial('combatExplorationBalance', v)}
+            onChange={(v) => {
+              // Temporary: Create a pillar balance from the spectrum value
+              const balance: PillarBalance = v.includes('combat')
+                ? { primary: 'combat', secondary: 'exploration', tertiary: 'social' }
+                : v.includes('exploration')
+                  ? { primary: 'exploration', secondary: 'social', tertiary: 'combat' }
+                  : { primary: 'social', secondary: 'combat', tertiary: 'exploration' };
+              setDial('pillarBalance', balance);
+            }}
           />
         );
       case 'npcDensity':
+        // TODO: Replace with OptionButtonGroup in dial UI overhaul (#46)
         return (
           <SpectrumSlider
-            value={npcDensity}
+            value={npcDensity as string | null}
             endpoints={{ low: 'Sparse', high: 'Rich' }}
-            onChange={(v) => setDial('npcDensity', v)}
+            onChange={(v) => setDial('npcDensity', v as NPCDensityOption)}
           />
         );
       case 'lethality':
+        // TODO: Replace with OptionButtonGroup in dial UI overhaul (#46)
         return (
           <SpectrumSlider
-            value={lethality}
+            value={lethality as string | null}
             endpoints={{ low: 'Forgiving', high: 'Deadly' }}
-            onChange={(v) => setDial('lethality', v)}
+            onChange={(v) => setDial('lethality', v as LethalityOption)}
           />
         );
       case 'emotionalRegister':
+        // TODO: Replace with OptionButtonGroup in dial UI overhaul (#46)
         return (
           <SpectrumSlider
-            value={emotionalRegister}
+            value={emotionalRegister as string | null}
             endpoints={{ low: 'Light', high: 'Heavy' }}
-            onChange={(v) => setDial('emotionalRegister', v)}
+            onChange={(v) => setDial('emotionalRegister', v as EmotionalRegisterOption)}
           />
         );
       case 'themes':
@@ -641,7 +667,7 @@ export function AdventurePage() {
     sceneCount,
     sessionLength,
     tone,
-    combatExplorationBalance,
+    pillarBalance,
     npcDensity,
     lethality,
     emotionalRegister,

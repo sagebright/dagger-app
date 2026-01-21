@@ -317,7 +317,7 @@ export interface GenerateOutlineInput {
     sessionLength: string;
     tone: string | null;
     themes: string[];
-    combatExplorationBalance: string | null;
+    pillarBalance: string | null;
     lethality: string | null;
   };
   /** Optional user feedback for regeneration */
@@ -672,7 +672,7 @@ export interface GenerateSceneInput {
     sessionLength: string;
     tone: string | null;
     themes: string[];
-    combatExplorationBalance: string | null;
+    pillarBalance: string | null;
     lethality: string | null;
   };
   /** User feedback for revision */

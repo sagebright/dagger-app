@@ -10,9 +10,14 @@ import {
   isValidSceneCount,
   isValidSessionLength,
   isValidThemes,
+  isValidTone,
+  isValidNPCDensity,
+  isValidLethality,
+  isValidEmotionalRegister,
+  isValidPillarBalance,
   DIAL_CONSTRAINTS,
 } from '@dagger-app/shared-types';
-import type { DialId, DialUpdate, ThemeOption } from '@dagger-app/shared-types';
+import type { DialId, DialUpdate, ThemeOption, PillarBalance } from '@dagger-app/shared-types';
 
 // =============================================================================
 // Dial Category Helpers
@@ -21,7 +26,7 @@ import type { DialId, DialUpdate, ThemeOption } from '@dagger-app/shared-types';
 const CONCRETE_DIALS: DialId[] = ['partySize', 'partyTier', 'sceneCount', 'sessionLength'];
 const CONCEPTUAL_DIALS: DialId[] = [
   'tone',
-  'combatExplorationBalance',
+  'pillarBalance',
   'npcDensity',
   'lethality',
   'emotionalRegister',
@@ -66,13 +71,22 @@ export function validateDialValue(dialId: DialId, value: unknown): boolean {
     case 'themes':
       return Array.isArray(value) && isValidThemes(value as ThemeOption[]);
 
-    // Conceptual dials accept string or null
+    // Discrete conceptual dials with specific option types
     case 'tone':
-    case 'combatExplorationBalance':
+      return value === null || (typeof value === 'string' && isValidTone(value));
+
     case 'npcDensity':
+      return value === null || (typeof value === 'string' && isValidNPCDensity(value));
+
     case 'lethality':
+      return value === null || (typeof value === 'string' && isValidLethality(value));
+
     case 'emotionalRegister':
-      return value === null || typeof value === 'string';
+      return value === null || (typeof value === 'string' && isValidEmotionalRegister(value));
+
+    // PillarBalance is a complex object
+    case 'pillarBalance':
+      return value === null || isValidPillarBalance(value as PillarBalance);
 
     default:
       return false;
@@ -115,13 +129,13 @@ export function getDialValidationError(dialId: DialId, value: unknown): string |
 
   switch (dialId) {
     case 'partySize':
-      return `Party size must be an integer between ${DIAL_CONSTRAINTS.partySize.min} and ${DIAL_CONSTRAINTS.partySize.max}`;
+      return `Party size must be one of: ${DIAL_CONSTRAINTS.partySize.options.join(', ')}`;
 
     case 'partyTier':
-      return 'Party tier must be 1-4';
+      return `Party tier must be one of: ${DIAL_CONSTRAINTS.partyTier.options.join(', ')}`;
 
     case 'sceneCount':
-      return `Scene count must be an integer between ${DIAL_CONSTRAINTS.sceneCount.min} and ${DIAL_CONSTRAINTS.sceneCount.max}`;
+      return `Scene count must be one of: ${DIAL_CONSTRAINTS.sceneCount.options.join(', ')}`;
 
     case 'sessionLength':
       return `Session length must be one of: ${DIAL_CONSTRAINTS.sessionLength.options.join(', ')}`;
@@ -136,34 +150,23 @@ export function getDialValidationError(dialId: DialId, value: unknown): string |
       return 'Themes contains invalid values';
 
     case 'tone':
-    case 'combatExplorationBalance':
+      return `Tone must be null or one of: ${DIAL_CONSTRAINTS.tone.options.join(', ')}`;
+
     case 'npcDensity':
+      return `NPC density must be null or one of: ${DIAL_CONSTRAINTS.npcDensity.options.join(', ')}`;
+
     case 'lethality':
+      return `Lethality must be null or one of: ${DIAL_CONSTRAINTS.lethality.options.join(', ')}`;
+
     case 'emotionalRegister':
-      return `${formatDialName(dialId)} must be a string or null`;
+      return `Emotional register must be null or one of: ${DIAL_CONSTRAINTS.emotionalRegister.options.join(', ')}`;
+
+    case 'pillarBalance':
+      return 'Pillar balance must be null or an object with primary, secondary, and tertiary pillars (combat, exploration, social) with no duplicates';
 
     default:
       return `Unknown dial: ${dialId}`;
   }
-}
-
-/**
- * Format a dial ID into a human-readable name
- */
-function formatDialName(dialId: DialId): string {
-  const names: Record<DialId, string> = {
-    partySize: 'Party size',
-    partyTier: 'Party tier',
-    sceneCount: 'Scene count',
-    sessionLength: 'Session length',
-    tone: 'Tone',
-    combatExplorationBalance: 'Combat/exploration balance',
-    npcDensity: 'NPC density',
-    lethality: 'Lethality',
-    emotionalRegister: 'Emotional register',
-    themes: 'Themes',
-  };
-  return names[dialId] || dialId;
 }
 
 // =============================================================================

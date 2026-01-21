@@ -55,7 +55,7 @@ const createMockDialsState = (overrides?: Partial<DialsState>): DialsState => ({
   sceneCount: 4,
   sessionLength: '3-4 hours',
   tone: null,
-  combatExplorationBalance: null,
+  pillarBalance: null,
   npcDensity: null,
   lethality: null,
   emotionalRegister: null,
@@ -442,7 +442,7 @@ describe('Adventure Workflow Integration Tests', () => {
         'sceneCount',
         'sessionLength',
         'tone',
-        'combatExplorationBalance',
+        'pillarBalance',
         'npcDensity',
         'lethality',
         'emotionalRegister',
@@ -450,11 +450,11 @@ describe('Adventure Workflow Integration Tests', () => {
       ] as const;
 
       const dials = createMockDialsState({
-        tone: 'heroic',
-        combatExplorationBalance: 'balanced',
+        tone: 'balanced',
+        pillarBalance: { primary: 'combat', secondary: 'exploration', tertiary: 'social' },
         npcDensity: 'moderate',
         lethality: 'standard',
-        emotionalRegister: 'varied',
+        emotionalRegister: 'epic',
         themes: ['redemption'],
         confirmedDials: new Set(allDialIds),
       });

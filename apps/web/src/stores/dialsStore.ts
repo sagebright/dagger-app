@@ -3,7 +3,7 @@
  *
  * Manages the adventure dial state including:
  * - 4 concrete dials (partySize, partyTier, sceneCount, sessionLength)
- * - 6 conceptual dials (tone, combatExplorationBalance, npcDensity, lethality, emotionalRegister, themes)
+ * - 6 conceptual dials (tone, pillarBalance, npcDensity, lethality, emotionalRegister, themes)
  * - Dial confirmation tracking
  * - Validation logic
  */
@@ -16,6 +16,7 @@ import type {
   ThemeOption,
   ConcreteDials,
   ConceptualDials,
+  PillarBalance,
 } from '@dagger-app/shared-types';
 import {
   DEFAULT_CONCRETE_DIALS,
@@ -25,6 +26,11 @@ import {
   isValidSceneCount,
   isValidSessionLength,
   isValidThemes,
+  isValidTone,
+  isValidNPCDensity,
+  isValidLethality,
+  isValidEmotionalRegister,
+  isValidPillarBalance,
   DIAL_CONSTRAINTS,
 } from '@dagger-app/shared-types';
 
@@ -67,13 +73,18 @@ function validateDialValue(dialId: DialId, value: DialValue): boolean {
       return typeof value === 'string' && isValidSessionLength(value);
     case 'themes':
       return Array.isArray(value) && isValidThemes(value as ThemeOption[]);
-    // Conceptual dials accept null or any string
+    // Discrete conceptual dials with specific option types
     case 'tone':
-    case 'combatExplorationBalance':
+      return value === null || (typeof value === 'string' && isValidTone(value));
     case 'npcDensity':
+      return value === null || (typeof value === 'string' && isValidNPCDensity(value));
     case 'lethality':
+      return value === null || (typeof value === 'string' && isValidLethality(value));
     case 'emotionalRegister':
-      return value === null || typeof value === 'string';
+      return value === null || (typeof value === 'string' && isValidEmotionalRegister(value));
+    // PillarBalance is a complex object
+    case 'pillarBalance':
+      return value === null || isValidPillarBalance(value as PillarBalance);
     default:
       return false;
   }
@@ -243,7 +254,7 @@ export const selectUnconfirmedDials = (state: DialsState): DialId[] => {
     'sceneCount',
     'sessionLength',
     'tone',
-    'combatExplorationBalance',
+    'pillarBalance',
     'npcDensity',
     'lethality',
     'emotionalRegister',
@@ -294,7 +305,7 @@ export const selectConcreteDials = (state: DialsState): ConcreteDials => ({
  */
 export const selectConceptualDials = (state: DialsState): ConceptualDials => ({
   tone: state.tone,
-  combatExplorationBalance: state.combatExplorationBalance,
+  pillarBalance: state.pillarBalance,
   npcDensity: state.npcDensity,
   lethality: state.lethality,
   emotionalRegister: state.emotionalRegister,

@@ -55,7 +55,7 @@ const mockDialsSummary = {
   sessionLength: '3-4 hours',
   tone: 'mysterious and haunting',
   themes: ['horror', 'mystery'],
-  combatExplorationBalance: 'balanced',
+  pillarBalance: 'balanced',
   lethality: 'moderate',
 };
 

@@ -122,7 +122,7 @@ describe('MCPServer', () => {
           sceneCount: 4,
           sessionLength: '3-4 hours',
           tone: null,
-          combatExplorationBalance: null,
+          pillarBalance: null,
           npcDensity: null,
           lethality: null,
           emotionalRegister: null,

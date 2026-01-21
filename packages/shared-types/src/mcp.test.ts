@@ -112,7 +112,7 @@ describe('MCP Types', () => {
           sceneCount: 4,
           sessionLength: '3-4 hours',
           tone: null,
-          combatExplorationBalance: null,
+          pillarBalance: null,
           npcDensity: null,
           lethality: null,
           emotionalRegister: null,
@@ -138,10 +138,10 @@ describe('MCP Types', () => {
             confidence: 'high',
           },
         ],
-        nextDialFocus: 'combatExplorationBalance',
+        nextDialFocus: 'pillarBalance',
       };
       expect(output.dialUpdates).toHaveLength(1);
-      expect(output.nextDialFocus).toBe('combatExplorationBalance');
+      expect(output.nextDialFocus).toBe('pillarBalance');
     });
 
     it('should accept output with inline widgets', () => {
@@ -196,11 +196,11 @@ describe('MCP Types', () => {
     it('should create spectrum slider widget', () => {
       const widget: InlineWidget = {
         type: 'spectrum_slider',
-        dialId: 'combatExplorationBalance',
-        leftLabel: 'Heavy Combat',
-        rightLabel: 'Pure Exploration',
+        dialId: 'tone',
+        leftLabel: 'Grim',
+        rightLabel: 'Whimsical',
       };
-      expect(widget.leftLabel).toBe('Heavy Combat');
+      expect(widget.leftLabel).toBe('Grim');
     });
 
     it('should create theme chips widget', () => {
@@ -225,7 +225,7 @@ describe('MCP Types', () => {
             sceneCount: 4,
             sessionLength: '3-4 hours',
             tone: null,
-            combatExplorationBalance: null,
+            pillarBalance: null,
             npcDensity: null,
             lethality: null,
             emotionalRegister: null,
@@ -368,7 +368,7 @@ describe('MCP Types', () => {
           sceneCount: 4,
           sessionLength: '3-4 hours',
           tone: null,
-          combatExplorationBalance: null,
+          pillarBalance: null,
           npcDensity: null,
           lethality: null,
           emotionalRegister: null,

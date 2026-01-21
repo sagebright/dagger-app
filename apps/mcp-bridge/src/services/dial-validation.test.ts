@@ -15,14 +15,16 @@ import type { DialUpdate } from '@dagger-app/shared-types';
 describe('Dial Validation', () => {
   describe('validateDialValue', () => {
     describe('partySize', () => {
-      it('should accept valid party size', () => {
-        expect(validateDialValue('partySize', 4)).toBe(true);
+      it('should accept valid party size (2-5)', () => {
         expect(validateDialValue('partySize', 2)).toBe(true);
-        expect(validateDialValue('partySize', 6)).toBe(true);
+        expect(validateDialValue('partySize', 3)).toBe(true);
+        expect(validateDialValue('partySize', 4)).toBe(true);
+        expect(validateDialValue('partySize', 5)).toBe(true);
       });
 
-      it('should reject invalid party size', () => {
+      it('should reject invalid party size (6 is no longer valid)', () => {
         expect(validateDialValue('partySize', 1)).toBe(false);
+        expect(validateDialValue('partySize', 6)).toBe(false);
         expect(validateDialValue('partySize', 7)).toBe(false);
         expect(validateDialValue('partySize', 3.5)).toBe(false);
         expect(validateDialValue('partySize', 'four')).toBe(false);
@@ -91,21 +93,27 @@ describe('Dial Validation', () => {
     });
 
     describe('conceptual dials', () => {
-      it('should accept string values for tone', () => {
-        expect(validateDialValue('tone', 'gritty like The Witcher')).toBe(true);
+      it('should accept valid discrete tone options', () => {
+        expect(validateDialValue('tone', 'grim')).toBe(true);
+        expect(validateDialValue('tone', 'serious')).toBe(true);
+        expect(validateDialValue('tone', 'balanced')).toBe(true);
+        expect(validateDialValue('tone', 'lighthearted')).toBe(true);
+        expect(validateDialValue('tone', 'whimsical')).toBe(true);
         expect(validateDialValue('tone', null)).toBe(true);
       });
 
-      it('should accept string values for other conceptual dials', () => {
-        expect(validateDialValue('combatExplorationBalance', 'balanced')).toBe(true);
+      it('should accept valid discrete options for conceptual dials', () => {
+        expect(validateDialValue('pillarBalance', { primary: 'combat', secondary: 'exploration', tertiary: 'social' })).toBe(true);
         expect(validateDialValue('npcDensity', 'moderate')).toBe(true);
         expect(validateDialValue('lethality', 'heroic')).toBe(true);
         expect(validateDialValue('emotionalRegister', 'thrilling')).toBe(true);
       });
 
-      it('should reject non-string values for conceptual dials', () => {
+      it('should reject invalid values for conceptual dials', () => {
         expect(validateDialValue('tone', 123)).toBe(false);
-        expect(validateDialValue('combatExplorationBalance', { value: 5 })).toBe(false);
+        expect(validateDialValue('tone', 'invalid-tone')).toBe(false);
+        expect(validateDialValue('pillarBalance', { value: 5 })).toBe(false);
+        expect(validateDialValue('pillarBalance', 'balanced')).toBe(false); // Must be an object
       });
     });
   });
@@ -137,13 +145,14 @@ describe('Dial Validation', () => {
       const error = getDialValidationError('partySize', 10);
       expect(error).toContain('Party size');
       expect(error).toContain('2');
-      expect(error).toContain('6');
+      expect(error).toContain('5');
     });
 
     it('should return descriptive error for party tier', () => {
       const error = getDialValidationError('partyTier', 5);
       expect(error).toContain('Party tier');
-      expect(error).toContain('1-4');
+      expect(error).toContain('1');
+      expect(error).toContain('4');
     });
 
     it('should return descriptive error for themes', () => {
@@ -154,14 +163,14 @@ describe('Dial Validation', () => {
 
     it('should return null for valid values', () => {
       expect(getDialValidationError('partySize', 4)).toBeNull();
-      expect(getDialValidationError('tone', 'dark')).toBeNull();
+      expect(getDialValidationError('tone', 'grim')).toBeNull();
     });
   });
 
   describe('isConceptualDial', () => {
     it('should identify conceptual dials', () => {
       expect(isConceptualDial('tone')).toBe(true);
-      expect(isConceptualDial('combatExplorationBalance')).toBe(true);
+      expect(isConceptualDial('pillarBalance')).toBe(true);
       expect(isConceptualDial('npcDensity')).toBe(true);
       expect(isConceptualDial('lethality')).toBe(true);
       expect(isConceptualDial('emotionalRegister')).toBe(true);

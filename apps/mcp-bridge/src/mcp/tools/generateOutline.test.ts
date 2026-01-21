@@ -53,7 +53,7 @@ function createMockDialsSummary(
     sessionLength: '3-4 hours',
     tone: 'dark and mysterious',
     themes: ['redemption', 'identity'],
-    combatExplorationBalance: 'balanced',
+    pillarBalance: 'balanced',
     lethality: 'moderate',
     ...overrides,
   };
@@ -239,7 +239,7 @@ describe('generateOutlineHandler', () => {
       const input = createMockInput({
         dialsSummary: createMockDialsSummary({
           sceneCount: 6,
-          combatExplorationBalance: 'combat-heavy action',
+          pillarBalance: 'combat-heavy action',
         }),
       });
 
@@ -253,7 +253,7 @@ describe('generateOutlineHandler', () => {
       const input = createMockInput({
         dialsSummary: createMockDialsSummary({
           sceneCount: 6,
-          combatExplorationBalance: 'exploration and roleplay focused',
+          pillarBalance: 'exploration and roleplay focused',
         }),
       });
 
@@ -269,7 +269,7 @@ describe('generateOutlineHandler', () => {
       const input = createMockInput({
         dialsSummary: createMockDialsSummary({
           sceneCount: 6,
-          combatExplorationBalance: 'balanced mix',
+          pillarBalance: 'balanced mix',
         }),
       });
 
@@ -570,9 +570,9 @@ describe('generateOutlineHandler', () => {
       expect(result.isComplete).toBe(true);
     });
 
-    it('handles null combatExplorationBalance', async () => {
+    it('handles null pillarBalance', async () => {
       const input = createMockInput({
-        dialsSummary: createMockDialsSummary({ combatExplorationBalance: null }),
+        dialsSummary: createMockDialsSummary({ pillarBalance: null }),
       });
 
       const result = await generateOutlineHandler(input);

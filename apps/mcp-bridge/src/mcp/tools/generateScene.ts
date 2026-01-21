@@ -54,7 +54,7 @@ export const GENERATE_SCENE_SCHEMA: ToolSchema = {
           sessionLength: { type: 'string' },
           tone: { type: 'string' },
           themes: { type: 'array', items: { type: 'string' } },
-          combatExplorationBalance: { type: 'string' },
+          pillarBalance: { type: 'string' },
           lethality: { type: 'string' },
         },
       },

@@ -5,17 +5,33 @@ import {
   isValidSceneCount,
   isValidSessionLength,
   isValidThemes,
+  isValidTone,
+  isValidNPCDensity,
+  isValidLethality,
+  isValidEmotionalRegister,
+  isValidPillarBalance,
   DIAL_CONSTRAINTS,
+  TONE_OPTIONS,
+  NPC_DENSITY_OPTIONS,
+  LETHALITY_OPTIONS,
+  EMOTIONAL_REGISTER_OPTIONS,
   type ThemeOption,
+  type ToneOption,
+  type NPCDensityOption,
+  type LethalityOption,
+  type EmotionalRegisterOption,
+  type Pillar,
+  type PillarBalance,
+  type PartySize,
+  type SceneCount,
 } from './dials.js';
 
 describe('isValidPartySize', () => {
-  it('returns true for valid party sizes (2-6)', () => {
+  it('returns true for valid party sizes (2-5)', () => {
     expect(isValidPartySize(2)).toBe(true);
     expect(isValidPartySize(3)).toBe(true);
     expect(isValidPartySize(4)).toBe(true);
     expect(isValidPartySize(5)).toBe(true);
-    expect(isValidPartySize(6)).toBe(true);
   });
 
   it('returns false for party size below minimum', () => {
@@ -24,7 +40,8 @@ describe('isValidPartySize', () => {
     expect(isValidPartySize(-1)).toBe(false);
   });
 
-  it('returns false for party size above maximum', () => {
+  it('returns false for party size above maximum (6 is no longer valid)', () => {
+    expect(isValidPartySize(6)).toBe(false);
     expect(isValidPartySize(7)).toBe(false);
     expect(isValidPartySize(100)).toBe(false);
   });
@@ -162,18 +179,16 @@ describe('isValidThemes', () => {
 });
 
 describe('DIAL_CONSTRAINTS', () => {
-  it('has correct party size constraints', () => {
-    expect(DIAL_CONSTRAINTS.partySize.min).toBe(2);
-    expect(DIAL_CONSTRAINTS.partySize.max).toBe(6);
+  it('has correct party size options (discrete union type)', () => {
+    expect(DIAL_CONSTRAINTS.partySize.options).toEqual([2, 3, 4, 5]);
   });
 
   it('has correct party tier options', () => {
     expect(DIAL_CONSTRAINTS.partyTier.options).toEqual([1, 2, 3, 4]);
   });
 
-  it('has correct scene count constraints', () => {
-    expect(DIAL_CONSTRAINTS.sceneCount.min).toBe(3);
-    expect(DIAL_CONSTRAINTS.sceneCount.max).toBe(6);
+  it('has correct scene count options (discrete union type)', () => {
+    expect(DIAL_CONSTRAINTS.sceneCount.options).toEqual([3, 4, 5, 6]);
   });
 
   it('has correct session length options', () => {
@@ -182,5 +197,150 @@ describe('DIAL_CONSTRAINTS', () => {
 
   it('has correct themes max selections', () => {
     expect(DIAL_CONSTRAINTS.themes.maxSelections).toBe(3);
+  });
+});
+
+// =============================================================================
+// New Discrete Type Tests
+// =============================================================================
+
+describe('PartySize union type', () => {
+  it('validates valid party sizes (2-5)', () => {
+    const validSizes: PartySize[] = [2, 3, 4, 5];
+    validSizes.forEach((size) => {
+      expect(isValidPartySize(size)).toBe(true);
+    });
+  });
+
+  it('rejects party size 6 (no longer valid with new discrete type)', () => {
+    expect(isValidPartySize(6)).toBe(false);
+  });
+});
+
+describe('SceneCount union type', () => {
+  it('validates valid scene counts (3-6)', () => {
+    const validCounts: SceneCount[] = [3, 4, 5, 6];
+    validCounts.forEach((count) => {
+      expect(isValidSceneCount(count)).toBe(true);
+    });
+  });
+});
+
+describe('ToneOption type', () => {
+  it('exports TONE_OPTIONS with correct values', () => {
+    expect(TONE_OPTIONS).toEqual(['grim', 'serious', 'balanced', 'lighthearted', 'whimsical']);
+  });
+
+  it('validates valid tone options', () => {
+    const validTones: ToneOption[] = ['grim', 'serious', 'balanced', 'lighthearted', 'whimsical'];
+    validTones.forEach((tone) => {
+      expect(isValidTone(tone)).toBe(true);
+    });
+  });
+
+  it('rejects invalid tone values', () => {
+    expect(isValidTone('invalid')).toBe(false);
+    expect(isValidTone('')).toBe(false);
+    expect(isValidTone(null as unknown as string)).toBe(false);
+  });
+});
+
+describe('NPCDensityOption type', () => {
+  it('exports NPC_DENSITY_OPTIONS with correct values', () => {
+    expect(NPC_DENSITY_OPTIONS).toEqual(['sparse', 'moderate', 'rich']);
+  });
+
+  it('validates valid NPC density options', () => {
+    const validDensities: NPCDensityOption[] = ['sparse', 'moderate', 'rich'];
+    validDensities.forEach((density) => {
+      expect(isValidNPCDensity(density)).toBe(true);
+    });
+  });
+
+  it('rejects invalid NPC density values', () => {
+    expect(isValidNPCDensity('invalid')).toBe(false);
+    expect(isValidNPCDensity('')).toBe(false);
+  });
+});
+
+describe('LethalityOption type', () => {
+  it('exports LETHALITY_OPTIONS with correct values', () => {
+    expect(LETHALITY_OPTIONS).toEqual(['heroic', 'standard', 'dangerous', 'brutal']);
+  });
+
+  it('validates valid lethality options', () => {
+    const validLethalities: LethalityOption[] = ['heroic', 'standard', 'dangerous', 'brutal'];
+    validLethalities.forEach((lethality) => {
+      expect(isValidLethality(lethality)).toBe(true);
+    });
+  });
+
+  it('rejects invalid lethality values', () => {
+    expect(isValidLethality('invalid')).toBe(false);
+    expect(isValidLethality('')).toBe(false);
+  });
+});
+
+describe('EmotionalRegisterOption type', () => {
+  it('exports EMOTIONAL_REGISTER_OPTIONS with correct values', () => {
+    expect(EMOTIONAL_REGISTER_OPTIONS).toEqual([
+      'thrilling',
+      'tense',
+      'heartfelt',
+      'bittersweet',
+      'epic',
+    ]);
+  });
+
+  it('validates valid emotional register options', () => {
+    const validRegisters: EmotionalRegisterOption[] = [
+      'thrilling',
+      'tense',
+      'heartfelt',
+      'bittersweet',
+      'epic',
+    ];
+    validRegisters.forEach((register) => {
+      expect(isValidEmotionalRegister(register)).toBe(true);
+    });
+  });
+
+  it('rejects invalid emotional register values', () => {
+    expect(isValidEmotionalRegister('invalid')).toBe(false);
+    expect(isValidEmotionalRegister('')).toBe(false);
+  });
+});
+
+describe('PillarBalance type', () => {
+  it('validates valid pillar balance configurations', () => {
+    const validBalances: PillarBalance[] = [
+      { primary: 'combat', secondary: 'exploration', tertiary: 'social' },
+      { primary: 'exploration', secondary: 'social', tertiary: 'combat' },
+      { primary: 'social', secondary: 'combat', tertiary: 'exploration' },
+    ];
+    validBalances.forEach((balance) => {
+      expect(isValidPillarBalance(balance)).toBe(true);
+    });
+  });
+
+  it('rejects pillar balance with duplicate pillars', () => {
+    expect(
+      isValidPillarBalance({ primary: 'combat', secondary: 'combat', tertiary: 'social' })
+    ).toBe(false);
+  });
+
+  it('rejects pillar balance with invalid pillar values', () => {
+    expect(
+      isValidPillarBalance({
+        primary: 'invalid' as Pillar,
+        secondary: 'combat',
+        tertiary: 'social',
+      })
+    ).toBe(false);
+  });
+
+  it('rejects null or undefined pillar balance', () => {
+    expect(isValidPillarBalance(null as unknown as PillarBalance)).toBe(false);
+    expect(isValidPillarBalance(undefined as unknown as PillarBalance)).toBe(false);
   });
 });

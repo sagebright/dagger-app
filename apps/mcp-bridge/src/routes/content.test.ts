@@ -382,7 +382,7 @@ describe('Content Route', () => {
       sessionLength: 'standard',
       tone: 'dramatic',
       themes: ['mystery'],
-      combatExplorationBalance: 'balanced',
+      pillarBalance: 'balanced',
       lethality: 'standard',
     };
 

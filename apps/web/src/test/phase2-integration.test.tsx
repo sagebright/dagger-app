@@ -250,7 +250,7 @@ describe('Phase 2 Integration Tests', () => {
           sceneCount: 4,
           sessionLength: '3-4 hours',
           tone: null,
-          combatExplorationBalance: null,
+          pillarBalance: null,
           npcDensity: null,
           lethality: null,
           emotionalRegister: null,
@@ -312,7 +312,7 @@ describe('Phase 2 Integration Tests', () => {
       it('shows continue button when all dials are confirmed', () => {
         const dialIds: DialId[] = [
           'partySize', 'partyTier', 'sceneCount', 'sessionLength',
-          'tone', 'combatExplorationBalance', 'npcDensity',
+          'tone', 'pillarBalance', 'npcDensity',
           'lethality', 'emotionalRegister', 'themes'
         ];
 
@@ -322,11 +322,11 @@ describe('Phase 2 Integration Tests', () => {
           partyTier: 2,
           sceneCount: 4,
           sessionLength: '3-4 hours',
-          tone: 'Epic',
-          combatExplorationBalance: 'Balanced',
-          npcDensity: 'Moderate',
-          lethality: 'Challenging',
-          emotionalRegister: 'Tense',
+          tone: 'balanced',
+          pillarBalance: { primary: 'combat', secondary: 'exploration', tertiary: 'social' },
+          npcDensity: 'moderate',
+          lethality: 'dangerous',
+          emotionalRegister: 'tense',
           themes: ['redemption'],
         });
 
@@ -392,7 +392,7 @@ describe('Phase 2 Integration Tests', () => {
           sceneCount: 5,
           sessionLength: '4-5 hours',
           tone: 'dark and mysterious',
-          combatExplorationBalance: null,
+          pillarBalance: null,
           npcDensity: null,
           lethality: null,
           emotionalRegister: null,
@@ -486,17 +486,17 @@ describe('Phase 2 Integration Tests', () => {
           () => useDialsStore.getState().setDial('partyTier', 2),
           () => useDialsStore.getState().setDial('sceneCount', 4),
           () => useDialsStore.getState().setDial('sessionLength', '3-4 hours'),
-          () => useDialsStore.getState().setDial('tone', 'Mysterious and haunting'),
-          () => useDialsStore.getState().setDial('combatExplorationBalance', 'exploration-focused'),
+          () => useDialsStore.getState().setDial('tone', 'grim'),
+          () => useDialsStore.getState().setDial('pillarBalance', { primary: 'exploration', secondary: 'combat', tertiary: 'social' }),
           () => useDialsStore.getState().setDial('npcDensity', 'moderate'),
-          () => useDialsStore.getState().setDial('lethality', 'challenging'),
+          () => useDialsStore.getState().setDial('lethality', 'dangerous'),
           () => useDialsStore.getState().setDial('emotionalRegister', 'tense'),
           () => useDialsStore.getState().setDial('themes', ['redemption', 'found-family'] as const),
         ];
 
         const dialIds: DialId[] = [
           'partySize', 'partyTier', 'sceneCount', 'sessionLength',
-          'tone', 'combatExplorationBalance', 'npcDensity',
+          'tone', 'pillarBalance', 'npcDensity',
           'lethality', 'emotionalRegister', 'themes'
         ];
 
@@ -523,10 +523,10 @@ describe('Phase 2 Integration Tests', () => {
           useDialsStore.getState().setDial('partyTier', 2);
           useDialsStore.getState().setDial('sceneCount', 5);
           useDialsStore.getState().setDial('sessionLength', '3-4 hours');
-          useDialsStore.getState().setDial('tone', 'Epic fantasy');
-          useDialsStore.getState().setDial('combatExplorationBalance', 'balanced');
+          useDialsStore.getState().setDial('tone', 'balanced');
+          useDialsStore.getState().setDial('pillarBalance', { primary: 'social', secondary: 'combat', tertiary: 'exploration' });
           useDialsStore.getState().setDial('npcDensity', 'rich');
-          useDialsStore.getState().setDial('lethality', 'moderate');
+          useDialsStore.getState().setDial('lethality', 'standard');
           useDialsStore.getState().setDial('emotionalRegister', 'thrilling');
           useDialsStore.getState().setDial('themes', ['redemption', 'sacrifice', 'found-family']);
         });
@@ -540,10 +540,10 @@ describe('Phase 2 Integration Tests', () => {
         expect(state.sessionLength).toBe('3-4 hours');
 
         // Verify conceptual dials
-        expect(state.tone).toBe('Epic fantasy');
-        expect(state.combatExplorationBalance).toBe('balanced');
+        expect(state.tone).toBe('balanced');
+        expect(state.pillarBalance).toEqual({ primary: 'social', secondary: 'combat', tertiary: 'exploration' });
         expect(state.npcDensity).toBe('rich');
-        expect(state.lethality).toBe('moderate');
+        expect(state.lethality).toBe('standard');
         expect(state.emotionalRegister).toBe('thrilling');
         expect(state.themes).toEqual(['redemption', 'sacrifice', 'found-family']);
       });
@@ -560,7 +560,7 @@ describe('Phase 2 Integration Tests', () => {
         // Complete all dials
         const dialIds: DialId[] = [
           'partySize', 'partyTier', 'sceneCount', 'sessionLength',
-          'tone', 'combatExplorationBalance', 'npcDensity',
+          'tone', 'pillarBalance', 'npcDensity',
           'lethality', 'emotionalRegister', 'themes'
         ];
 
@@ -571,7 +571,11 @@ describe('Phase 2 Integration Tests', () => {
             else if (dialId === 'sceneCount') useDialsStore.getState().setDial(dialId, 4);
             else if (dialId === 'sessionLength') useDialsStore.getState().setDial(dialId, '3-4 hours');
             else if (dialId === 'themes') useDialsStore.getState().setDial(dialId, ['redemption']);
-            else useDialsStore.getState().setDial(dialId, 'test value');
+            else if (dialId === 'tone') useDialsStore.getState().setDial(dialId, 'balanced');
+            else if (dialId === 'pillarBalance') useDialsStore.getState().setDial(dialId, { primary: 'combat', secondary: 'exploration', tertiary: 'social' });
+            else if (dialId === 'npcDensity') useDialsStore.getState().setDial(dialId, 'moderate');
+            else if (dialId === 'lethality') useDialsStore.getState().setDial(dialId, 'standard');
+            else if (dialId === 'emotionalRegister') useDialsStore.getState().setDial(dialId, 'thrilling');
 
             useDialsStore.getState().confirmDial(dialId);
           });

@@ -52,6 +52,16 @@ export const PHASES: PhaseInfo[] = [
 // =============================================================================
 
 /**
+ * Party size - discrete union type (2-5 players)
+ */
+export type PartySize = 2 | 3 | 4 | 5;
+
+/**
+ * Scene count - discrete union type (3-6 scenes)
+ */
+export type SceneCount = 3 | 4 | 5 | 6;
+
+/**
  * Party tier levels (affects encounter scaling, item tiers)
  */
 export type PartyTier = 1 | 2 | 3 | 4;
@@ -65,12 +75,12 @@ export type SessionLength = '2-3 hours' | '3-4 hours' | '4-5 hours';
  * Concrete dial values with definite numeric/string values
  */
 export interface ConcreteDials {
-  /** Number of players (2-6, default 4) */
-  partySize: number;
+  /** Number of players (2-5, default 4) */
+  partySize: PartySize;
   /** Character tier level (1-4, default 1) */
   partyTier: PartyTier;
   /** Number of scenes (3-6, default 4) */
-  sceneCount: number;
+  sceneCount: SceneCount;
   /** Target session length */
   sessionLength: SessionLength;
 }
@@ -108,19 +118,67 @@ export const THEME_OPTIONS: { id: ThemeOption; label: string; description: strin
 ];
 
 /**
- * Conceptual dial values with spectrum/reference-based values
+ * Tone options - discrete selection for adventure tone
+ */
+export type ToneOption = 'grim' | 'serious' | 'balanced' | 'lighthearted' | 'whimsical';
+
+export const TONE_OPTIONS: ToneOption[] = ['grim', 'serious', 'balanced', 'lighthearted', 'whimsical'];
+
+/**
+ * NPC density options - discrete selection
+ */
+export type NPCDensityOption = 'sparse' | 'moderate' | 'rich';
+
+export const NPC_DENSITY_OPTIONS: NPCDensityOption[] = ['sparse', 'moderate', 'rich'];
+
+/**
+ * Lethality options - discrete selection
+ */
+export type LethalityOption = 'heroic' | 'standard' | 'dangerous' | 'brutal';
+
+export const LETHALITY_OPTIONS: LethalityOption[] = ['heroic', 'standard', 'dangerous', 'brutal'];
+
+/**
+ * Emotional register options - discrete selection
+ */
+export type EmotionalRegisterOption = 'thrilling' | 'tense' | 'heartfelt' | 'bittersweet' | 'epic';
+
+export const EMOTIONAL_REGISTER_OPTIONS: EmotionalRegisterOption[] = [
+  'thrilling',
+  'tense',
+  'heartfelt',
+  'bittersweet',
+  'epic',
+];
+
+/**
+ * Three pillars of TTRPG gameplay
+ */
+export type Pillar = 'combat' | 'exploration' | 'social';
+
+/**
+ * Pillar balance - prioritized ordering of the three pillars
+ */
+export interface PillarBalance {
+  primary: Pillar;
+  secondary: Pillar;
+  tertiary: Pillar;
+}
+
+/**
+ * Conceptual dial values with discrete type selections
  */
 export interface ConceptualDials {
-  /** Tone - reference point or description (e.g., "like The Witcher") */
-  tone: string | null;
-  /** Combat vs exploration balance spectrum */
-  combatExplorationBalance: string | null;
+  /** Tone - discrete selection from grim to whimsical */
+  tone: ToneOption | null;
+  /** Pillar balance - prioritized ordering of combat/exploration/social */
+  pillarBalance: PillarBalance | null;
   /** NPC density - sparse, moderate, rich */
-  npcDensity: string | null;
+  npcDensity: NPCDensityOption | null;
   /** Lethality - heroic to brutal */
-  lethality: string | null;
+  lethality: LethalityOption | null;
   /** Emotional register - thrilling, tense, heartfelt, etc. */
-  emotionalRegister: string | null;
+  emotionalRegister: EmotionalRegisterOption | null;
   /** Themes - max 3 selections */
   themes: ThemeOption[];
 }
@@ -145,7 +203,19 @@ export interface DialsState extends ConcreteDials, ConceptualDials {
 /**
  * Dial value can be any valid dial type
  */
-export type DialValue = number | PartyTier | SessionLength | string | null | ThemeOption[];
+export type DialValue =
+  | PartySize
+  | SceneCount
+  | PartyTier
+  | SessionLength
+  | ToneOption
+  | NPCDensityOption
+  | LethalityOption
+  | EmotionalRegisterOption
+  | PillarBalance
+  | ThemeOption[]
+  | string
+  | null;
 
 // =============================================================================
 // Dial Metadata & Validation
@@ -199,23 +269,23 @@ export const CONCEPTUAL_DIAL_METADATA: DialMetadata[] = [
   {
     id: 'tone',
     label: 'Tone',
-    type: 'spectrum',
+    type: 'select',
     category: 'conceptual',
-    description: 'Adventure tone (reference points welcome)',
+    description: 'Adventure tone from grim to whimsical',
     required: false,
   },
   {
-    id: 'combatExplorationBalance',
-    label: 'Combat/Exploration Balance',
-    type: 'spectrum',
+    id: 'pillarBalance',
+    label: 'Pillar Balance',
+    type: 'select',
     category: 'conceptual',
-    description: 'Heavy combat to exploration focus',
+    description: 'Priority of combat, exploration, and social pillars',
     required: false,
   },
   {
     id: 'npcDensity',
     label: 'NPC Density',
-    type: 'spectrum',
+    type: 'select',
     category: 'conceptual',
     description: 'Sparse to rich NPC presence',
     required: false,
@@ -223,7 +293,7 @@ export const CONCEPTUAL_DIAL_METADATA: DialMetadata[] = [
   {
     id: 'lethality',
     label: 'Lethality',
-    type: 'spectrum',
+    type: 'select',
     category: 'conceptual',
     description: 'Heroic to brutal difficulty',
     required: false,
@@ -231,7 +301,7 @@ export const CONCEPTUAL_DIAL_METADATA: DialMetadata[] = [
   {
     id: 'emotionalRegister',
     label: 'Emotional Register',
-    type: 'spectrum',
+    type: 'select',
     category: 'conceptual',
     description: 'Primary emotional journey',
     required: false,
@@ -264,7 +334,7 @@ export const DEFAULT_CONCRETE_DIALS: ConcreteDials = {
 
 export const DEFAULT_CONCEPTUAL_DIALS: ConceptualDials = {
   tone: null,
-  combatExplorationBalance: null,
+  pillarBalance: null,
   npcDensity: null,
   lethality: null,
   emotionalRegister: null,
@@ -276,22 +346,23 @@ export const DEFAULT_CONCEPTUAL_DIALS: ConceptualDials = {
 // =============================================================================
 
 export const DIAL_CONSTRAINTS = {
-  partySize: { min: 2, max: 6 },
+  partySize: { options: [2, 3, 4, 5] as const },
   partyTier: { options: [1, 2, 3, 4] as const },
-  sceneCount: { min: 3, max: 6 },
+  sceneCount: { options: [3, 4, 5, 6] as const },
   sessionLength: { options: ['2-3 hours', '3-4 hours', '4-5 hours'] as const },
   themes: { maxSelections: 3 },
+  tone: { options: TONE_OPTIONS },
+  npcDensity: { options: NPC_DENSITY_OPTIONS },
+  lethality: { options: LETHALITY_OPTIONS },
+  emotionalRegister: { options: EMOTIONAL_REGISTER_OPTIONS },
+  pillar: { options: ['combat', 'exploration', 'social'] as const },
 } as const;
 
 /**
  * Validate a party size value
  */
-export function isValidPartySize(value: number): boolean {
-  return (
-    Number.isInteger(value) &&
-    value >= DIAL_CONSTRAINTS.partySize.min &&
-    value <= DIAL_CONSTRAINTS.partySize.max
-  );
+export function isValidPartySize(value: number): value is PartySize {
+  return DIAL_CONSTRAINTS.partySize.options.includes(value as PartySize);
 }
 
 /**
@@ -304,12 +375,8 @@ export function isValidPartyTier(value: number): value is PartyTier {
 /**
  * Validate a scene count value
  */
-export function isValidSceneCount(value: number): boolean {
-  return (
-    Number.isInteger(value) &&
-    value >= DIAL_CONSTRAINTS.sceneCount.min &&
-    value <= DIAL_CONSTRAINTS.sceneCount.max
-  );
+export function isValidSceneCount(value: number): value is SceneCount {
+  return DIAL_CONSTRAINTS.sceneCount.options.includes(value as SceneCount);
 }
 
 /**
@@ -328,6 +395,62 @@ export function isValidThemes(themes: ThemeOption[]): boolean {
   }
   const validThemes = THEME_OPTIONS.map((t) => t.id);
   return themes.every((t) => validThemes.includes(t));
+}
+
+/**
+ * Validate a tone value
+ */
+export function isValidTone(value: string): value is ToneOption {
+  return TONE_OPTIONS.includes(value as ToneOption);
+}
+
+/**
+ * Validate an NPC density value
+ */
+export function isValidNPCDensity(value: string): value is NPCDensityOption {
+  return NPC_DENSITY_OPTIONS.includes(value as NPCDensityOption);
+}
+
+/**
+ * Validate a lethality value
+ */
+export function isValidLethality(value: string): value is LethalityOption {
+  return LETHALITY_OPTIONS.includes(value as LethalityOption);
+}
+
+/**
+ * Validate an emotional register value
+ */
+export function isValidEmotionalRegister(value: string): value is EmotionalRegisterOption {
+  return EMOTIONAL_REGISTER_OPTIONS.includes(value as EmotionalRegisterOption);
+}
+
+/**
+ * Validate a pillar value
+ */
+export function isValidPillar(value: string): value is Pillar {
+  return DIAL_CONSTRAINTS.pillar.options.includes(value as Pillar);
+}
+
+/**
+ * Validate a pillar balance configuration
+ */
+export function isValidPillarBalance(balance: PillarBalance): boolean {
+  if (!balance || typeof balance !== 'object') {
+    return false;
+  }
+
+  const { primary, secondary, tertiary } = balance;
+
+  // Check all pillars are valid
+  if (!isValidPillar(primary) || !isValidPillar(secondary) || !isValidPillar(tertiary)) {
+    return false;
+  }
+
+  // Check no duplicates
+  const pillars = [primary, secondary, tertiary];
+  const uniquePillars = new Set(pillars);
+  return uniquePillars.size === 3;
 }
 
 // =============================================================================

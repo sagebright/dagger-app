@@ -133,7 +133,7 @@ describe('persistence', () => {
           sceneCount: 5,
           sessionLength: '3-4 hours',
           tone: 'dark and gritty',
-          combatExplorationBalance: null,
+          pillarBalance: null,
           npcDensity: null,
           lethality: null,
           emotionalRegister: null,
@@ -182,7 +182,7 @@ describe('persistence', () => {
           sceneCount: 5,
           sessionLength: '4-5 hours',
           tone: 'dark',
-          combatExplorationBalance: 'exploration-heavy',
+          pillarBalance: 'exploration-heavy',
           npcDensity: null,
           lethality: null,
           emotionalRegister: null,
@@ -215,7 +215,7 @@ describe('persistence', () => {
       expect(dialsState.sceneCount).toBe(5);
       expect(dialsState.sessionLength).toBe('4-5 hours');
       expect(dialsState.tone).toBe('dark');
-      expect(dialsState.combatExplorationBalance).toBe('exploration-heavy');
+      expect(dialsState.pillarBalance).toBe('exploration-heavy');
       expect(dialsState.themes).toEqual(['sacrifice', 'identity']);
       expect(dialsState.confirmedDials.has('partySize')).toBe(true);
       expect(dialsState.confirmedDials.has('partyTier')).toBe(true);
@@ -230,7 +230,7 @@ describe('persistence', () => {
         phase_history: ['setup', 'dial-tuning', 'frame', 'outline'],
         created_at: '2025-01-01T00:00:00.000Z',
         updated_at: '2025-01-02T00:00:00.000Z',
-        dials: { partySize: 4, partyTier: 1, sceneCount: 4, sessionLength: '3-4 hours', tone: null, combatExplorationBalance: null, npcDensity: null, lethality: null, emotionalRegister: null, themes: [] },
+        dials: { partySize: 4, partyTier: 1, sceneCount: 4, sessionLength: '3-4 hours', tone: null, pillarBalance: null, npcDensity: null, lethality: null, emotionalRegister: null, themes: [] },
         confirmed_dials: [],
         selected_frame: { id: 1, name: 'Test Frame', description: 'A frame' },
         frame_confirmed: true,
@@ -301,7 +301,7 @@ describe('persistence', () => {
       cleanup();
 
       // Make a change
-      useDialsStore.getState().setDial('partySize', 6);
+      useDialsStore.getState().setDial('partySize', 5);
 
       // queueSave may have been called before cleanup, but let's verify cleanup was called
       // by checking the mock was reset and no new calls happen after cleanup

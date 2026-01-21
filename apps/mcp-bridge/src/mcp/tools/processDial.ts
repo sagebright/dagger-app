@@ -64,7 +64,7 @@ const DIAL_ORDER: DialId[] = [
   'sceneCount',
   'sessionLength',
   'tone',
-  'combatExplorationBalance',
+  'pillarBalance',
   'npcDensity',
   'lethality',
   'emotionalRegister',
@@ -208,7 +208,7 @@ export function interpretDialValue(
       return null;
     }
 
-    case 'combatExplorationBalance': {
+    case 'pillarBalance': {
       // Check for reference points
       for (const ref of COMBAT_BALANCE_REFERENCES) {
         if (lower.includes(ref.name.toLowerCase())) {
@@ -396,10 +396,10 @@ function generateInlineWidget(dialId: DialId): InlineWidget | null {
         references: TONE_REFERENCES,
       };
 
-    case 'combatExplorationBalance':
+    case 'pillarBalance':
       return {
         type: 'reference_cards',
-        dialId: 'combatExplorationBalance',
+        dialId: 'pillarBalance',
         references: COMBAT_BALANCE_REFERENCES,
       };
 
@@ -438,7 +438,7 @@ export function generateDialResponse(
     sceneCount: "How many scenes would you like in this adventure? (3-6 scenes)",
     sessionLength: "How long is your target session? (2-3 hours, 3-4 hours, or 4-5 hours)",
     tone: "What tone resonates with your adventure? You can reference media like 'like The Witcher' or describe it directly.",
-    combatExplorationBalance: "What's the balance between combat and exploration? Heavy combat, balanced, or roleplay-focused?",
+    pillarBalance: "What's the balance between combat and exploration? Heavy combat, balanced, or roleplay-focused?",
     npcDensity: "How many NPCs should populate your adventure? Sparse, moderate, or rich?",
     lethality: "How lethal should encounters be? Heroic (safe), tactical (moderate danger), or brutal?",
     emotionalRegister: "What emotional register should dominate? Thrilling, tense, heartfelt, whimsical?",
@@ -560,7 +560,7 @@ function formatDialName(dialId: DialId): string {
     sceneCount: 'Scene count',
     sessionLength: 'Session length',
     tone: 'Tone',
-    combatExplorationBalance: 'Combat/exploration',
+    pillarBalance: 'Combat/exploration',
     npcDensity: 'NPC density',
     lethality: 'Lethality',
     emotionalRegister: 'Emotional register',

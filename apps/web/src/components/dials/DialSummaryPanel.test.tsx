@@ -13,8 +13,8 @@ describe('DialSummaryPanel', () => {
     partyTier: 2,
     sceneCount: 4,
     sessionLength: '3-4 hours',
-    tone: 'Like The Witcher',
-    combatExplorationBalance: 'Balanced/middle',
+    tone: 'grim',
+    pillarBalance: { primary: 'combat', secondary: 'exploration', tertiary: 'social' },
     npcDensity: null,
     lethality: null,
     emotionalRegister: null,
@@ -72,7 +72,7 @@ describe('DialSummaryPanel', () => {
   it('renders all conceptual dials', () => {
     render(<DialSummaryPanel {...defaultProps} />);
     expect(screen.getByText('Tone')).toBeInTheDocument();
-    expect(screen.getByText('Combat/Exploration Balance')).toBeInTheDocument();
+    expect(screen.getByText('Pillar Balance')).toBeInTheDocument();
     expect(screen.getByText('NPC Density')).toBeInTheDocument();
     expect(screen.getByText('Lethality')).toBeInTheDocument();
     expect(screen.getByText('Emotional Register')).toBeInTheDocument();
@@ -120,7 +120,7 @@ describe('DialSummaryPanel', () => {
         'sceneCount',
         'sessionLength',
         'tone',
-        'combatExplorationBalance',
+        'pillarBalance',
         'npcDensity',
         'lethality',
         'emotionalRegister',
@@ -141,7 +141,7 @@ describe('DialSummaryPanel', () => {
         'sceneCount',
         'sessionLength',
         'tone',
-        'combatExplorationBalance',
+        'pillarBalance',
         'npcDensity',
         'lethality',
         'emotionalRegister',

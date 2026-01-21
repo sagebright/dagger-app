@@ -61,7 +61,7 @@ describe('dialsStore', () => {
       const state = useDialsStore.getState();
 
       expect(state.tone).toBe(DEFAULT_CONCEPTUAL_DIALS.tone);
-      expect(state.combatExplorationBalance).toBe(DEFAULT_CONCEPTUAL_DIALS.combatExplorationBalance);
+      expect(state.pillarBalance).toBe(DEFAULT_CONCEPTUAL_DIALS.pillarBalance);
       expect(state.npcDensity).toBe(DEFAULT_CONCEPTUAL_DIALS.npcDensity);
       expect(state.lethality).toBe(DEFAULT_CONCEPTUAL_DIALS.lethality);
       expect(state.emotionalRegister).toBe(DEFAULT_CONCEPTUAL_DIALS.emotionalRegister);
@@ -83,40 +83,36 @@ describe('dialsStore', () => {
         expect(useDialsStore.getState().partySize).toBe(3);
       });
 
-      it('accepts minimum party size', () => {
-        const result = storeAction(() =>
-          useDialsStore.getState().setDial('partySize', DIAL_CONSTRAINTS.partySize.min)
-        );
-
-        expect(result).toBe(true);
-        expect(useDialsStore.getState().partySize).toBe(2);
-      });
-
-      it('accepts maximum party size', () => {
-        const result = storeAction(() =>
-          useDialsStore.getState().setDial('partySize', DIAL_CONSTRAINTS.partySize.max)
-        );
-
-        expect(result).toBe(true);
-        expect(useDialsStore.getState().partySize).toBe(6);
+      it('accepts all valid party size options (2-5)', () => {
+        for (const size of DIAL_CONSTRAINTS.partySize.options) {
+          const result = storeAction(() => useDialsStore.getState().setDial('partySize', size));
+          expect(result).toBe(true);
+          expect(useDialsStore.getState().partySize).toBe(size);
+        }
       });
 
       it('rejects party size below minimum', () => {
-        const result = storeAction(() => useDialsStore.getState().setDial('partySize', 1));
+        const result = storeAction(() =>
+          useDialsStore.getState().setDial('partySize', 1 as never)
+        );
 
         expect(result).toBe(false);
         expect(useDialsStore.getState().partySize).toBe(DEFAULT_CONCRETE_DIALS.partySize);
       });
 
-      it('rejects party size above maximum', () => {
-        const result = storeAction(() => useDialsStore.getState().setDial('partySize', 7));
+      it('rejects party size above maximum (6 is no longer valid)', () => {
+        const result = storeAction(() =>
+          useDialsStore.getState().setDial('partySize', 6 as never)
+        );
 
         expect(result).toBe(false);
         expect(useDialsStore.getState().partySize).toBe(DEFAULT_CONCRETE_DIALS.partySize);
       });
 
-      it('rejects non-integer party size', () => {
-        const result = storeAction(() => useDialsStore.getState().setDial('partySize', 3.5));
+      it('rejects non-option party size values', () => {
+        const result = storeAction(() =>
+          useDialsStore.getState().setDial('partySize', 7 as never)
+        );
 
         expect(result).toBe(false);
       });
@@ -148,21 +144,26 @@ describe('dialsStore', () => {
     });
 
     describe('sceneCount validation', () => {
-      it('accepts valid scene count (3-6)', () => {
-        const result = storeAction(() => useDialsStore.getState().setDial('sceneCount', 5));
-
-        expect(result).toBe(true);
-        expect(useDialsStore.getState().sceneCount).toBe(5);
+      it('accepts all valid scene count options (3-6)', () => {
+        for (const count of DIAL_CONSTRAINTS.sceneCount.options) {
+          const result = storeAction(() => useDialsStore.getState().setDial('sceneCount', count));
+          expect(result).toBe(true);
+          expect(useDialsStore.getState().sceneCount).toBe(count);
+        }
       });
 
       it('rejects scene count below minimum', () => {
-        const result = storeAction(() => useDialsStore.getState().setDial('sceneCount', 2));
+        const result = storeAction(() =>
+          useDialsStore.getState().setDial('sceneCount', 2 as never)
+        );
 
         expect(result).toBe(false);
       });
 
       it('rejects scene count above maximum', () => {
-        const result = storeAction(() => useDialsStore.getState().setDial('sceneCount', 7));
+        const result = storeAction(() =>
+          useDialsStore.getState().setDial('sceneCount', 7 as never)
+        );
 
         expect(result).toBe(false);
       });
@@ -193,7 +194,7 @@ describe('dialsStore', () => {
       it('accepts null for conceptual dials', () => {
         const conceptualDials = [
           'tone',
-          'combatExplorationBalance',
+          'pillarBalance',
           'npcDensity',
           'lethality',
           'emotionalRegister',
@@ -205,13 +206,31 @@ describe('dialsStore', () => {
         }
       });
 
-      it('accepts string values for conceptual dials', () => {
+      it('accepts valid discrete tone options', () => {
         const result = storeAction(() =>
-          useDialsStore.getState().setDial('tone', 'like The Witcher')
+          useDialsStore.getState().setDial('tone', 'grim')
         );
 
         expect(result).toBe(true);
-        expect(useDialsStore.getState().tone).toBe('like The Witcher');
+        expect(useDialsStore.getState().tone).toBe('grim');
+      });
+
+      it('accepts valid pillarBalance object', () => {
+        const validBalance = { primary: 'combat' as const, secondary: 'exploration' as const, tertiary: 'social' as const };
+        const result = storeAction(() =>
+          useDialsStore.getState().setDial('pillarBalance', validBalance)
+        );
+
+        expect(result).toBe(true);
+        expect(useDialsStore.getState().pillarBalance).toEqual(validBalance);
+      });
+
+      it('rejects invalid tone values', () => {
+        const result = storeAction(() =>
+          useDialsStore.getState().setDial('tone', 'invalid-tone' as never)
+        );
+
+        expect(result).toBe(false);
       });
     });
 
@@ -279,8 +298,8 @@ describe('dialsStore', () => {
   describe('resetDials', () => {
     it('resets all dials to defaults', () => {
       storeAction(() => {
-        useDialsStore.getState().setDial('partySize', 6);
-        useDialsStore.getState().setDial('tone', 'gritty');
+        useDialsStore.getState().setDial('partySize', 5);
+        useDialsStore.getState().setDial('tone', 'grim');
         useDialsStore.getState().confirmDial('partySize');
       });
 
@@ -296,7 +315,7 @@ describe('dialsStore', () => {
   describe('resetDial', () => {
     it('resets a single dial to default and unconfirms it', () => {
       storeAction(() => {
-        useDialsStore.getState().setDial('partySize', 6);
+        useDialsStore.getState().setDial('partySize', 5);
         useDialsStore.getState().confirmDial('partySize');
       });
 
@@ -407,7 +426,7 @@ describe('dialsStore', () => {
           'sceneCount',
           'sessionLength',
           'tone',
-          'combatExplorationBalance',
+          'pillarBalance',
           'npcDensity',
           'lethality',
           'emotionalRegister',
@@ -487,7 +506,7 @@ describe('dialsStore', () => {
 
         expect(conceptual).toEqual({
           tone: null,
-          combatExplorationBalance: null,
+          pillarBalance: null,
           npcDensity: null,
           lethality: null,
           emotionalRegister: null,

@@ -22,6 +22,12 @@ export {
   type MultiSelectChipsProps,
   type ChipOption,
 } from './MultiSelectChips';
+export {
+  OptionButtonGroup,
+  type OptionButtonGroupProps,
+  type OptionButtonGroupOption,
+} from './OptionButtonGroup';
+export { ConfirmCheckmark, type ConfirmCheckmarkProps } from './ConfirmCheckmark';
 
 // Wrapper component
 export { DialWrapper, type DialWrapperProps } from './DialWrapper';

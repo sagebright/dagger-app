@@ -40,7 +40,7 @@ export const GENERATE_OUTLINE_SCHEMA: ToolSchema = {
           sessionLength: { type: 'string' },
           tone: { type: 'string' },
           themes: { type: 'array', items: { type: 'string' } },
-          combatExplorationBalance: { type: 'string' },
+          pillarBalance: { type: 'string' },
           lethality: { type: 'string' },
         },
       },
@@ -335,7 +335,7 @@ export async function generateOutlineHandler(
   input: GenerateOutlineInput
 ): Promise<GenerateOutlineOutput> {
   const { frame, dialsSummary, feedback, previousOutline } = input;
-  const { sceneCount, themes, combatExplorationBalance, tone } = dialsSummary;
+  const { sceneCount, themes, pillarBalance, tone } = dialsSummary;
 
   // Validate scene count
   if (sceneCount < 3 || sceneCount > 6) {
@@ -352,14 +352,14 @@ export async function generateOutlineHandler(
 
     // Parse feedback for specific changes
     if (lowerFeedback.includes('more combat')) {
-      dialsSummary.combatExplorationBalance = 'combat-heavy';
+      dialsSummary.pillarBalance = 'combat-heavy';
     } else if (lowerFeedback.includes('less combat') || lowerFeedback.includes('more exploration')) {
-      dialsSummary.combatExplorationBalance = 'exploration-heavy';
+      dialsSummary.pillarBalance = 'exploration-heavy';
     }
   }
 
   // Get scene type distribution
-  const sceneTypes = getSceneTypeDistribution(sceneCount, combatExplorationBalance);
+  const sceneTypes = getSceneTypeDistribution(sceneCount, pillarBalance);
   const frameThemes = frame.themes || [];
 
   // Generate scene briefs
