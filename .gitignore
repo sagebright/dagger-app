@@ -36,3 +36,6 @@ coverage/
 
 # Vite
 .vite/
+
+# Claude Code orchestration state
+.claude/orchestration/
