@@ -228,9 +228,12 @@ export interface DialConfirmEvent {
 }
 
 /**
- * Union of all client events
+ * Union of all client events (dial events only - outline events in content.ts)
  */
 export type ClientEvent = UserMessageEvent | DialUpdateEvent | DialConfirmEvent;
+
+// Note: OutlineClientEvent union is defined in content.ts and should be used separately
+// or combined with ClientEvent where outline events are needed
 
 // -----------------------------------------------------------------------------
 // Server Events (Bridge → Frontend)

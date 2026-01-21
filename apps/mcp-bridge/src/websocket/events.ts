@@ -16,7 +16,19 @@ import type {
   UserMessageEvent,
   DialUpdateEvent,
   DialConfirmEvent,
+  OutlineGenerateEvent,
+  OutlineFeedbackEvent,
+  OutlineConfirmEvent,
+  OutlineEditSceneEvent,
+  OutlineClientEvent,
+  OutlineServerEvent,
+  Outline,
+  SceneBrief,
 } from '@dagger-app/shared-types';
+
+// Combined event types that include both dial and outline events
+type AllClientEvents = ClientEvent | OutlineClientEvent;
+type AllServerEvents = ServerEvent | OutlineServerEvent;
 
 // =============================================================================
 // Event Handlers Configuration
@@ -29,6 +41,11 @@ export interface ClientEventHandlers {
   onUserMessage?: (payload: UserMessageEvent['payload']) => Promise<void> | void;
   onDialUpdate?: (payload: DialUpdateEvent['payload']) => Promise<void> | void;
   onDialConfirm?: (payload: DialConfirmEvent['payload']) => Promise<void> | void;
+  // Outline events
+  onOutlineGenerate?: (payload: OutlineGenerateEvent['payload']) => Promise<void> | void;
+  onOutlineFeedback?: (payload: OutlineFeedbackEvent['payload']) => Promise<void> | void;
+  onOutlineConfirm?: (payload: OutlineConfirmEvent['payload']) => Promise<void> | void;
+  onOutlineEditScene?: (payload: OutlineEditSceneEvent['payload']) => Promise<void> | void;
 }
 
 // =============================================================================
@@ -38,7 +55,7 @@ export interface ClientEventHandlers {
 /**
  * Send a typed event to a WebSocket client
  */
-export function emitToClient(ws: WebSocket, event: ServerEvent): void {
+export function emitToClient(ws: WebSocket, event: AllServerEvents): void {
   if (ws.readyState === 1) {
     // 1 = OPEN
     ws.send(JSON.stringify(event));
@@ -156,6 +173,80 @@ export function emitError(ws: WebSocket, code: string, message: string): void {
 }
 
 // =============================================================================
+// Outline Event Emitters
+// =============================================================================
+
+/**
+ * Emit outline draft start event
+ */
+export function emitOutlineDraftStart(ws: WebSocket, messageId: string): void {
+  emitToClient(ws, {
+    type: 'outline:draft_start',
+    payload: { messageId },
+  });
+}
+
+/**
+ * Emit outline draft streaming chunk
+ */
+export function emitOutlineDraftChunk(ws: WebSocket, messageId: string, chunk: string): void {
+  emitToClient(ws, {
+    type: 'outline:draft_chunk',
+    payload: { messageId, chunk },
+  });
+}
+
+/**
+ * Emit outline draft complete
+ */
+export function emitOutlineDraftComplete(
+  ws: WebSocket,
+  messageId: string,
+  isComplete: boolean,
+  outline?: Omit<Outline, 'id' | 'isConfirmed' | 'createdAt' | 'updatedAt'>,
+  followUpQuestion?: string
+): void {
+  const payload: {
+    messageId: string;
+    isComplete: boolean;
+    outline?: Omit<Outline, 'id' | 'isConfirmed' | 'createdAt' | 'updatedAt'>;
+    followUpQuestion?: string;
+  } = { messageId, isComplete };
+
+  if (outline) {
+    payload.outline = outline;
+  }
+  if (followUpQuestion) {
+    payload.followUpQuestion = followUpQuestion;
+  }
+
+  emitToClient(ws, {
+    type: 'outline:draft_complete',
+    payload,
+  });
+}
+
+/**
+ * Emit outline confirmed event
+ */
+export function emitOutlineConfirmed(ws: WebSocket, outline: Outline): void {
+  emitToClient(ws, {
+    type: 'outline:confirmed',
+    payload: { outline },
+  });
+}
+
+/**
+ * Emit scene brief updated event
+ */
+export function emitSceneBriefUpdated(ws: WebSocket, scene: SceneBrief): void {
+  emitToClient(ws, {
+    type: 'outline:scene_updated',
+    payload: { scene },
+  });
+}
+
+// =============================================================================
 // Client Event Handler
 // =============================================================================
 
@@ -164,7 +255,7 @@ export function emitError(ws: WebSocket, code: string, message: string): void {
  */
 export async function handleClientEvent(
   ws: WebSocket,
-  event: ClientEvent,
+  event: AllClientEvents,
   handlers: ClientEventHandlers
 ): Promise<void> {
   switch (event.type) {
@@ -186,6 +277,31 @@ export async function handleClientEvent(
       }
       break;
 
+    // Outline events
+    case 'outline:generate':
+      if (handlers.onOutlineGenerate) {
+        await handlers.onOutlineGenerate((event as OutlineGenerateEvent).payload);
+      }
+      break;
+
+    case 'outline:feedback':
+      if (handlers.onOutlineFeedback) {
+        await handlers.onOutlineFeedback((event as OutlineFeedbackEvent).payload);
+      }
+      break;
+
+    case 'outline:confirm':
+      if (handlers.onOutlineConfirm) {
+        await handlers.onOutlineConfirm((event as OutlineConfirmEvent).payload);
+      }
+      break;
+
+    case 'outline:edit_scene':
+      if (handlers.onOutlineEditScene) {
+        await handlers.onOutlineEditScene((event as OutlineEditSceneEvent).payload);
+      }
+      break;
+
     default:
       emitError(ws, 'UNKNOWN_EVENT', `Unknown event type: ${(event as { type: string }).type}`);
   }
@@ -194,7 +310,7 @@ export async function handleClientEvent(
 /**
  * Parse and validate incoming WebSocket message as ClientEvent
  */
-export function parseClientEvent(data: Buffer | string): ClientEvent | null {
+export function parseClientEvent(data: Buffer | string): AllClientEvents | null {
   try {
     const parsed = JSON.parse(data.toString());
 
@@ -204,12 +320,21 @@ export function parseClientEvent(data: Buffer | string): ClientEvent | null {
     }
 
     // Validate known event types
-    const validTypes = ['chat:user_message', 'dial:update', 'dial:confirm'];
+    const validTypes = [
+      'chat:user_message',
+      'dial:update',
+      'dial:confirm',
+      // Outline events
+      'outline:generate',
+      'outline:feedback',
+      'outline:confirm',
+      'outline:edit_scene',
+    ];
     if (!validTypes.includes(parsed.type)) {
       return null;
     }
 
-    return parsed as ClientEvent;
+    return parsed as AllClientEvents;
   } catch {
     return null;
   }

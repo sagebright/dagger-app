@@ -11,10 +11,13 @@ import type {
   GetFramesResponse,
   GenerateFrameRequest,
   GenerateFrameResponse,
+  GenerateOutlineRequest,
+  GenerateOutlineResponse,
   DaggerheartFrame,
 } from '@dagger-app/shared-types';
 import { getFrames, getFrameByName } from '../services/daggerheart-queries.js';
 import { generateFrameHandler } from '../mcp/tools/generateFrame.js';
+import { generateOutlineHandler } from '../mcp/tools/generateOutline.js';
 
 const router: RouterType = Router();
 
@@ -169,6 +172,83 @@ router.post('/frame/generate', async (req: Request, res: Response) => {
     const errorResponse: ErrorResponse = {
       code: 'PROCESSING_ERROR',
       message: 'Failed to generate frame',
+    };
+    res.status(500).json(errorResponse);
+  }
+});
+
+/**
+ * POST /content/outline/generate
+ *
+ * Generate adventure outline with scene briefs.
+ */
+router.post('/outline/generate', async (req: Request, res: Response) => {
+  const body = req.body as Partial<GenerateOutlineRequest>;
+
+  // Validate request
+  if (!body.frame || typeof body.frame !== 'object') {
+    const error: ErrorResponse = {
+      code: 'INVALID_REQUEST',
+      message: 'frame is required',
+    };
+    res.status(400).json(error);
+    return;
+  }
+
+  if (!body.dialsSummary || typeof body.dialsSummary !== 'object') {
+    const error: ErrorResponse = {
+      code: 'INVALID_REQUEST',
+      message: 'dialsSummary is required',
+    };
+    res.status(400).json(error);
+    return;
+  }
+
+  // Validate dialsSummary has required fields
+  const { partySize, partyTier, sceneCount } = body.dialsSummary;
+  if (typeof partySize !== 'number' || typeof partyTier !== 'number' || typeof sceneCount !== 'number') {
+    const error: ErrorResponse = {
+      code: 'INVALID_REQUEST',
+      message: 'dialsSummary must include partySize, partyTier, and sceneCount',
+    };
+    res.status(400).json(error);
+    return;
+  }
+
+  // Validate scene count range
+  if (sceneCount < 3 || sceneCount > 6) {
+    const error: ErrorResponse = {
+      code: 'INVALID_REQUEST',
+      message: 'sceneCount must be between 3 and 6',
+    };
+    res.status(400).json(error);
+    return;
+  }
+
+  try {
+    // Process through the outline generation handler
+    const result = await generateOutlineHandler({
+      frame: body.frame,
+      dialsSummary: body.dialsSummary,
+      feedback: body.feedback,
+      previousOutline: body.previousOutline,
+    });
+
+    // Build response
+    const response: GenerateOutlineResponse = {
+      messageId: uuidv4(),
+      content: result.assistantMessage,
+      outline: result.outline,
+      isComplete: result.isComplete,
+      followUpQuestion: result.followUpQuestion,
+    };
+
+    res.json(response);
+  } catch (error) {
+    console.error('Outline generation error:', error);
+    const errorResponse: ErrorResponse = {
+      code: 'PROCESSING_ERROR',
+      message: 'Failed to generate outline',
     };
     res.status(500).json(errorResponse);
   }

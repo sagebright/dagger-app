@@ -281,4 +281,147 @@ describe('Content Route', () => {
       }
     });
   });
+
+  describe('POST /content/outline/generate', () => {
+    const mockFrame = {
+      id: 'frame-1',
+      name: 'The Dark Forest',
+      description: 'A mysterious forest full of danger and ancient secrets',
+      themes: ['mystery', 'horror'],
+      typical_adversaries: ['beasts', 'undead'],
+    };
+
+    const mockDialsSummary = {
+      partySize: 4,
+      partyTier: 2,
+      sceneCount: 4,
+      sessionLength: 'standard',
+      tone: 'dramatic',
+      themes: ['mystery'],
+      combatExplorationBalance: 'balanced',
+      lethality: 'standard',
+    };
+
+    it('should generate an outline with scene briefs', async () => {
+      const response = await request(app)
+        .post('/content/outline/generate')
+        .send({
+          frame: mockFrame,
+          dialsSummary: mockDialsSummary,
+        });
+
+      expect(response.status).toBe(200);
+      expect(response.body).toHaveProperty('messageId');
+      expect(response.body).toHaveProperty('content');
+      expect(response.body).toHaveProperty('isComplete', true);
+      expect(response.body).toHaveProperty('outline');
+      expect(response.body.outline).toHaveProperty('title');
+      expect(response.body.outline).toHaveProperty('summary');
+      expect(response.body.outline).toHaveProperty('scenes');
+      expect(response.body.outline.scenes).toHaveLength(4);
+    });
+
+    it('should respect scene count from dials', async () => {
+      const response = await request(app)
+        .post('/content/outline/generate')
+        .send({
+          frame: mockFrame,
+          dialsSummary: { ...mockDialsSummary, sceneCount: 6 },
+        });
+
+      expect(response.status).toBe(200);
+      expect(response.body.outline.scenes).toHaveLength(6);
+    });
+
+    it('should return 400 for missing frame', async () => {
+      const response = await request(app)
+        .post('/content/outline/generate')
+        .send({
+          dialsSummary: mockDialsSummary,
+        });
+
+      expect(response.status).toBe(400);
+      expect(response.body).toHaveProperty('code', 'INVALID_REQUEST');
+      expect(response.body.message).toContain('frame');
+    });
+
+    it('should return 400 for missing dialsSummary', async () => {
+      const response = await request(app)
+        .post('/content/outline/generate')
+        .send({
+          frame: mockFrame,
+        });
+
+      expect(response.status).toBe(400);
+      expect(response.body).toHaveProperty('code', 'INVALID_REQUEST');
+      expect(response.body.message).toContain('dialsSummary');
+    });
+
+    it('should return 400 for invalid scene count', async () => {
+      const response = await request(app)
+        .post('/content/outline/generate')
+        .send({
+          frame: mockFrame,
+          dialsSummary: { ...mockDialsSummary, sceneCount: 10 },
+        });
+
+      expect(response.status).toBe(400);
+      expect(response.body).toHaveProperty('code', 'INVALID_REQUEST');
+      expect(response.body.message).toContain('sceneCount');
+    });
+
+    it('should accept feedback for regeneration', async () => {
+      const response = await request(app)
+        .post('/content/outline/generate')
+        .send({
+          frame: mockFrame,
+          dialsSummary: mockDialsSummary,
+          feedback: 'Add more combat scenes',
+          previousOutline: {
+            id: 'old-outline',
+            title: 'Old Title',
+            summary: 'Old summary',
+            scenes: [],
+            isConfirmed: false,
+            createdAt: '2024-01-01T00:00:00.000Z',
+            updatedAt: '2024-01-01T00:00:00.000Z',
+          },
+        });
+
+      expect(response.status).toBe(200);
+      expect(response.body).toHaveProperty('outline');
+      expect(response.body.content).toContain('revised');
+    });
+
+    it('should include scene types in generated scenes', async () => {
+      const response = await request(app)
+        .post('/content/outline/generate')
+        .send({
+          frame: mockFrame,
+          dialsSummary: mockDialsSummary,
+        });
+
+      expect(response.status).toBe(200);
+      response.body.outline.scenes.forEach((scene: { sceneType?: string }) => {
+        expect(scene).toHaveProperty('sceneType');
+        expect(['combat', 'exploration', 'social', 'puzzle', 'revelation', 'mixed']).toContain(scene.sceneType);
+      });
+    });
+
+    it('should include key elements in each scene', async () => {
+      const response = await request(app)
+        .post('/content/outline/generate')
+        .send({
+          frame: mockFrame,
+          dialsSummary: mockDialsSummary,
+        });
+
+      expect(response.status).toBe(200);
+      response.body.outline.scenes.forEach((scene: { keyElements?: string[] }) => {
+        expect(scene).toHaveProperty('keyElements');
+        expect(Array.isArray(scene.keyElements)).toBe(true);
+        expect(scene.keyElements?.length).toBeGreaterThan(0);
+      });
+    });
+  });
 });

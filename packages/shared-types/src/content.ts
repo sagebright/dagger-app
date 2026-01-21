@@ -245,3 +245,285 @@ export interface GenerateFrameResponse {
   isComplete: boolean;
   followUpQuestion?: string;
 }
+
+// =============================================================================
+// Outline Types (Phase 3.2)
+// =============================================================================
+
+/**
+ * A single scene brief in the adventure outline
+ */
+export interface SceneBrief {
+  /** Unique identifier for this scene brief */
+  id: string;
+  /** Scene number/order (1-indexed) */
+  sceneNumber: number;
+  /** Compelling scene title */
+  title: string;
+  /** Brief description of what happens in this scene */
+  description: string;
+  /** Key elements/moments in the scene */
+  keyElements: string[];
+  /** Suggested location/environment */
+  location?: string;
+  /** Suggested adversaries or NPCs */
+  characters?: string[];
+  /** Scene type: combat, exploration, social, puzzle, etc */
+  sceneType?: 'combat' | 'exploration' | 'social' | 'puzzle' | 'revelation' | 'mixed';
+}
+
+/**
+ * The complete adventure outline
+ */
+export interface Outline {
+  /** Unique identifier for this outline */
+  id: string;
+  /** Adventure title */
+  title: string;
+  /** Brief summary of the entire adventure arc */
+  summary: string;
+  /** The scene briefs (3-6 scenes based on sceneCount dial) */
+  scenes: SceneBrief[];
+  /** Whether the outline is a draft or confirmed */
+  isConfirmed: boolean;
+  /** Timestamp when outline was created */
+  createdAt: string;
+  /** Timestamp when outline was last updated */
+  updatedAt: string;
+}
+
+/**
+ * Type guard to check if outline is complete (has all scenes)
+ */
+export function isOutlineComplete(outline: Outline, expectedSceneCount: number): boolean {
+  return outline.scenes.length === expectedSceneCount && outline.scenes.every((s) => s.title && s.description);
+}
+
+// =============================================================================
+// MCP Tool: generate_outline_draft
+// =============================================================================
+
+/**
+ * Input for the generate_outline_draft MCP tool
+ */
+export interface GenerateOutlineInput {
+  /** The selected frame for context */
+  frame: SelectedFrame;
+  /** Current dial settings */
+  dialsSummary: {
+    partySize: number;
+    partyTier: 1 | 2 | 3 | 4;
+    sceneCount: number;
+    sessionLength: string;
+    tone: string | null;
+    themes: string[];
+    combatExplorationBalance: string | null;
+    lethality: string | null;
+  };
+  /** Optional user feedback for regeneration */
+  feedback?: string;
+  /** Previous outline (if regenerating) */
+  previousOutline?: Outline;
+  /** Conversation history for context */
+  conversationHistory?: Array<{ role: 'user' | 'assistant'; content: string }>;
+}
+
+/**
+ * Output from the generate_outline_draft MCP tool
+ */
+export interface GenerateOutlineOutput {
+  /** The assistant's response message */
+  assistantMessage: string;
+  /** The generated outline (if successful) */
+  outline?: Omit<Outline, 'id' | 'isConfirmed' | 'createdAt' | 'updatedAt'>;
+  /** Whether the outline is ready for confirmation */
+  isComplete: boolean;
+  /** Follow-up questions if more info needed */
+  followUpQuestion?: string;
+}
+
+// =============================================================================
+// WebSocket Events for Outline
+// =============================================================================
+
+/**
+ * WebSocket event types for outline generation (client → server)
+ */
+export type OutlineClientEventType =
+  | 'outline:generate'
+  | 'outline:feedback'
+  | 'outline:confirm'
+  | 'outline:edit_scene';
+
+/**
+ * WebSocket event types for outline generation (server → client)
+ */
+export type OutlineServerEventType =
+  | 'outline:draft_start'
+  | 'outline:draft_chunk'
+  | 'outline:draft_complete'
+  | 'outline:confirmed'
+  | 'outline:error'
+  | 'outline:scene_updated';
+
+// -----------------------------------------------------------------------------
+// Client Events (Frontend → Bridge)
+// -----------------------------------------------------------------------------
+
+/**
+ * User requests outline generation
+ */
+export interface OutlineGenerateEvent {
+  type: 'outline:generate';
+  payload: {
+    frame: SelectedFrame;
+    dialsSummary: GenerateOutlineInput['dialsSummary'];
+  };
+}
+
+/**
+ * User provides feedback on the outline
+ */
+export interface OutlineFeedbackEvent {
+  type: 'outline:feedback';
+  payload: {
+    feedback: string;
+    currentOutline: Outline;
+  };
+}
+
+/**
+ * User confirms the outline
+ */
+export interface OutlineConfirmEvent {
+  type: 'outline:confirm';
+  payload: {
+    outline: Outline;
+  };
+}
+
+/**
+ * User edits a specific scene brief
+ */
+export interface OutlineEditSceneEvent {
+  type: 'outline:edit_scene';
+  payload: {
+    sceneId: string;
+    updates: Partial<Omit<SceneBrief, 'id' | 'sceneNumber'>>;
+  };
+}
+
+/**
+ * Union of all outline client events
+ */
+export type OutlineClientEvent =
+  | OutlineGenerateEvent
+  | OutlineFeedbackEvent
+  | OutlineConfirmEvent
+  | OutlineEditSceneEvent;
+
+// -----------------------------------------------------------------------------
+// Server Events (Bridge → Frontend)
+// -----------------------------------------------------------------------------
+
+/**
+ * Outline generation starting
+ */
+export interface OutlineDraftStartEvent {
+  type: 'outline:draft_start';
+  payload: {
+    messageId: string;
+  };
+}
+
+/**
+ * Streaming chunk of outline response
+ */
+export interface OutlineDraftChunkEvent {
+  type: 'outline:draft_chunk';
+  payload: {
+    messageId: string;
+    chunk: string;
+  };
+}
+
+/**
+ * Outline generation complete
+ */
+export interface OutlineDraftCompleteEvent {
+  type: 'outline:draft_complete';
+  payload: {
+    messageId: string;
+    outline?: Omit<Outline, 'id' | 'isConfirmed' | 'createdAt' | 'updatedAt'>;
+    isComplete: boolean;
+    followUpQuestion?: string;
+  };
+}
+
+/**
+ * Outline confirmed
+ */
+export interface OutlineConfirmedEvent {
+  type: 'outline:confirmed';
+  payload: {
+    outline: Outline;
+  };
+}
+
+/**
+ * Outline error
+ */
+export interface OutlineErrorEvent {
+  type: 'outline:error';
+  payload: {
+    code: string;
+    message: string;
+  };
+}
+
+/**
+ * Scene brief updated
+ */
+export interface OutlineSceneUpdatedEvent {
+  type: 'outline:scene_updated';
+  payload: {
+    scene: SceneBrief;
+  };
+}
+
+/**
+ * Union of all outline server events
+ */
+export type OutlineServerEvent =
+  | OutlineDraftStartEvent
+  | OutlineDraftChunkEvent
+  | OutlineDraftCompleteEvent
+  | OutlineConfirmedEvent
+  | OutlineErrorEvent
+  | OutlineSceneUpdatedEvent;
+
+// =============================================================================
+// Outline API Types
+// =============================================================================
+
+/**
+ * Request to generate an outline
+ */
+export interface GenerateOutlineRequest {
+  frame: SelectedFrame;
+  dialsSummary: GenerateOutlineInput['dialsSummary'];
+  feedback?: string;
+  previousOutline?: Outline;
+  conversationHistory?: Array<{ role: 'user' | 'assistant'; content: string }>;
+}
+
+/**
+ * Response from outline generation
+ */
+export interface GenerateOutlineResponse {
+  messageId: string;
+  content: string;
+  outline?: Omit<Outline, 'id' | 'isConfirmed' | 'createdAt' | 'updatedAt'>;
+  isComplete: boolean;
+  followUpQuestion?: string;
+}

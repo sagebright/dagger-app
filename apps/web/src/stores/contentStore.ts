@@ -3,15 +3,21 @@
  *
  * Manages content generation state for Phase 3+ including:
  * - Frame selection/creation
- * - (Future: Outline generation)
+ * - Outline generation with feedback loop
  * - (Future: Scene drafts)
  * - (Future: NPC compilation)
  */
 
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
-import type { DaggerheartFrame, SelectedFrame, FrameDraft } from '@dagger-app/shared-types';
-import { isCustomFrame } from '@dagger-app/shared-types';
+import type {
+  DaggerheartFrame,
+  SelectedFrame,
+  FrameDraft,
+  Outline,
+  SceneBrief,
+} from '@dagger-app/shared-types';
+import { isCustomFrame, isOutlineComplete } from '@dagger-app/shared-types';
 
 // =============================================================================
 // Types
@@ -30,6 +36,16 @@ export interface ContentState {
   /** Error message if frame loading failed */
   framesError: string | null;
 
+  // Outline state
+  /** Current outline draft or confirmed outline */
+  currentOutline: Outline | null;
+  /** Loading state for outline generation */
+  outlineLoading: boolean;
+  /** Error message if outline generation failed */
+  outlineError: string | null;
+  /** Whether the outline has been confirmed */
+  outlineConfirmed: boolean;
+
   // Actions - Frame
   setAvailableFrames: (frames: DaggerheartFrame[]) => void;
   selectFrame: (frame: SelectedFrame) => void;
@@ -38,6 +54,15 @@ export interface ContentState {
   clearFrame: () => void;
   setFramesLoading: (loading: boolean) => void;
   setFramesError: (error: string | null) => void;
+
+  // Actions - Outline
+  setOutline: (outline: Omit<Outline, 'id' | 'isConfirmed' | 'createdAt' | 'updatedAt'>) => void;
+  updateOutline: (outline: Outline) => void;
+  updateSceneBrief: (sceneId: string, updates: Partial<Omit<SceneBrief, 'id' | 'sceneNumber'>>) => void;
+  confirmOutline: () => void;
+  clearOutline: () => void;
+  setOutlineLoading: (loading: boolean) => void;
+  setOutlineError: (error: string | null) => void;
 
   // Reset
   resetContent: () => void;
@@ -53,6 +78,10 @@ const initialContentState = {
   frameConfirmed: false,
   framesLoading: false,
   framesError: null as string | null,
+  currentOutline: null as Outline | null,
+  outlineLoading: false,
+  outlineError: null as string | null,
+  outlineConfirmed: false,
 };
 
 // =============================================================================
@@ -122,6 +151,111 @@ export const useContentStore = create<ContentState>()(
           set({ framesError: error, framesLoading: false }, false, 'setFramesError');
         },
 
+        // =====================================================================
+        // Outline Actions
+        // =====================================================================
+
+        /**
+         * Set a new outline from generated draft
+         */
+        setOutline: (outline: Omit<Outline, 'id' | 'isConfirmed' | 'createdAt' | 'updatedAt'>) => {
+          const now = new Date().toISOString();
+          const fullOutline: Outline = {
+            ...outline,
+            id: `outline-${Date.now()}`,
+            isConfirmed: false,
+            createdAt: now,
+            updatedAt: now,
+            scenes: outline.scenes.map((scene, index) => ({
+              ...scene,
+              id: scene.id || `scene-${Date.now()}-${index}`,
+            })),
+          };
+          set(
+            { currentOutline: fullOutline, outlineConfirmed: false, outlineError: null },
+            false,
+            'setOutline'
+          );
+        },
+
+        /**
+         * Update an existing outline
+         */
+        updateOutline: (outline: Outline) => {
+          const updatedOutline: Outline = {
+            ...outline,
+            updatedAt: new Date().toISOString(),
+          };
+          set({ currentOutline: updatedOutline }, false, 'updateOutline');
+        },
+
+        /**
+         * Update a specific scene brief
+         */
+        updateSceneBrief: (
+          sceneId: string,
+          updates: Partial<Omit<SceneBrief, 'id' | 'sceneNumber'>>
+        ) => {
+          const { currentOutline } = get();
+          if (!currentOutline) return;
+
+          const updatedScenes = currentOutline.scenes.map((scene) =>
+            scene.id === sceneId ? { ...scene, ...updates } : scene
+          );
+
+          const updatedOutline: Outline = {
+            ...currentOutline,
+            scenes: updatedScenes,
+            updatedAt: new Date().toISOString(),
+          };
+
+          set({ currentOutline: updatedOutline }, false, 'updateSceneBrief');
+        },
+
+        /**
+         * Confirm the current outline
+         */
+        confirmOutline: () => {
+          const { currentOutline } = get();
+          if (currentOutline) {
+            const confirmedOutline: Outline = {
+              ...currentOutline,
+              isConfirmed: true,
+              updatedAt: new Date().toISOString(),
+            };
+            set(
+              { currentOutline: confirmedOutline, outlineConfirmed: true },
+              false,
+              'confirmOutline'
+            );
+          }
+        },
+
+        /**
+         * Clear the current outline
+         */
+        clearOutline: () => {
+          set(
+            { currentOutline: null, outlineConfirmed: false, outlineError: null },
+            false,
+            'clearOutline'
+          );
+        },
+
+        /**
+         * Set outline loading state
+         */
+        setOutlineLoading: (loading: boolean) => {
+          set({ outlineLoading: loading }, false, 'setOutlineLoading');
+        },
+
+        /**
+         * Set outline error state
+         */
+        setOutlineError: (error: string | null) => {
+          set({ outlineError: error, outlineLoading: false }, false, 'setOutlineError');
+        },
+
         /**
          * Reset all content state
          */
@@ -131,10 +265,12 @@ export const useContentStore = create<ContentState>()(
       }),
       {
         name: 'dagger-content-storage',
-        // Only persist selected frame and confirmation, not available frames
+        // Persist frame and outline state (not available frames from DB)
         partialize: (state) => ({
           selectedFrame: state.selectedFrame,
           frameConfirmed: state.frameConfirmed,
+          currentOutline: state.currentOutline,
+          outlineConfirmed: state.outlineConfirmed,
         }),
       }
     ),
@@ -193,3 +329,86 @@ export const selectFramesStatus = (
   error: state.framesError,
   hasFrames: state.availableFrames.length > 0,
 });
+
+// =============================================================================
+// Outline Selectors
+// =============================================================================
+
+/**
+ * Check if an outline exists
+ */
+export const selectHasOutline = (state: ContentState): boolean =>
+  state.currentOutline !== null;
+
+/**
+ * Check if the outline is confirmed
+ */
+export const selectIsOutlineConfirmed = (state: ContentState): boolean =>
+  state.outlineConfirmed;
+
+/**
+ * Get outline title (or null)
+ */
+export const selectOutlineTitle = (state: ContentState): string | null =>
+  state.currentOutline?.title ?? null;
+
+/**
+ * Get scene count from outline
+ */
+export const selectSceneCount = (state: ContentState): number =>
+  state.currentOutline?.scenes.length ?? 0;
+
+/**
+ * Get all scene briefs
+ */
+export const selectSceneBriefs = (state: ContentState): SceneBrief[] =>
+  state.currentOutline?.scenes ?? [];
+
+/**
+ * Get a specific scene brief by ID
+ */
+export const selectSceneBriefById = (
+  state: ContentState,
+  sceneId: string
+): SceneBrief | undefined =>
+  state.currentOutline?.scenes.find((s) => s.id === sceneId);
+
+/**
+ * Check if outline is complete (has all expected scenes)
+ */
+export const selectIsOutlineComplete = (
+  state: ContentState,
+  expectedSceneCount: number
+): boolean =>
+  state.currentOutline !== null && isOutlineComplete(state.currentOutline, expectedSceneCount);
+
+/**
+ * Check if user can proceed to scene editor
+ */
+export const selectCanProceedToScenes = (state: ContentState): boolean =>
+  state.currentOutline !== null && state.outlineConfirmed;
+
+/**
+ * Get outline loading status
+ */
+export const selectOutlineStatus = (
+  state: ContentState
+): { loading: boolean; error: string | null; hasOutline: boolean } => ({
+  loading: state.outlineLoading,
+  error: state.outlineError,
+  hasOutline: state.currentOutline !== null,
+});
+
+/**
+ * Get outline summary for display
+ */
+export const selectOutlineSummary = (
+  state: ContentState
+): { title: string; sceneCount: number; isConfirmed: boolean } | null => {
+  if (!state.currentOutline) return null;
+  return {
+    title: state.currentOutline.title,
+    sceneCount: state.currentOutline.scenes.length,
+    isConfirmed: state.outlineConfirmed,
+  };
+};

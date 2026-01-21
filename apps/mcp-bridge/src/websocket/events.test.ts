@@ -13,13 +13,23 @@ import {
   emitDialUpdated,
   emitDialSuggestion,
   emitError,
+  emitOutlineDraftStart,
+  emitOutlineDraftChunk,
+  emitOutlineDraftComplete,
+  emitOutlineConfirmed,
+  emitSceneBriefUpdated,
+  parseClientEvent,
 } from './events.js';
 import type {
   ClientEvent,
+  OutlineClientEvent,
   ServerEvent,
   DialUpdate,
   InlineWidget,
 } from '@dagger-app/shared-types';
+
+// Combined type for tests
+type AllClientEvents = ClientEvent | OutlineClientEvent;
 
 // Mock WebSocket
 function createMockWebSocket(): WebSocket {
@@ -242,6 +252,199 @@ describe('WebSocket Events', () => {
       expect(mockWs.send).toHaveBeenCalledWith(
         expect.stringContaining('UNKNOWN_EVENT')
       );
+    });
+
+    it('should handle outline generate event', async () => {
+      const event = {
+        type: 'outline:generate' as const,
+        payload: {
+          frame: {
+            id: 'f1',
+            name: 'Test',
+            description: 'Test frame',
+            themes: [],
+            typical_adversaries: [],
+            lore: null,
+            embedding: null,
+            source_book: null,
+            created_at: null,
+          },
+          dialsSummary: {
+            partySize: 4,
+            partyTier: 2 as const,
+            sceneCount: 4,
+            sessionLength: 'standard',
+            tone: null,
+            themes: [],
+            combatExplorationBalance: null,
+            lethality: null,
+          },
+        },
+      };
+      const handler = vi.fn();
+      await handleClientEvent(mockWs, event, { onOutlineGenerate: handler });
+      expect(handler).toHaveBeenCalledWith(event.payload);
+    });
+
+    it('should handle outline feedback event', async () => {
+      const event = {
+        type: 'outline:feedback',
+        payload: {
+          feedback: 'More combat',
+          currentOutline: { id: 'o1', title: 'Test', summary: '', scenes: [], isConfirmed: false, createdAt: '', updatedAt: '' },
+        },
+      } as AllClientEvents;
+      const handler = vi.fn();
+      await handleClientEvent(mockWs, event, { onOutlineFeedback: handler });
+      expect(handler).toHaveBeenCalledWith(event.payload);
+    });
+
+    it('should handle outline confirm event', async () => {
+      const event = {
+        type: 'outline:confirm',
+        payload: {
+          outline: { id: 'o1', title: 'Test', summary: '', scenes: [], isConfirmed: true, createdAt: '', updatedAt: '' },
+        },
+      } as AllClientEvents;
+      const handler = vi.fn();
+      await handleClientEvent(mockWs, event, { onOutlineConfirm: handler });
+      expect(handler).toHaveBeenCalledWith(event.payload);
+    });
+
+    it('should handle outline edit scene event', async () => {
+      const event = {
+        type: 'outline:edit_scene',
+        payload: {
+          sceneId: 's1',
+          updates: { title: 'New Title' },
+        },
+      } as AllClientEvents;
+      const handler = vi.fn();
+      await handleClientEvent(mockWs, event, { onOutlineEditScene: handler });
+      expect(handler).toHaveBeenCalledWith(event.payload);
+    });
+  });
+
+  describe('Outline Event Emitters', () => {
+    it('should emit outline draft start', () => {
+      emitOutlineDraftStart(mockWs, 'msg-456');
+      expect(mockWs.send).toHaveBeenCalledWith(
+        JSON.stringify({
+          type: 'outline:draft_start',
+          payload: { messageId: 'msg-456' },
+        })
+      );
+    });
+
+    it('should emit outline draft chunk', () => {
+      emitOutlineDraftChunk(mockWs, 'msg-456', 'Scene 1...');
+      expect(mockWs.send).toHaveBeenCalledWith(
+        JSON.stringify({
+          type: 'outline:draft_chunk',
+          payload: { messageId: 'msg-456', chunk: 'Scene 1...' },
+        })
+      );
+    });
+
+    it('should emit outline draft complete without outline', () => {
+      emitOutlineDraftComplete(mockWs, 'msg-456', false, undefined, 'Need more detail');
+      expect(mockWs.send).toHaveBeenCalledWith(
+        JSON.stringify({
+          type: 'outline:draft_complete',
+          payload: { messageId: 'msg-456', isComplete: false, followUpQuestion: 'Need more detail' },
+        })
+      );
+    });
+
+    it('should emit outline draft complete with outline', () => {
+      const outline = {
+        title: 'Test Adventure',
+        summary: 'A test',
+        scenes: [{ id: 's1', sceneNumber: 1, title: 'Scene 1', description: 'Test', keyElements: [] }],
+      };
+      emitOutlineDraftComplete(mockWs, 'msg-456', true, outline);
+      expect(mockWs.send).toHaveBeenCalledWith(
+        JSON.stringify({
+          type: 'outline:draft_complete',
+          payload: { messageId: 'msg-456', isComplete: true, outline },
+        })
+      );
+    });
+
+    it('should emit outline confirmed', () => {
+      const outline = {
+        id: 'o1',
+        title: 'Test',
+        summary: 'Test summary',
+        scenes: [],
+        isConfirmed: true,
+        createdAt: '2024-01-01',
+        updatedAt: '2024-01-01',
+      };
+      emitOutlineConfirmed(mockWs, outline);
+      expect(mockWs.send).toHaveBeenCalledWith(
+        JSON.stringify({
+          type: 'outline:confirmed',
+          payload: { outline },
+        })
+      );
+    });
+
+    it('should emit scene brief updated', () => {
+      const scene = {
+        id: 's1',
+        sceneNumber: 1,
+        title: 'Updated Scene',
+        description: 'Test',
+        keyElements: ['test'],
+        sceneType: 'combat' as const,
+      };
+      emitSceneBriefUpdated(mockWs, scene);
+      expect(mockWs.send).toHaveBeenCalledWith(
+        JSON.stringify({
+          type: 'outline:scene_updated',
+          payload: { scene },
+        })
+      );
+    });
+  });
+
+  describe('parseClientEvent', () => {
+    it('should parse valid chat event', () => {
+      const data = JSON.stringify({
+        type: 'chat:user_message',
+        payload: { content: 'test' },
+      });
+      const result = parseClientEvent(data);
+      expect(result).not.toBeNull();
+      expect(result?.type).toBe('chat:user_message');
+    });
+
+    it('should parse valid outline event', () => {
+      const data = JSON.stringify({
+        type: 'outline:generate',
+        payload: { frame: {}, dialsSummary: {} },
+      });
+      const result = parseClientEvent(data);
+      expect(result).not.toBeNull();
+      expect(result?.type).toBe('outline:generate');
+    });
+
+    it('should return null for invalid JSON', () => {
+      const result = parseClientEvent('not json');
+      expect(result).toBeNull();
+    });
+
+    it('should return null for missing type', () => {
+      const data = JSON.stringify({ payload: {} });
+      const result = parseClientEvent(data);
+      expect(result).toBeNull();
+    });
+
+    it('should return null for unknown event type', () => {
+      const data = JSON.stringify({ type: 'unknown:event', payload: {} });
+      const result = parseClientEvent(data);
+      expect(result).toBeNull();
     });
   });
 });
