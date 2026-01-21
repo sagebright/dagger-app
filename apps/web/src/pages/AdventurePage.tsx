@@ -7,7 +7,7 @@
  *
  * Phases:
  * - setup: Adventure name input
- * - dial-tuning: ChatContainer + DialSummaryPanel
+ * - dial-tuning: DialTuningPanel (full-page dial selection)
  * - frame: FramePanel
  * - outline: OutlinePanel
  * - scenes: SceneEditor + SceneList + SceneNavigation
@@ -15,16 +15,9 @@
  * - adversaries/items/echoes/complete: Coming soon
  */
 
-import { useState, useCallback, useEffect, useMemo, type ReactNode } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import type {
-  DialId,
-  CompiledNPC,
-  PartyTier,
-  SessionLength,
-  ThemeOption,
-} from '@dagger-app/shared-types';
-import { THEME_OPTIONS } from '@dagger-app/shared-types';
+import type { CompiledNPC } from '@dagger-app/shared-types';
 
 // Adventure components
 import { PhaseProgressBar, PhaseNavigation, SessionRecoveryModal } from '@/components/adventure';
@@ -34,20 +27,7 @@ import { loadAdventure, deleteAdventure } from '@/services/adventureService';
 import { restoreFromSnapshot } from '@/stores/persistence';
 
 // Phase 2 components
-import { ChatContainer } from '@/components/chat';
-import {
-  DialSummaryPanel,
-  TierSelect,
-  SessionLengthSelect,
-  MultiSelectChips,
-  PartySizeSelect,
-  SceneCountSelect,
-  ToneSelect,
-  NPCDensitySelect,
-  LethalitySelect,
-  EmotionalRegisterSelect,
-  PillarBalanceSelect,
-} from '@/components/dials';
+import { DialTuningPanel } from '@/components/dials';
 
 // Phase 3 components
 import {
@@ -362,7 +342,7 @@ export function AdventurePage() {
   const removeTheme = useDialsStore((state) => state.removeTheme);
   const requiredDialsComplete = useDialsStore(selectRequiredDialsComplete);
 
-  // Assemble dials state for DialSummaryPanel - memoize to prevent infinite loops
+  // Assemble dials state for DialTuningPanel - memoize to prevent infinite loops
   const dialsState: DialsState = useMemo(() => ({
     partySize,
     partyTier,
@@ -539,133 +519,6 @@ export function AdventurePage() {
   ]);
 
   // =============================================================================
-  // Dial Handlers
-  // =============================================================================
-
-  const handleConfirmToggle = useCallback((dialId: DialId) => {
-    if (dialsState.confirmedDials.has(dialId)) {
-      dialsState.unconfirmDial(dialId);
-    } else {
-      dialsState.confirmDial(dialId);
-    }
-  }, [dialsState]);
-
-  // =============================================================================
-  // Dial Selector Renderer
-  // =============================================================================
-
-  const renderSelector = useCallback((dialId: DialId): ReactNode => {
-    switch (dialId) {
-      case 'partySize':
-        return (
-          <PartySizeSelect
-            value={partySize}
-            onChange={(v) => setDial('partySize', v)}
-          />
-        );
-      case 'partyTier':
-        return (
-          <TierSelect
-            value={partyTier as PartyTier}
-            onChange={(v) => setDial('partyTier', v)}
-          />
-        );
-      case 'sceneCount':
-        return (
-          <SceneCountSelect
-            value={sceneCount}
-            onChange={(v) => setDial('sceneCount', v)}
-          />
-        );
-      case 'sessionLength':
-        return (
-          <SessionLengthSelect
-            value={sessionLength as SessionLength}
-            onChange={(v) => setDial('sessionLength', v)}
-          />
-        );
-      case 'tone':
-        return (
-          <ToneSelect
-            value={tone ?? 'balanced'}
-            onChange={(v) => setDial('tone', v)}
-          />
-        );
-      case 'pillarBalance':
-        return (
-          <PillarBalanceSelect
-            value={pillarBalance ?? { primary: 'combat', secondary: 'exploration', tertiary: 'social' }}
-            onChange={(v) => setDial('pillarBalance', v)}
-          />
-        );
-      case 'npcDensity':
-        return (
-          <NPCDensitySelect
-            value={npcDensity ?? 'moderate'}
-            onChange={(v) => setDial('npcDensity', v)}
-          />
-        );
-      case 'lethality':
-        return (
-          <LethalitySelect
-            value={lethality ?? 'standard'}
-            onChange={(v) => setDial('lethality', v)}
-          />
-        );
-      case 'emotionalRegister':
-        return (
-          <EmotionalRegisterSelect
-            value={emotionalRegister ?? 'thrilling'}
-            onChange={(v) => setDial('emotionalRegister', v)}
-          />
-        );
-      case 'themes':
-        return (
-          <MultiSelectChips
-            options={THEME_OPTIONS.map((t) => ({ id: t.id, label: t.label }))}
-            selected={themes}
-            maxSelections={3}
-            onChange={(selected: string[]) => {
-              // Handle theme changes - compare with current and add/remove
-              const currentSet = new Set<string>(themes);
-              const newSet = new Set<string>(selected);
-
-              // Remove themes that are no longer selected
-              themes.forEach((theme) => {
-                if (!newSet.has(theme)) {
-                  removeTheme(theme);
-                }
-              });
-
-              // Add new themes (cast is safe because options come from THEME_OPTIONS)
-              selected.forEach((theme) => {
-                if (!currentSet.has(theme)) {
-                  addTheme(theme as ThemeOption);
-                }
-              });
-            }}
-          />
-        );
-      default:
-        return null;
-    }
-  }, [
-    partySize,
-    partyTier,
-    sceneCount,
-    sessionLength,
-    tone,
-    pillarBalance,
-    npcDensity,
-    lethality,
-    emotionalRegister,
-    themes,
-    setDial,
-    addTheme,
-    removeTheme,
-  ]);
-
-  // =============================================================================
   // Content Phase Handlers
   // =============================================================================
 
@@ -831,24 +684,11 @@ export function AdventurePage() {
 
       case 'dial-tuning':
         return (
-          <div className="flex-1 flex min-h-0">
-            {/* Chat panel - 60% */}
-            <div className="w-[60%] border-r border-ink-200 dark:border-shadow-600">
-              <ChatContainer
-                sessionId={sessionId ?? 'default'}
-                className="h-full"
-              />
-            </div>
-            {/* Dial summary - 40% */}
-            <div className="w-[40%] overflow-y-auto">
-              <DialSummaryPanel
-                dials={dialsState}
-                onConfirmToggle={handleConfirmToggle}
-                onContinue={handleContinue}
-                renderSelector={renderSelector}
-              />
-            </div>
-          </div>
+          <DialTuningPanel
+            dials={dialsState}
+            onContinue={handleContinue}
+            canContinue={requiredDialsComplete}
+          />
         );
 
       case 'frame':
@@ -1007,7 +847,7 @@ export function AdventurePage() {
     hasActiveSession &&
     currentPhase !== 'setup' &&
     currentPhase !== 'scenes' && // Scenes have their own SceneNavigation
-    currentPhase !== 'dial-tuning'; // Dial tuning uses DialSummaryPanel continue button
+    currentPhase !== 'dial-tuning'; // Dial tuning uses DialTuningPanel continue button
 
   return (
     <div className="min-h-screen flex flex-col bg-parchment-100 dark:bg-shadow-900 transition-colors duration-200">

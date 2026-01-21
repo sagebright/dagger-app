@@ -12,11 +12,9 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen, waitFor, act } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 
 // Components - import directly from source files
 import { ChatContainer } from '@/components/chat/ChatContainer';
-import { DialSummaryPanel } from '@/components/dials/DialSummaryPanel';
 
 // Stores
 import { useChatStore } from '@/stores/chatStore';
@@ -26,7 +24,6 @@ import { resetAllStores, clearAllStorageData } from '@/stores';
 
 // Types
 import type { DialId } from '@dagger-app/shared-types';
-import type { DialsState } from '@/stores/dialsStore';
 
 // Test utilities
 import { storeAction, clearPersistedStorage, setPersistedState } from './store-utils';
@@ -236,118 +233,6 @@ describe('Phase 2 Integration Tests', () => {
         const state = useDialsStore.getState();
         // 2 out of 10 dials confirmed = 20%
         expect(selectCompletionPercentage(state)).toBe(20);
-      });
-    });
-
-    describe('dial summary panel', () => {
-      /**
-       * Create a mock DialsState with functions for DialSummaryPanel props
-       */
-      function createMockDialsState(overrides?: Partial<DialsState>): DialsState {
-        return {
-          partySize: 4,
-          partyTier: 2,
-          sceneCount: 4,
-          sessionLength: '3-4 hours',
-          tone: null,
-          pillarBalance: null,
-          npcDensity: null,
-          lethality: null,
-          emotionalRegister: null,
-          themes: [],
-          confirmedDials: new Set<DialId>(),
-          setDial: vi.fn(),
-          confirmDial: vi.fn(),
-          unconfirmDial: vi.fn(),
-          resetDials: vi.fn(),
-          resetDial: vi.fn(),
-          addTheme: vi.fn(),
-          removeTheme: vi.fn(),
-          ...overrides,
-        };
-      }
-
-      it('renders dial summary with selector widgets', () => {
-        const mockDials = createMockDialsState({
-          partySize: 5,
-          partyTier: 3,
-        });
-        const mockRenderSelector = vi.fn(() => <div data-testid="selector-widget">Selector</div>);
-
-        render(
-          <DialSummaryPanel
-            dials={mockDials}
-            onConfirmToggle={vi.fn()}
-            onContinue={vi.fn()}
-            renderSelector={mockRenderSelector}
-          />
-        );
-
-        // Verify selector widgets are rendered
-        const selectorWidgets = screen.getAllByTestId('selector-widget');
-        expect(selectorWidgets.length).toBeGreaterThan(0);
-      });
-
-      it('calls onConfirmToggle when checkmark is clicked', async () => {
-        const user = userEvent.setup();
-        const onConfirmToggle = vi.fn();
-        const mockDials = createMockDialsState();
-        const mockRenderSelector = vi.fn(() => <div data-testid="selector-widget">Selector</div>);
-
-        render(
-          <DialSummaryPanel
-            dials={mockDials}
-            onConfirmToggle={onConfirmToggle}
-            onContinue={vi.fn()}
-            renderSelector={mockRenderSelector}
-          />
-        );
-
-        // Find and click a checkmark button
-        const checkmarkButtons = screen.getAllByRole('button', { pressed: false });
-        const confirmButtons = checkmarkButtons.filter(btn =>
-          btn.getAttribute('aria-label')?.includes('Confirm')
-        );
-        if (confirmButtons.length > 0) {
-          await user.click(confirmButtons[0]);
-          expect(onConfirmToggle).toHaveBeenCalled();
-        }
-      });
-
-      it('shows continue button when all dials are confirmed', () => {
-        const dialIds: DialId[] = [
-          'partySize', 'partyTier', 'sceneCount', 'sessionLength',
-          'tone', 'pillarBalance', 'npcDensity',
-          'lethality', 'emotionalRegister', 'themes'
-        ];
-
-        const mockDials = createMockDialsState({
-          confirmedDials: new Set(dialIds),
-          partySize: 4,
-          partyTier: 2,
-          sceneCount: 4,
-          sessionLength: '3-4 hours',
-          tone: 'balanced',
-          pillarBalance: { primary: 'combat', secondary: 'exploration', tertiary: 'social' },
-          npcDensity: 'moderate',
-          lethality: 'dangerous',
-          emotionalRegister: 'tense',
-          themes: ['redemption'],
-        });
-        const mockRenderSelector = vi.fn(() => <div data-testid="selector-widget">Selector</div>);
-
-        render(
-          <DialSummaryPanel
-            dials={mockDials}
-            onConfirmToggle={vi.fn()}
-            onContinue={vi.fn()}
-            renderSelector={mockRenderSelector}
-          />
-        );
-
-        // Continue button should be enabled when all dials are confirmed
-        const continueButton = screen.getByRole('button', { name: /continue/i });
-        expect(continueButton).not.toBeDisabled();
       });
     });
 

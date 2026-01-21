@@ -23,7 +23,9 @@ describe('useChat', () => {
   });
 
   afterEach(() => {
-    vi.clearAllTimers();
+    // Note: Don't use vi.clearAllTimers() here as it interferes with
+    // the 100ms connection delay timer in useChat when using real timers
+    vi.useRealTimers();
   });
 
   describe('connection lifecycle', () => {
@@ -277,13 +279,110 @@ describe('useChat', () => {
     });
   });
 
+  describe('initial connection delay', () => {
+    it('delays initial connection when autoConnect is true to avoid race condition', async () => {
+      vi.useFakeTimers();
+
+      renderHook(() => useChat({ sessionId: 'test-session' }));
+
+      // Immediately after mount, no WebSocket should be created
+      expect(MockWebSocket.instances.length).toBe(0);
+
+      // After 100ms delay, WebSocket should be created
+      await act(async () => {
+        vi.advanceTimersByTime(100);
+      });
+
+      expect(MockWebSocket.instances.length).toBe(1);
+
+      vi.useRealTimers();
+    });
+
+    it('does not log error on first connection attempt (before any successful connection)', async () => {
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+      vi.useFakeTimers();
+
+      renderHook(() => useChat({ sessionId: 'test-session' }));
+
+      // Advance past the initial delay to create WebSocket
+      await act(async () => {
+        vi.advanceTimersByTime(100);
+      });
+
+      const ws = MockWebSocket.getLastInstance()!;
+
+      // Simulate an error BEFORE onopen fires (hasConnectedOnce = false)
+      // Don't advance timers so onopen doesn't fire
+      act(() => {
+        ws.simulateError();
+      });
+
+      // No error should be logged before first successful connection
+      expect(consoleErrorSpy).not.toHaveBeenCalledWith('[useChat] WebSocket error');
+
+      consoleErrorSpy.mockRestore();
+      vi.useRealTimers();
+    });
+
+    it('logs error after first successful connection (hasConnectedOnce = true)', async () => {
+      // This test verifies that errors ARE logged after we've successfully connected once
+      // The key insight: hasConnectedOnceRef is set to true in onopen handler
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+      renderHook(() =>
+        useChat({
+          sessionId: 'test-session',
+          reconnectInterval: 50, // Short interval for faster test
+        })
+      );
+
+      // Wait for initial connection (first WebSocket) to fully establish
+      // This means onopen has fired and hasConnectedOnce is true
+      await waitFor(() => {
+        expect(MockWebSocket.instances.length).toBe(1);
+        expect(useChatStore.getState().connectionStatus).toBe('connected');
+      }, { timeout: 2000 });
+
+      const firstWs = MockWebSocket.instances[0]!;
+      expect(firstWs).toBeDefined();
+
+      // Simulate connection close to trigger reconnection
+      act(() => {
+        firstWs.simulateClose(1006, 'Connection lost');
+      });
+
+      // Wait for second WebSocket to be created (reconnection)
+      await waitFor(() => {
+        expect(MockWebSocket.instances.length).toBe(2);
+      }, { timeout: 3000 });
+
+      // Get the second WebSocket (created during reconnection)
+      const secondWs = MockWebSocket.instances[1]!;
+      expect(secondWs).toBeDefined();
+      expect(secondWs.onerror).toBeDefined();
+      expect(secondWs).not.toBe(firstWs);
+
+      // Simulate an error on the reconnection WebSocket
+      // At this point, hasConnectedOnceRef.current should be true
+      act(() => {
+        secondWs.simulateError();
+      });
+
+      // Error should be logged because we've successfully connected once before
+      expect(consoleErrorSpy).toHaveBeenCalledWith('[useChat] WebSocket error');
+
+      consoleErrorSpy.mockRestore();
+    });
+  });
+
   describe('reconnection', () => {
     it('sets status to reconnecting on disconnect', async () => {
       renderHook(() => useChat({ sessionId: 'test-session' }));
 
       await waitFor(() => {
         expect(MockWebSocket.instances.length).toBe(1);
-      });
+      }, { timeout: 2000 });
 
       const ws = MockWebSocket.getLastInstance()!;
 
@@ -305,7 +404,7 @@ describe('useChat', () => {
 
       await waitFor(() => {
         expect(MockWebSocket.instances.length).toBe(1);
-      });
+      }, { timeout: 2000 });
 
       const ws = MockWebSocket.getLastInstance()!;
 
@@ -327,7 +426,7 @@ describe('useChat', () => {
 
       await waitFor(() => {
         expect(MockWebSocket.instances.length).toBe(1);
-      });
+      }, { timeout: 2000 });
 
       const instancesBeforeDisconnect = MockWebSocket.instances.length;
 
@@ -353,7 +452,7 @@ describe('useChat', () => {
 
       await waitFor(() => {
         expect(MockWebSocket.instances.length).toBe(1);
-      });
+      }, { timeout: 2000 });
 
       const ws = MockWebSocket.getLastInstance()!;
 
@@ -391,7 +490,7 @@ describe('useChat', () => {
 
       await waitFor(() => {
         expect(MockWebSocket.instances.length).toBe(1);
-      });
+      }, { timeout: 2000 });
 
       expect(result.current.isStreaming).toBe(false);
 
@@ -411,7 +510,7 @@ describe('useChat', () => {
 
       await waitFor(() => {
         expect(result.current.connectionStatus).toBe('connected');
-      });
+      }, { timeout: 2000 });
     });
   });
 });

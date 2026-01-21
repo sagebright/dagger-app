@@ -21,7 +21,6 @@ import { MemoryRouter } from 'react-router-dom';
 
 // Individual components for targeted testing
 import { ChatContainer } from '@/components/chat';
-import { DialSummaryPanel } from '@/components/dials';
 import { FramePanel, OutlinePanel, EchoGenerator, EchoCard } from '@/components/content';
 import { PhaseProgressBar, PhaseNavigation } from '@/components/adventure';
 
@@ -32,7 +31,6 @@ import { useContentStore } from '@/stores/contentStore';
 import { resetAllStores } from '@/stores';
 
 // Types
-import type { DialsState } from '@/stores/dialsStore';
 import type { Phase } from '@dagger-app/shared-types';
 
 // Test utilities
@@ -47,29 +45,6 @@ const ADVENTURE_STORAGE_KEY = 'dagger-adventure-storage';
 const DIALS_STORAGE_KEY = 'dagger-dials-storage';
 const CONTENT_STORAGE_KEY = 'dagger-content-storage';
 const CHAT_STORAGE_KEY = 'dagger-chat-storage';
-
-// Mock dials state for DialSummaryPanel
-const createMockDialsState = (overrides?: Partial<DialsState>): DialsState => ({
-  partySize: 4,
-  partyTier: 2,
-  sceneCount: 4,
-  sessionLength: '3-4 hours',
-  tone: null,
-  pillarBalance: null,
-  npcDensity: null,
-  lethality: null,
-  emotionalRegister: null,
-  themes: [],
-  confirmedDials: new Set(['partySize', 'partyTier', 'sceneCount', 'sessionLength']),
-  setDial: vi.fn().mockReturnValue(true),
-  confirmDial: vi.fn(),
-  unconfirmDial: vi.fn(),
-  resetDials: vi.fn(),
-  resetDial: vi.fn(),
-  addTheme: vi.fn().mockReturnValue(true),
-  removeTheme: vi.fn(),
-  ...overrides,
-});
 
 describe('Adventure Workflow Integration Tests', () => {
   beforeEach(() => {
@@ -372,114 +347,10 @@ describe('Adventure Workflow Integration Tests', () => {
   });
 
   // ===========================================================================
-  // 4. DialSummaryPanel Integration
+  // 4. Session Persistence
   // ===========================================================================
 
-  describe('4. DialSummaryPanel Integration', () => {
-    const mockOnConfirmToggle = vi.fn();
-    const mockOnContinue = vi.fn();
-    const mockRenderSelector = vi.fn(() => <div data-testid="selector-widget">Selector</div>);
-
-    beforeEach(() => {
-      mockOnConfirmToggle.mockClear();
-      mockOnContinue.mockClear();
-      mockRenderSelector.mockClear();
-    });
-
-    it('renders with mock dials state', () => {
-      render(
-        <DialSummaryPanel
-          dials={createMockDialsState()}
-          onConfirmToggle={mockOnConfirmToggle}
-          onContinue={mockOnContinue}
-          renderSelector={mockRenderSelector}
-        />
-      );
-
-      expect(screen.getByText('Adventure Dials')).toBeInTheDocument();
-      expect(screen.getByText('Party Size')).toBeInTheDocument();
-    });
-
-    it('shows confirmation count', () => {
-      const dials = createMockDialsState();
-      render(
-        <DialSummaryPanel
-          dials={dials}
-          onConfirmToggle={mockOnConfirmToggle}
-          onContinue={mockOnContinue}
-          renderSelector={mockRenderSelector}
-        />
-      );
-
-      // 4 required dials confirmed
-      expect(screen.getByText('4 of 10 configured')).toBeInTheDocument();
-    });
-
-    it('hides continue button when not all dials are confirmed', () => {
-      const dials = createMockDialsState({
-        confirmedDials: new Set(['partySize']), // Only 1 confirmed
-      });
-
-      render(
-        <DialSummaryPanel
-          dials={dials}
-          onConfirmToggle={mockOnConfirmToggle}
-          onContinue={mockOnContinue}
-          renderSelector={mockRenderSelector}
-        />
-      );
-
-      // DialSummaryPanel only shows continue button when ALL 10 dials are confirmed
-      // With only 1 confirmed, the button should not exist
-      const continueButton = screen.queryByRole('button', { name: /continue/i });
-      expect(continueButton).toBeNull();
-    });
-
-    it('shows continue button when all dials are confirmed', () => {
-      const allDialIds = [
-        'partySize',
-        'partyTier',
-        'sceneCount',
-        'sessionLength',
-        'tone',
-        'pillarBalance',
-        'npcDensity',
-        'lethality',
-        'emotionalRegister',
-        'themes',
-      ] as const;
-
-      const dials = createMockDialsState({
-        tone: 'balanced',
-        pillarBalance: { primary: 'combat', secondary: 'exploration', tertiary: 'social' },
-        npcDensity: 'moderate',
-        lethality: 'standard',
-        emotionalRegister: 'epic',
-        themes: ['redemption'],
-        confirmedDials: new Set(allDialIds),
-      });
-
-      render(
-        <DialSummaryPanel
-          dials={dials}
-          onConfirmToggle={mockOnConfirmToggle}
-          onContinue={mockOnContinue}
-          renderSelector={mockRenderSelector}
-        />
-      );
-
-      // When all dials are confirmed, continue button should be visible and enabled
-      const continueButton = screen.getByRole('button', { name: /continue/i });
-      expect(continueButton).toBeInTheDocument();
-      expect(continueButton).not.toBeDisabled();
-    });
-  });
-
-  // ===========================================================================
-  // 5. Session Persistence
-  // ===========================================================================
-
-  describe('5. Session Persistence', () => {
+  describe('4. Session Persistence', () => {
     it('persists session to localStorage', () => {
       storeAction(() => {
         useAdventureStore.getState().initSession('Persistent Adventure');
@@ -538,10 +409,10 @@ describe('Adventure Workflow Integration Tests', () => {
   });
 
   // ===========================================================================
-  // 6. ChatContainer Integration
+  // 5. ChatContainer Integration
   // ===========================================================================
 
-  describe('6. ChatContainer Integration', () => {
+  describe('5. ChatContainer Integration', () => {
     it('renders chat container with session ID', async () => {
       render(
         <MemoryRouter>
@@ -569,10 +440,10 @@ describe('Adventure Workflow Integration Tests', () => {
   });
 
   // ===========================================================================
-  // 7. Content Panel Rendering
+  // 6. Content Panel Rendering
   // ===========================================================================
 
-  describe('7. Content Panel Components', () => {
+  describe('6. Content Panel Components', () => {
     // Note: FramePanel, OutlinePanel, and SceneEditor have internal store
     // connections and are tested in their respective component test files.
     // These tests verify the components are exported and can be imported.
@@ -589,10 +460,10 @@ describe('Adventure Workflow Integration Tests', () => {
   });
 
   // ===========================================================================
-  // 8. Full Workflow Simulation (Store-Level)
+  // 7. Full Workflow Simulation (Store-Level)
   // ===========================================================================
 
-  describe('8. Full Workflow Simulation', () => {
+  describe('7. Full Workflow Simulation', () => {
     it('simulates complete phase progression through stores', () => {
       // Phase 1: Setup - Initialize session
       storeAction(() => {
@@ -668,10 +539,10 @@ describe('Adventure Workflow Integration Tests', () => {
   });
 
   // ===========================================================================
-  // 9. Echo Generator Integration (Phase 4.3)
+  // 8. Echo Generator Integration (Phase 4.3)
   // ===========================================================================
 
-  describe('9. Echo Generator Integration', () => {
+  describe('8. Echo Generator Integration', () => {
     const mockEchoes = [
       {
         id: 'echo-1',
