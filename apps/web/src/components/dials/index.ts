@@ -9,6 +9,8 @@
 export { NumberStepper, type NumberStepperProps } from './NumberStepper';
 export { TierSelect, type TierSelectProps } from './TierSelect';
 export { SessionLengthSelect, type SessionLengthSelectProps } from './SessionLengthSelect';
+export { PartySizeSelect, type PartySizeSelectProps } from './PartySizeSelect';
+export { SceneCountSelect, type SceneCountSelectProps } from './SceneCountSelect';
 
 // Conceptual dial components
 export { SpectrumSlider, type SpectrumSliderProps } from './SpectrumSlider';
@@ -28,6 +30,11 @@ export {
   type OptionButtonGroupOption,
 } from './OptionButtonGroup';
 export { ConfirmCheckmark, type ConfirmCheckmarkProps } from './ConfirmCheckmark';
+export { ToneSelect, type ToneSelectProps } from './ToneSelect';
+export { NPCDensitySelect, type NPCDensitySelectProps } from './NPCDensitySelect';
+export { LethalitySelect, type LethalitySelectProps } from './LethalitySelect';
+export { EmotionalRegisterSelect, type EmotionalRegisterSelectProps } from './EmotionalRegisterSelect';
+export { PillarBalanceSelect, type PillarBalanceSelectProps } from './PillarBalanceSelect';
 
 // Wrapper component
 export { DialWrapper, type DialWrapperProps } from './DialWrapper';
