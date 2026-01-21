@@ -36,7 +36,6 @@ function validateSnapshot(body: unknown): body is AdventureSnapshot {
     typeof snapshot.sessionId === 'string' &&
     snapshot.sessionId.length > 0 &&
     typeof snapshot.adventureName === 'string' &&
-    snapshot.adventureName.length > 0 &&
     typeof snapshot.currentPhase === 'string' &&
     Array.isArray(snapshot.phaseHistory)
   );

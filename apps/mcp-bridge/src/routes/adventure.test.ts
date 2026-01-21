@@ -116,6 +116,36 @@ describe('Adventure Routes', () => {
       expect(response.body.code).toBe('VALIDATION_ERROR');
     });
 
+    it('returns 200 when adventureName is empty string (skip naming flow)', async () => {
+      vi.mocked(saveAdventure).mockResolvedValue({
+        data: {
+          sessionId: 'test-session-123',
+          updatedAt: '2024-01-15T12:00:00Z',
+        },
+        error: null,
+      });
+
+      const app = createTestApp();
+      const response = await request(app)
+        .post('/adventure/save')
+        .send({
+          sessionId: 'test-session-123',
+          adventureName: '', // Empty string - user skipped naming
+          currentPhase: 'setup',
+          phaseHistory: ['setup'],
+          dialsConfirmed: [],
+          frameConfirmed: false,
+          outlineConfirmed: false,
+          scenesConfirmed: 0,
+          totalScenes: 0,
+          lastUpdated: '2024-01-15T12:00:00Z',
+        });
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.sessionId).toBe('test-session-123');
+    });
+
     it('returns 500 when save fails', async () => {
       vi.mocked(saveAdventure).mockResolvedValue({
         data: null,
