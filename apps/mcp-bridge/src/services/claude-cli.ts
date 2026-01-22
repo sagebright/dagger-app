@@ -216,34 +216,47 @@ function spawnClaudeProcess(
 
     // Use stdio workaround for Node.js compatibility
     // See: https://github.com/anthropics/claude-code/issues/771
-    const process = spawn(CLAUDE_CLI_COMMAND, args, {
+    // Also clear ANTHROPIC_API_KEY to force session-based auth
+    console.log('[claude-cli] Starting spawn with args:', args.slice(0, 3), '...');
+    console.log('[claude-cli] Timeout:', timeout, 'ms');
+
+    const childProcess = spawn(CLAUDE_CLI_COMMAND, args, {
       stdio: ['inherit', 'pipe', 'pipe'],
+      env: {
+        ...globalThis.process.env,
+        ANTHROPIC_API_KEY: '', // Forces Claude to use session auth, not API key
+      },
     });
+
+    console.log('[claude-cli] Process spawned with PID:', childProcess.pid);
 
     // Set up timeout
     const timeoutId = setTimeout(() => {
-      process.kill('SIGTERM');
+      childProcess.kill('SIGTERM');
       reject(new Error(`Claude CLI timed out after ${timeout}ms`));
     }, timeout);
 
     // Collect stdout
-    process.stdout.on('data', (chunk: Buffer) => {
+    childProcess.stdout.on('data', (chunk: Buffer) => {
+      console.log('[claude-cli] stdout chunk received:', chunk.length, 'bytes');
       chunks.push(chunk);
     });
 
     // Collect stderr
-    process.stderr.on('data', (chunk: Buffer) => {
+    childProcess.stderr.on('data', (chunk: Buffer) => {
+      console.log('[claude-cli] stderr:', chunk.toString().slice(0, 200));
       errorChunks.push(chunk);
     });
 
     // Handle process errors
-    process.on('error', (error) => {
+    childProcess.on('error', (error) => {
       clearTimeout(timeoutId);
       reject(new Error(`Failed to spawn Claude CLI: ${error.message}`));
     });
 
     // Handle process completion
-    process.on('close', (code) => {
+    childProcess.on('close', (code) => {
+      console.log('[claude-cli] Process closed with code:', code);
       clearTimeout(timeoutId);
 
       if (code !== 0) {
