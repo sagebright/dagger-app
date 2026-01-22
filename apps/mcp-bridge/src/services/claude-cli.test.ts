@@ -237,7 +237,65 @@ describe('claude-cli service', () => {
         invokeClaudeCli({
           prompt: 'Hello!',
         })
-      ).rejects.toThrow();
+      ).rejects.toThrow('Claude CLI exited with code 1');
+    });
+
+    it('includes stderr in error message on non-zero exit', async () => {
+      const mockSpawn = vi.mocked(childProcess.spawn);
+      const mockProcess = createMockProcess();
+
+      mockSpawn.mockReturnValue(mockProcess as unknown as ChildProcess);
+
+      const stderrMessage = 'Authentication failed: invalid token';
+
+      // Simulate stderr output and non-zero exit
+      setTimeout(() => {
+        mockProcess.stderr.emit('data', Buffer.from(stderrMessage));
+        mockProcess.emit('close', 1);
+      }, 10);
+
+      await expect(
+        invokeClaudeCli({
+          prompt: 'Hello!',
+        })
+      ).rejects.toThrow(stderrMessage);
+    });
+
+    it('throws error when spawn fails', async () => {
+      const mockSpawn = vi.mocked(childProcess.spawn);
+      const mockProcess = createMockProcess();
+
+      mockSpawn.mockReturnValue(mockProcess as unknown as ChildProcess);
+
+      // Simulate spawn error (CLI not found)
+      setTimeout(() => {
+        mockProcess.emit('error', new Error('spawn claude ENOENT'));
+      }, 10);
+
+      await expect(
+        invokeClaudeCli({
+          prompt: 'Hello!',
+        })
+      ).rejects.toThrow('Failed to spawn Claude CLI');
+    });
+
+    it('throws error on timeout', async () => {
+      const mockSpawn = vi.mocked(childProcess.spawn);
+      const mockProcess = createMockProcess();
+
+      mockSpawn.mockReturnValue(mockProcess as unknown as ChildProcess);
+
+      // Don't emit close - let it timeout
+      // Use a very short timeout for testing
+      await expect(
+        invokeClaudeCli({
+          prompt: 'Hello!',
+          timeout: 50, // 50ms timeout
+        })
+      ).rejects.toThrow('timed out');
+
+      // Verify kill was called
+      expect(mockProcess.kill).toHaveBeenCalledWith('SIGTERM');
     });
 
     it('handles chunked JSON output', async () => {
