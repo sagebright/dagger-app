@@ -45,7 +45,8 @@ import {
 import { ECHO_TEMPLATES, ECHOES_PER_CATEGORY } from '../constants/echo-templates.js';
 import { generateFrameHandler } from '../mcp/tools/generateFrame.js';
 import { generateOutlineHandler } from '../mcp/tools/generateOutline.js';
-import { sendError } from './helpers.js';
+import { sendError, sendStructuredError } from './helpers.js';
+import type { StructuredErrorResponse } from '@dagger-app/shared-types';
 
 const router: RouterType = Router();
 
@@ -217,7 +218,36 @@ router.post('/outline/generate', async (req: Request, res: Response) => {
     res.json(response);
   } catch (error) {
     console.error('Outline generation error:', error);
-    sendError(res, 'PROCESSING_ERROR', 'Failed to generate outline');
+
+    // Check for Claude CLI not available error
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    if (errorMessage.includes('CLAUDE_NOT_AVAILABLE')) {
+      const structuredError: StructuredErrorResponse = {
+        error: 'CLAUDE_NOT_AVAILABLE',
+        title: 'Claude Code Not Available',
+        message: 'Claude Code CLI is not installed or not authenticated.',
+        instructions: [
+          'Install Claude Code: curl -fsSL https://claude.ai/install.sh | bash',
+          'Authenticate: Run "claude" in terminal and follow prompts',
+          'Restart this application',
+        ],
+      };
+      sendStructuredError(res, structuredError, 503);
+      return;
+    }
+
+    // General generation failure
+    const structuredError: StructuredErrorResponse = {
+      error: 'GENERATION_FAILED',
+      title: 'Outline Generation Failed',
+      message: 'An error occurred while generating the adventure outline.',
+      instructions: [
+        'Check your internet connection',
+        'Try again in a few moments',
+        'If the problem persists, restart the application',
+      ],
+    };
+    sendStructuredError(res, structuredError, 500);
   }
 });
 

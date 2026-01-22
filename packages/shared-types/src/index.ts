@@ -43,3 +43,20 @@ export interface ApiError {
   code: string;
   message: string;
 }
+
+/**
+ * Structured error response for user-facing errors
+ *
+ * Used when errors require detailed user instructions (e.g., Claude CLI unavailable).
+ * The frontend displays these in an ErrorModal with actionable steps.
+ */
+export interface StructuredErrorResponse {
+  /** Error code for programmatic handling (e.g., 'CLAUDE_NOT_AVAILABLE') */
+  error: string;
+  /** User-friendly error title for display */
+  title: string;
+  /** Detailed error message explaining what went wrong */
+  message: string;
+  /** Step-by-step instructions for resolving the error */
+  instructions: string[];
+}

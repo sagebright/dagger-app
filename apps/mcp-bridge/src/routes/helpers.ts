@@ -5,6 +5,7 @@
  */
 
 import type { Response } from 'express';
+import type { StructuredErrorResponse } from '@dagger-app/shared-types';
 
 /**
  * Standard error response structure for API endpoints
@@ -29,5 +30,23 @@ export function sendError(
   status = 500
 ): void {
   const error: ErrorResponse = { code, message };
+  res.status(status).json(error);
+}
+
+/**
+ * Send a structured error response with user-friendly details
+ *
+ * Use this for errors that require actionable instructions for the user,
+ * such as missing dependencies or authentication issues.
+ *
+ * @param res - Express response object
+ * @param error - Structured error response with title, message, and instructions
+ * @param status - HTTP status code (default: 500)
+ */
+export function sendStructuredError(
+  res: Response,
+  error: StructuredErrorResponse,
+  status = 500
+): void {
   res.status(status).json(error);
 }
