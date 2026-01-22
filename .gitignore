@@ -39,3 +39,6 @@ coverage/
 
 # Claude Code orchestration state
 .claude/orchestration/
+
+# Claude CLI temp files
+.claude/temp/
