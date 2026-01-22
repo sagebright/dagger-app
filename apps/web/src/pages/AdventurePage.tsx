@@ -644,7 +644,7 @@ export function AdventurePage() {
         lethality,
       };
 
-      const response = await fetch('/api/content/outline', {
+      const response = await fetch('/api/content/outline/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

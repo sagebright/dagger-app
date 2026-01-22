@@ -180,7 +180,7 @@ describe('generateOutlineHandler', () => {
 
       expect(claudeCli.invokeClaudeCli).toHaveBeenCalledWith(
         expect.objectContaining({
-          timeout: 90000,
+          timeout: 180000,
         })
       );
     });

@@ -19,7 +19,9 @@ import { getOutlineSchemaJson } from '../../schemas/outline-schema.js';
 // Constants
 // =============================================================================
 
-const CLAUDE_CLI_TIMEOUT_MS = 90000;
+// Increased timeout to 180 seconds to handle complex outline generation
+// which involves cache creation (~28k tokens) and structured JSON output
+const CLAUDE_CLI_TIMEOUT_MS = 180000;
 
 // =============================================================================
 // Tool Schema
