@@ -34,10 +34,15 @@ export const selectSceneCount = (state: ContentState): number =>
   state.currentOutline?.scenes.length ?? 0;
 
 /**
+ * Empty array constant to avoid creating new references
+ */
+const EMPTY_SCENE_BRIEFS: SceneBrief[] = [];
+
+/**
  * Get all scene briefs
  */
 export const selectSceneBriefs = (state: ContentState): SceneBrief[] =>
-  state.currentOutline?.scenes ?? [];
+  state.currentOutline?.scenes ?? EMPTY_SCENE_BRIEFS;
 
 /**
  * Get a specific scene brief by ID
