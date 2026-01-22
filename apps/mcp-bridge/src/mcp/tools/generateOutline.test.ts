@@ -1,15 +1,23 @@
 /**
  * Tests for generate_outline_draft MCP Tool
+ *
+ * Tests the Claude CLI-based outline generation handler.
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { generateOutlineHandler, GENERATE_OUTLINE_SCHEMA } from './generateOutline.js';
 import type {
   GenerateOutlineInput,
   FrameDraft,
   DaggerheartFrame,
-  Outline,
 } from '@dagger-app/shared-types';
+import * as claudeCli from '../../services/claude-cli.js';
+
+// Mock the claude-cli module
+vi.mock('../../services/claude-cli.js', () => ({
+  checkClaudeAvailable: vi.fn(),
+  invokeClaudeCli: vi.fn(),
+}));
 
 // =============================================================================
 // Test Fixtures
@@ -67,6 +75,37 @@ function createMockInput(overrides: Partial<GenerateOutlineInput> = {}): Generat
   };
 }
 
+/**
+ * Creates a mock Claude CLI response for outline generation
+ */
+function createMockClaudeResponse(options: {
+  sceneCount?: number;
+  title?: string;
+  summary?: string;
+} = {}) {
+  const {
+    sceneCount = 4,
+    title = 'Shadows of the Haunted Forest',
+    summary = 'An adventure for experienced heroes exploring the dark forest where ancient spirits dwell.',
+  } = options;
+
+  const scenes = Array.from({ length: sceneCount }, (_, i) => ({
+    sceneNumber: i + 1,
+    title: `Scene ${i + 1}: The ${['Arrival', 'Investigation', 'Confrontation', 'Resolution', 'Escape', 'Climax'][i] || 'Journey'}`,
+    description: `Description for scene ${i + 1} that sets up the dramatic moment.`,
+    sceneType: ['exploration', 'social', 'combat', 'revelation', 'puzzle', 'mixed'][i % 6],
+    keyElements: ['Key element 1', 'Key element 2'],
+    location: `Location ${i + 1}`,
+    characters: ['NPC 1', 'NPC 2'],
+  }));
+
+  return {
+    title,
+    summary,
+    scenes,
+  };
+}
+
 // =============================================================================
 // Schema Tests
 // =============================================================================
@@ -89,12 +128,111 @@ describe('GENERATE_OUTLINE_SCHEMA', () => {
 });
 
 // =============================================================================
-// Basic Generation Tests
+// Claude CLI Availability Tests
 // =============================================================================
 
 describe('generateOutlineHandler', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  describe('Claude CLI availability', () => {
+    it('throws CLAUDE_NOT_AVAILABLE error when CLI is not available', async () => {
+      vi.mocked(claudeCli.checkClaudeAvailable).mockResolvedValue(false);
+
+      const input = createMockInput();
+
+      await expect(generateOutlineHandler(input)).rejects.toThrow('CLAUDE_NOT_AVAILABLE');
+    });
+
+    it('proceeds with generation when CLI is available', async () => {
+      vi.mocked(claudeCli.checkClaudeAvailable).mockResolvedValue(true);
+      vi.mocked(claudeCli.invokeClaudeCli).mockResolvedValue({
+        output: JSON.stringify(createMockClaudeResponse()),
+        jsonResponse: createMockClaudeResponse(),
+      });
+
+      const input = createMockInput();
+      const result = await generateOutlineHandler(input);
+
+      expect(result.isComplete).toBe(true);
+      expect(result.outline).toBeDefined();
+    });
+  });
+
+  // =============================================================================
+  // Claude CLI Invocation Tests
+  // =============================================================================
+
+  describe('Claude CLI invocation', () => {
+    beforeEach(() => {
+      vi.mocked(claudeCli.checkClaudeAvailable).mockResolvedValue(true);
+    });
+
+    it('invokes Claude CLI with 90-second timeout', async () => {
+      vi.mocked(claudeCli.invokeClaudeCli).mockResolvedValue({
+        output: JSON.stringify(createMockClaudeResponse()),
+        jsonResponse: createMockClaudeResponse(),
+      });
+
+      const input = createMockInput();
+      await generateOutlineHandler(input);
+
+      expect(claudeCli.invokeClaudeCli).toHaveBeenCalledWith(
+        expect.objectContaining({
+          timeout: 90000,
+        })
+      );
+    });
+
+    it('passes system prompt to Claude CLI', async () => {
+      vi.mocked(claudeCli.invokeClaudeCli).mockResolvedValue({
+        output: JSON.stringify(createMockClaudeResponse()),
+        jsonResponse: createMockClaudeResponse(),
+      });
+
+      const input = createMockInput();
+      await generateOutlineHandler(input);
+
+      expect(claudeCli.invokeClaudeCli).toHaveBeenCalledWith(
+        expect.objectContaining({
+          systemPrompt: expect.stringContaining('TTRPG adventure designer'),
+        })
+      );
+    });
+
+    it('passes user prompt to Claude CLI', async () => {
+      vi.mocked(claudeCli.invokeClaudeCli).mockResolvedValue({
+        output: JSON.stringify(createMockClaudeResponse()),
+        jsonResponse: createMockClaudeResponse(),
+      });
+
+      const input = createMockInput();
+      await generateOutlineHandler(input);
+
+      expect(claudeCli.invokeClaudeCli).toHaveBeenCalledWith(
+        expect.objectContaining({
+          prompt: expect.stringContaining('Generate an adventure outline'),
+        })
+      );
+    });
+  });
+
+  // =============================================================================
+  // Basic Generation Tests
+  // =============================================================================
+
   describe('basic generation', () => {
+    beforeEach(() => {
+      vi.mocked(claudeCli.checkClaudeAvailable).mockResolvedValue(true);
+    });
+
     it('generates outline with correct scene count', async () => {
+      vi.mocked(claudeCli.invokeClaudeCli).mockResolvedValue({
+        output: JSON.stringify(createMockClaudeResponse({ sceneCount: 4 })),
+        jsonResponse: createMockClaudeResponse({ sceneCount: 4 }),
+      });
+
       const input = createMockInput({
         dialsSummary: createMockDialsSummary({ sceneCount: 4 }),
       });
@@ -107,6 +245,11 @@ describe('generateOutlineHandler', () => {
     });
 
     it('generates minimum 3 scenes', async () => {
+      vi.mocked(claudeCli.invokeClaudeCli).mockResolvedValue({
+        output: JSON.stringify(createMockClaudeResponse({ sceneCount: 3 })),
+        jsonResponse: createMockClaudeResponse({ sceneCount: 3 }),
+      });
+
       const input = createMockInput({
         dialsSummary: createMockDialsSummary({ sceneCount: 3 }),
       });
@@ -117,6 +260,11 @@ describe('generateOutlineHandler', () => {
     });
 
     it('generates maximum 6 scenes', async () => {
+      vi.mocked(claudeCli.invokeClaudeCli).mockResolvedValue({
+        output: JSON.stringify(createMockClaudeResponse({ sceneCount: 6 })),
+        jsonResponse: createMockClaudeResponse({ sceneCount: 6 }),
+      });
+
       const input = createMockInput({
         dialsSummary: createMockDialsSummary({ sceneCount: 6 }),
       });
@@ -148,21 +296,32 @@ describe('generateOutlineHandler', () => {
     });
 
     it('includes adventure title in outline', async () => {
+      vi.mocked(claudeCli.invokeClaudeCli).mockResolvedValue({
+        output: JSON.stringify(createMockClaudeResponse({ title: 'The Dark Journey' })),
+        jsonResponse: createMockClaudeResponse({ title: 'The Dark Journey' }),
+      });
+
       const input = createMockInput();
 
       const result = await generateOutlineHandler(input);
 
-      expect(result.outline?.title).toBeTruthy();
-      expect(result.outline?.title.length).toBeGreaterThan(0);
+      expect(result.outline?.title).toBe('The Dark Journey');
     });
 
     it('includes adventure summary in outline', async () => {
+      const mockResponse = createMockClaudeResponse({
+        summary: 'A thrilling adventure in the haunted forest.',
+      });
+      vi.mocked(claudeCli.invokeClaudeCli).mockResolvedValue({
+        output: JSON.stringify(mockResponse),
+        jsonResponse: mockResponse,
+      });
+
       const input = createMockInput();
 
       const result = await generateOutlineHandler(input);
 
-      expect(result.outline?.summary).toBeTruthy();
-      expect(result.outline?.summary).toContain('Haunted Forest');
+      expect(result.outline?.summary).toBe('A thrilling adventure in the haunted forest.');
     });
   });
 
@@ -171,7 +330,16 @@ describe('generateOutlineHandler', () => {
   // =============================================================================
 
   describe('scene brief structure', () => {
+    beforeEach(() => {
+      vi.mocked(claudeCli.checkClaudeAvailable).mockResolvedValue(true);
+    });
+
     it('each scene has required fields', async () => {
+      vi.mocked(claudeCli.invokeClaudeCli).mockResolvedValue({
+        output: JSON.stringify(createMockClaudeResponse()),
+        jsonResponse: createMockClaudeResponse(),
+      });
+
       const input = createMockInput();
 
       const result = await generateOutlineHandler(input);
@@ -181,12 +349,15 @@ describe('generateOutlineHandler', () => {
         expect(scene.sceneNumber).toBeDefined();
         expect(scene.title).toBeTruthy();
         expect(scene.description).toBeTruthy();
-        expect(scene.keyElements).toBeDefined();
-        expect(Array.isArray(scene.keyElements)).toBe(true);
       }
     });
 
     it('scenes are numbered sequentially starting at 1', async () => {
+      vi.mocked(claudeCli.invokeClaudeCli).mockResolvedValue({
+        output: JSON.stringify(createMockClaudeResponse({ sceneCount: 5 })),
+        jsonResponse: createMockClaudeResponse({ sceneCount: 5 }),
+      });
+
       const input = createMockInput({
         dialsSummary: createMockDialsSummary({ sceneCount: 5 }),
       });
@@ -198,6 +369,11 @@ describe('generateOutlineHandler', () => {
     });
 
     it('scenes have valid scene types', async () => {
+      vi.mocked(claudeCli.invokeClaudeCli).mockResolvedValue({
+        output: JSON.stringify(createMockClaudeResponse()),
+        jsonResponse: createMockClaudeResponse(),
+      });
+
       const input = createMockInput();
 
       const result = await generateOutlineHandler(input);
@@ -209,6 +385,11 @@ describe('generateOutlineHandler', () => {
     });
 
     it('scenes have location suggestions', async () => {
+      vi.mocked(claudeCli.invokeClaudeCli).mockResolvedValue({
+        output: JSON.stringify(createMockClaudeResponse()),
+        jsonResponse: createMockClaudeResponse(),
+      });
+
       const input = createMockInput();
 
       const result = await generateOutlineHandler(input);
@@ -218,67 +399,20 @@ describe('generateOutlineHandler', () => {
       }
     });
 
-    it('scenes have key elements (1-4 items)', async () => {
+    it('scenes have key elements', async () => {
+      vi.mocked(claudeCli.invokeClaudeCli).mockResolvedValue({
+        output: JSON.stringify(createMockClaudeResponse()),
+        jsonResponse: createMockClaudeResponse(),
+      });
+
       const input = createMockInput();
 
       const result = await generateOutlineHandler(input);
 
       for (const scene of result.outline!.scenes) {
-        expect(scene.keyElements.length).toBeGreaterThanOrEqual(1);
-        expect(scene.keyElements.length).toBeLessThanOrEqual(4);
+        expect(scene.keyElements).toBeDefined();
+        expect(Array.isArray(scene.keyElements)).toBe(true);
       }
-    });
-  });
-
-  // =============================================================================
-  // Combat/Exploration Balance Tests
-  // =============================================================================
-
-  describe('combat/exploration balance', () => {
-    it('generates more combat scenes when combat-heavy', async () => {
-      const input = createMockInput({
-        dialsSummary: createMockDialsSummary({
-          sceneCount: 6,
-          pillarBalance: 'combat-heavy action',
-        }),
-      });
-
-      const result = await generateOutlineHandler(input);
-
-      const combatScenes = result.outline!.scenes.filter((s) => s.sceneType === 'combat');
-      expect(combatScenes.length).toBeGreaterThanOrEqual(3);
-    });
-
-    it('generates more exploration scenes when exploration-heavy', async () => {
-      const input = createMockInput({
-        dialsSummary: createMockDialsSummary({
-          sceneCount: 6,
-          pillarBalance: 'exploration and roleplay focused',
-        }),
-      });
-
-      const result = await generateOutlineHandler(input);
-
-      const explorationScenes = result.outline!.scenes.filter(
-        (s) => s.sceneType === 'exploration' || s.sceneType === 'social' || s.sceneType === 'puzzle'
-      );
-      expect(explorationScenes.length).toBeGreaterThanOrEqual(3);
-    });
-
-    it('generates balanced mix when balanced', async () => {
-      const input = createMockInput({
-        dialsSummary: createMockDialsSummary({
-          sceneCount: 6,
-          pillarBalance: 'balanced mix',
-        }),
-      });
-
-      const result = await generateOutlineHandler(input);
-
-      const combatScenes = result.outline!.scenes.filter((s) => s.sceneType === 'combat');
-      const nonCombatScenes = result.outline!.scenes.filter((s) => s.sceneType !== 'combat');
-      expect(combatScenes.length).toBeGreaterThanOrEqual(1);
-      expect(nonCombatScenes.length).toBeGreaterThanOrEqual(2);
     });
   });
 
@@ -287,127 +421,42 @@ describe('generateOutlineHandler', () => {
   // =============================================================================
 
   describe('frame integration', () => {
-    it('incorporates DB frame name in title', async () => {
+    beforeEach(() => {
+      vi.mocked(claudeCli.checkClaudeAvailable).mockResolvedValue(true);
+    });
+
+    it('passes frame context to system prompt', async () => {
+      vi.mocked(claudeCli.invokeClaudeCli).mockResolvedValue({
+        output: JSON.stringify(createMockClaudeResponse()),
+        jsonResponse: createMockClaudeResponse(),
+      });
+
       const input = createMockInput({
         frame: createMockDbFrame({ name: 'The Shadow Keep' }),
       });
 
-      const result = await generateOutlineHandler(input);
+      await generateOutlineHandler(input);
 
-      expect(result.outline?.title).toContain('Shadow Keep');
+      expect(claudeCli.invokeClaudeCli).toHaveBeenCalledWith(
+        expect.objectContaining({
+          systemPrompt: expect.stringContaining('Shadow Keep'),
+        })
+      );
     });
 
-    it('incorporates custom frame name in title', async () => {
+    it('handles custom frame', async () => {
+      vi.mocked(claudeCli.invokeClaudeCli).mockResolvedValue({
+        output: JSON.stringify(createMockClaudeResponse()),
+        jsonResponse: createMockClaudeResponse(),
+      });
+
       const input = createMockInput({
         frame: createMockCustomFrame({ name: 'The Clockwork City' }),
       });
 
       const result = await generateOutlineHandler(input);
 
-      expect(result.outline?.title).toContain('Clockwork City');
-    });
-
-    it('uses frame description in summary', async () => {
-      const input = createMockInput({
-        frame: createMockDbFrame({
-          description: 'A mystical realm where dreams become reality',
-        }),
-      });
-
-      const result = await generateOutlineHandler(input);
-
-      expect(result.outline?.summary).toContain('mystical realm');
-    });
-
-    it('uses frame adversaries in character suggestions', async () => {
-      const input = createMockInput({
-        frame: createMockDbFrame({
-          typical_adversaries: ['dragons', 'cultists'],
-        }),
-      });
-
-      const result = await generateOutlineHandler(input);
-
-      // At least one scene should reference frame adversaries
-      const hasAdversaryReferences = result.outline!.scenes.some(
-        (s) => s.characters?.some((c) => c.toLowerCase().includes('dragon'))
-      );
-      // Combat scenes should have adversary references or at least exist
-      expect(result.outline!.scenes.some((s) => s.sceneType === 'combat') || hasAdversaryReferences).toBe(true);
-    });
-
-    it('handles custom frame typicalAdversaries', async () => {
-      const input = createMockInput({
-        frame: createMockCustomFrame({
-          typicalAdversaries: ['automatons', 'rogues'],
-        }),
-      });
-
-      const result = await generateOutlineHandler(input);
-
       expect(result.isComplete).toBe(true);
-    });
-  });
-
-  // =============================================================================
-  // Dial Integration Tests
-  // =============================================================================
-
-  describe('dial integration', () => {
-    it('includes party size in summary', async () => {
-      const input = createMockInput({
-        dialsSummary: createMockDialsSummary({ partySize: 5 }),
-      });
-
-      const result = await generateOutlineHandler(input);
-
-      expect(result.outline?.summary).toContain('5');
-    });
-
-    it('includes tier description in summary', async () => {
-      const input = createMockInput({
-        dialsSummary: createMockDialsSummary({ partyTier: 3 }),
-      });
-
-      const result = await generateOutlineHandler(input);
-
-      expect(result.outline?.summary.toLowerCase()).toContain('veteran');
-    });
-
-    it('includes tone in summary when provided', async () => {
-      const input = createMockInput({
-        dialsSummary: createMockDialsSummary({ tone: 'whimsical and lighthearted' }),
-      });
-
-      const result = await generateOutlineHandler(input);
-
-      expect(result.outline?.summary).toContain('whimsical');
-    });
-
-    it('handles null tone gracefully', async () => {
-      const input = createMockInput({
-        dialsSummary: createMockDialsSummary({ tone: null }),
-      });
-
-      const result = await generateOutlineHandler(input);
-
-      expect(result.isComplete).toBe(true);
-      expect(result.outline?.summary).not.toContain('null');
-    });
-
-    it('incorporates themes in key elements', async () => {
-      const input = createMockInput({
-        dialsSummary: createMockDialsSummary({ themes: ['redemption', 'sacrifice'] }),
-      });
-
-      const result = await generateOutlineHandler(input);
-
-      // At least one scene should have theme-related key elements
-      const allKeyElements = result.outline!.scenes.flatMap((s) => s.keyElements);
-      const hasThemeElement = allKeyElements.some(
-        (e) => e.toLowerCase().includes('redemption') || e.toLowerCase().includes('sacrifice')
-      );
-      expect(hasThemeElement).toBe(true);
     });
   });
 
@@ -416,8 +465,17 @@ describe('generateOutlineHandler', () => {
   // =============================================================================
 
   describe('feedback and regeneration', () => {
+    beforeEach(() => {
+      vi.mocked(claudeCli.checkClaudeAvailable).mockResolvedValue(true);
+    });
+
     it('acknowledges feedback in response message', async () => {
-      const previousOutline: Outline = {
+      vi.mocked(claudeCli.invokeClaudeCli).mockResolvedValue({
+        output: JSON.stringify(createMockClaudeResponse()),
+        jsonResponse: createMockClaudeResponse(),
+      });
+
+      const previousOutline = {
         id: 'outline-1',
         title: 'Previous Adventure',
         summary: 'Previous summary',
@@ -438,8 +496,13 @@ describe('generateOutlineHandler', () => {
       expect(result.assistantMessage).toContain('feedback');
     });
 
-    it('adjusts to more combat when feedback requests it', async () => {
-      const previousOutline: Outline = {
+    it('passes feedback to user prompt', async () => {
+      vi.mocked(claudeCli.invokeClaudeCli).mockResolvedValue({
+        output: JSON.stringify(createMockClaudeResponse()),
+        jsonResponse: createMockClaudeResponse(),
+      });
+
+      const previousOutline = {
         id: 'outline-1',
         title: 'Previous Adventure',
         summary: 'Previous summary',
@@ -452,42 +515,23 @@ describe('generateOutlineHandler', () => {
       const input = createMockInput({
         feedback: 'More combat please',
         previousOutline,
-        dialsSummary: createMockDialsSummary({ sceneCount: 6 }),
       });
 
-      const result = await generateOutlineHandler(input);
+      await generateOutlineHandler(input);
 
-      const combatScenes = result.outline!.scenes.filter((s) => s.sceneType === 'combat');
-      // Combat-heavy distribution provides significant combat presence (at least 2 of 6)
-      expect(combatScenes.length).toBeGreaterThanOrEqual(2);
-    });
-
-    it('adjusts to more exploration when feedback requests less combat', async () => {
-      const previousOutline: Outline = {
-        id: 'outline-1',
-        title: 'Previous Adventure',
-        summary: 'Previous summary',
-        scenes: [],
-        isConfirmed: false,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-
-      const input = createMockInput({
-        feedback: 'Less combat, more exploration please',
-        previousOutline,
-        dialsSummary: createMockDialsSummary({ sceneCount: 6 }),
-      });
-
-      const result = await generateOutlineHandler(input);
-
-      const explorationScenes = result.outline!.scenes.filter(
-        (s) => s.sceneType === 'exploration' || s.sceneType === 'social' || s.sceneType === 'puzzle'
+      expect(claudeCli.invokeClaudeCli).toHaveBeenCalledWith(
+        expect.objectContaining({
+          prompt: expect.stringContaining('More combat please'),
+        })
       );
-      expect(explorationScenes.length).toBeGreaterThanOrEqual(3);
     });
 
     it('generates new outline without feedback', async () => {
+      vi.mocked(claudeCli.invokeClaudeCli).mockResolvedValue({
+        output: JSON.stringify(createMockClaudeResponse()),
+        jsonResponse: createMockClaudeResponse(),
+      });
+
       const input = createMockInput();
 
       const result = await generateOutlineHandler(input);
@@ -502,7 +546,16 @@ describe('generateOutlineHandler', () => {
   // =============================================================================
 
   describe('response messages', () => {
+    beforeEach(() => {
+      vi.mocked(claudeCli.checkClaudeAvailable).mockResolvedValue(true);
+    });
+
     it('includes frame name in response', async () => {
+      vi.mocked(claudeCli.invokeClaudeCli).mockResolvedValue({
+        output: JSON.stringify(createMockClaudeResponse()),
+        jsonResponse: createMockClaudeResponse(),
+      });
+
       const input = createMockInput({
         frame: createMockDbFrame({ name: 'The Crystal Caves' }),
       });
@@ -513,6 +566,11 @@ describe('generateOutlineHandler', () => {
     });
 
     it('includes scene list in response', async () => {
+      vi.mocked(claudeCli.invokeClaudeCli).mockResolvedValue({
+        output: JSON.stringify(createMockClaudeResponse({ sceneCount: 4 })),
+        jsonResponse: createMockClaudeResponse({ sceneCount: 4 }),
+      });
+
       const input = createMockInput({
         dialsSummary: createMockDialsSummary({ sceneCount: 4 }),
       });
@@ -527,6 +585,11 @@ describe('generateOutlineHandler', () => {
     });
 
     it('prompts for review when generation is complete', async () => {
+      vi.mocked(claudeCli.invokeClaudeCli).mockResolvedValue({
+        output: JSON.stringify(createMockClaudeResponse()),
+        jsonResponse: createMockClaudeResponse(),
+      });
+
       const input = createMockInput();
 
       const result = await generateOutlineHandler(input);
@@ -536,11 +599,62 @@ describe('generateOutlineHandler', () => {
   });
 
   // =============================================================================
+  // Error Handling Tests
+  // =============================================================================
+
+  describe('error handling', () => {
+    beforeEach(() => {
+      vi.mocked(claudeCli.checkClaudeAvailable).mockResolvedValue(true);
+    });
+
+    it('handles Claude CLI timeout', async () => {
+      vi.mocked(claudeCli.invokeClaudeCli).mockRejectedValue(
+        new Error('Claude CLI timed out after 90000ms')
+      );
+
+      const input = createMockInput();
+
+      await expect(generateOutlineHandler(input)).rejects.toThrow('timed out');
+    });
+
+    it('handles invalid JSON response', async () => {
+      vi.mocked(claudeCli.invokeClaudeCli).mockResolvedValue({
+        output: 'not valid json',
+        jsonResponse: undefined,
+      });
+
+      const input = createMockInput();
+
+      await expect(generateOutlineHandler(input)).rejects.toThrow();
+    });
+
+    it('handles missing required fields in response', async () => {
+      vi.mocked(claudeCli.invokeClaudeCli).mockResolvedValue({
+        output: JSON.stringify({ title: 'Missing scenes' }),
+        jsonResponse: { title: 'Missing scenes' },
+      });
+
+      const input = createMockInput();
+
+      await expect(generateOutlineHandler(input)).rejects.toThrow();
+    });
+  });
+
+  // =============================================================================
   // Edge Cases
   // =============================================================================
 
   describe('edge cases', () => {
+    beforeEach(() => {
+      vi.mocked(claudeCli.checkClaudeAvailable).mockResolvedValue(true);
+    });
+
     it('handles frame with no themes', async () => {
+      vi.mocked(claudeCli.invokeClaudeCli).mockResolvedValue({
+        output: JSON.stringify(createMockClaudeResponse()),
+        jsonResponse: createMockClaudeResponse(),
+      });
+
       const input = createMockInput({
         frame: createMockDbFrame({ themes: undefined }),
       });
@@ -551,6 +665,11 @@ describe('generateOutlineHandler', () => {
     });
 
     it('handles frame with no adversaries', async () => {
+      vi.mocked(claudeCli.invokeClaudeCli).mockResolvedValue({
+        output: JSON.stringify(createMockClaudeResponse()),
+        jsonResponse: createMockClaudeResponse(),
+      });
+
       const input = createMockInput({
         frame: createMockDbFrame({ typical_adversaries: undefined }),
       });
@@ -561,6 +680,11 @@ describe('generateOutlineHandler', () => {
     });
 
     it('handles empty themes array in dials', async () => {
+      vi.mocked(claudeCli.invokeClaudeCli).mockResolvedValue({
+        output: JSON.stringify(createMockClaudeResponse()),
+        jsonResponse: createMockClaudeResponse(),
+      });
+
       const input = createMockInput({
         dialsSummary: createMockDialsSummary({ themes: [] }),
       });
@@ -571,6 +695,11 @@ describe('generateOutlineHandler', () => {
     });
 
     it('handles null pillarBalance', async () => {
+      vi.mocked(claudeCli.invokeClaudeCli).mockResolvedValue({
+        output: JSON.stringify(createMockClaudeResponse()),
+        jsonResponse: createMockClaudeResponse(),
+      });
+
       const input = createMockInput({
         dialsSummary: createMockDialsSummary({ pillarBalance: null }),
       });
@@ -581,28 +710,19 @@ describe('generateOutlineHandler', () => {
       expect(result.outline?.scenes).toBeDefined();
     });
 
-    it('handles very long frame description', async () => {
-      const longDescription = 'A'.repeat(500);
+    it('handles null tone gracefully', async () => {
+      vi.mocked(claudeCli.invokeClaudeCli).mockResolvedValue({
+        output: JSON.stringify(createMockClaudeResponse()),
+        jsonResponse: createMockClaudeResponse(),
+      });
+
       const input = createMockInput({
-        frame: createMockDbFrame({ description: longDescription }),
+        dialsSummary: createMockDialsSummary({ tone: null }),
       });
 
       const result = await generateOutlineHandler(input);
 
       expect(result.isComplete).toBe(true);
-      // Summary should be truncated
-      expect(result.outline!.summary.length).toBeLessThan(longDescription.length + 200);
-    });
-
-    it('handles frame name that already starts with The', async () => {
-      const input = createMockInput({
-        frame: createMockDbFrame({ name: 'The Ancient Temple' }),
-      });
-
-      const result = await generateOutlineHandler(input);
-
-      // Should not have double "The"
-      expect(result.outline?.title).not.toMatch(/^The The/);
     });
   });
 });

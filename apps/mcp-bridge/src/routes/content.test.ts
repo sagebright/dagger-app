@@ -15,6 +15,7 @@ import type {
 } from '@dagger-app/shared-types';
 import contentRouter from './content.js';
 import * as daggerheartQueries from '../services/daggerheart-queries.js';
+import * as claudeCli from '../services/claude-cli.js';
 
 // Mock the Supabase queries
 vi.mock('../services/daggerheart-queries.js', () => ({
@@ -27,6 +28,12 @@ vi.mock('../services/daggerheart-queries.js', () => ({
   getWeapons: vi.fn(),
   getArmor: vi.fn(),
   getConsumables: vi.fn(),
+}));
+
+// Mock Claude CLI service for outline generation
+vi.mock('../services/claude-cli.js', () => ({
+  checkClaudeAvailable: vi.fn().mockResolvedValue(true),
+  invokeClaudeCli: vi.fn(),
 }));
 
 // Create test app
@@ -386,7 +393,38 @@ describe('Content Route', () => {
       lethality: 'standard',
     };
 
+    /**
+     * Create mock Claude CLI response for outline generation
+     */
+    function createMockClaudeOutlineResponse(sceneCount = 4) {
+      const scenes = Array.from({ length: sceneCount }, (_, i) => ({
+        sceneNumber: i + 1,
+        title: `Scene ${i + 1}: The ${['Arrival', 'Investigation', 'Confrontation', 'Resolution', 'Escape', 'Climax'][i] || 'Journey'}`,
+        description: `Description for scene ${i + 1} that sets up the dramatic moment.`,
+        sceneType: ['exploration', 'social', 'combat', 'revelation', 'puzzle', 'mixed'][i % 6],
+        keyElements: ['Key element 1', 'Key element 2'],
+        location: `Location ${i + 1}`,
+        characters: ['NPC 1', 'NPC 2'],
+      }));
+
+      return {
+        title: 'Shadows of the Dark Forest',
+        summary: 'An adventure exploring the mysterious forest where danger lurks.',
+        scenes,
+      };
+    }
+
+    beforeEach(() => {
+      vi.mocked(claudeCli.checkClaudeAvailable).mockResolvedValue(true);
+    });
+
     it('should generate an outline with scene briefs', async () => {
+      const mockResponse = createMockClaudeOutlineResponse(4);
+      vi.mocked(claudeCli.invokeClaudeCli).mockResolvedValue({
+        output: JSON.stringify(mockResponse),
+        jsonResponse: mockResponse,
+      });
+
       const response = await request(app)
         .post('/content/outline/generate')
         .send({
@@ -406,6 +444,12 @@ describe('Content Route', () => {
     });
 
     it('should respect scene count from dials', async () => {
+      const mockResponse = createMockClaudeOutlineResponse(6);
+      vi.mocked(claudeCli.invokeClaudeCli).mockResolvedValue({
+        output: JSON.stringify(mockResponse),
+        jsonResponse: mockResponse,
+      });
+
       const response = await request(app)
         .post('/content/outline/generate')
         .send({
@@ -455,6 +499,12 @@ describe('Content Route', () => {
     });
 
     it('should accept feedback for regeneration', async () => {
+      const mockResponse = createMockClaudeOutlineResponse(4);
+      vi.mocked(claudeCli.invokeClaudeCli).mockResolvedValue({
+        output: JSON.stringify(mockResponse),
+        jsonResponse: mockResponse,
+      });
+
       const response = await request(app)
         .post('/content/outline/generate')
         .send({
@@ -478,6 +528,12 @@ describe('Content Route', () => {
     });
 
     it('should include scene types in generated scenes', async () => {
+      const mockResponse = createMockClaudeOutlineResponse(4);
+      vi.mocked(claudeCli.invokeClaudeCli).mockResolvedValue({
+        output: JSON.stringify(mockResponse),
+        jsonResponse: mockResponse,
+      });
+
       const response = await request(app)
         .post('/content/outline/generate')
         .send({
@@ -493,6 +549,12 @@ describe('Content Route', () => {
     });
 
     it('should include key elements in each scene', async () => {
+      const mockResponse = createMockClaudeOutlineResponse(4);
+      vi.mocked(claudeCli.invokeClaudeCli).mockResolvedValue({
+        output: JSON.stringify(mockResponse),
+        jsonResponse: mockResponse,
+      });
+
       const response = await request(app)
         .post('/content/outline/generate')
         .send({
