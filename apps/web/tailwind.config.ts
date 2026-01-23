@@ -38,14 +38,14 @@ const config: Config = {
           100: '#fef3c7',
           200: '#fde68a',
           300: '#fcd34d',
-          400: '#fbbf24',
-          500: '#d4a418',
-          600: '#b8860b',
-          700: '#92670a',
-          800: '#78540f',
-          900: '#654413',
+          400: '#e5bc7a',
+          500: '#d7a964',  // Demiplane gold
+          600: '#c49a58',
+          700: '#a67d3d',
+          800: '#8a6530',
+          900: '#6e5026',
           950: '#3a2507',
-          DEFAULT: '#d4a418',
+          DEFAULT: '#d7a964',
         },
         blood: {
           50: '#fef2f2',
@@ -62,18 +62,33 @@ const config: Config = {
           DEFAULT: '#8b1a1a',
         },
         shadow: {
-          50: '#f4f4f5',
-          100: '#e8e8ea',
-          200: '#d1d1d6',
-          300: '#a9a9b4',
-          400: '#7e7e8c',
-          500: '#5c5c6a',
-          600: '#47475a',
-          700: '#3b3b4c',
-          800: '#2e2e3d',
-          900: '#1e1e2a',
-          950: '#12121a',
-          DEFAULT: '#1e1e2a',
+          // Deep purple palette (from TTRPG persona - Demiplane inspired)
+          50: '#f4f4f8',
+          100: '#e8e6f0',
+          200: '#d1cce1',
+          300: '#a99bc5',
+          400: '#7b6aa8',
+          500: '#5c4a8a',
+          600: '#4a3873',
+          700: '#3d2d5e',
+          800: '#2d1a6b',  // Elevated purple
+          900: '#22145B',  // Surface purple
+          950: '#1a0f3a',  // Background - deep purple-black
+          DEFAULT: '#22145B',
+        },
+        // Rarity system (from D&D Beyond - for game content)
+        rarity: {
+          common: '#9ca3af',
+          uncommon: '#7ebe15',
+          rare: '#41a9f2',
+          legendary: '#ffb62a',
+          artifact: '#c364e7',
+        },
+        // Magic accent color
+        magic: {
+          DEFAULT: '#c364e7',
+          light: '#d17cf0',
+          dark: '#9b4dbd',
         },
       },
       fontFamily: {
@@ -90,10 +105,19 @@ const config: Config = {
         'heading-4': ['1.25rem', { lineHeight: '1.4', fontWeight: '600' }],
       },
       boxShadow: {
-        'fantasy': '0 4px 6px -1px rgba(26, 26, 29, 0.1), 0 2px 4px -2px rgba(26, 26, 29, 0.1)',
-        'fantasy-lg': '0 10px 15px -3px rgba(26, 26, 29, 0.15), 0 4px 6px -4px rgba(26, 26, 29, 0.1)',
-        'gold-glow': '0 0 15px rgba(212, 164, 24, 0.3)',
-        'blood-glow': '0 0 15px rgba(139, 26, 26, 0.3)',
+        'fantasy': '0 4px 6px -1px rgba(26, 15, 58, 0.2), 0 2px 4px -2px rgba(26, 15, 58, 0.15)',
+        'fantasy-lg': '0 10px 15px -3px rgba(26, 15, 58, 0.25), 0 4px 6px -4px rgba(26, 15, 58, 0.15)',
+        // Glow effects (from TTRPG persona)
+        'gold-glow': '0 0 20px rgba(215, 169, 100, 0.4)',
+        'gold-glow-subtle': '0 0 15px rgba(215, 169, 100, 0.2)',
+        'magic-glow': '0 0 20px rgba(195, 100, 231, 0.4)',
+        'legendary-glow': '0 0 30px rgba(255, 182, 42, 0.5)',
+        'blood-glow': '0 0 15px rgba(198, 0, 0, 0.4)',
+        // Elevation scale
+        'elevation-1': '0 2px 4px rgba(0, 0, 0, 0.3)',
+        'elevation-2': '0 4px 12px rgba(0, 0, 0, 0.4)',
+        'elevation-3': '0 8px 24px rgba(0, 0, 0, 0.5)',
+        'elevation-4': '0 16px 48px rgba(0, 0, 0, 0.6)',
       },
       borderRadius: {
         'fantasy': '0.5rem',

@@ -18,15 +18,19 @@
     --color-danger: theme('colors.blood.DEFAULT');
   }
 
-  /* Dark mode (shadow theme) */
+  /* Dark mode (deep purple theme - TTRPG persona) */
   .dark {
-    --color-bg: theme('colors.shadow.900');
-    --color-bg-secondary: theme('colors.shadow.800');
-    --color-text: theme('colors.parchment.100');
-    --color-text-secondary: theme('colors.parchment.300');
-    --color-border: theme('colors.shadow.600');
-    --color-accent: theme('colors.gold.400');
-    --color-accent-hover: theme('colors.gold.300');
+    --color-bg: theme('colors.shadow.950');           /* Deep purple-black #1a0f3a */
+    --color-bg-secondary: theme('colors.shadow.900'); /* Surface purple #22145B */
+    --color-surface: theme('colors.shadow.800');      /* Elevated purple #2d1a6b */
+    --color-text: #e0d8ca;                            /* Cream/parchment */
+    --color-text-secondary: #b8a990;                  /* Muted cream */
+    --color-text-muted: #8a7d6d;                      /* Subtle */
+    --color-border: rgba(215, 169, 100, 0.2);         /* Gold-tinted subtle */
+    --color-border-medium: rgba(215, 169, 100, 0.4); /* Gold-tinted medium */
+    --color-border-strong: theme('colors.gold.DEFAULT'); /* Gold solid */
+    --color-accent: theme('colors.gold.DEFAULT');     /* Demiplane gold #d7a964 */
+    --color-accent-hover: theme('colors.gold.400');   /* Lighter gold on hover */
     --color-danger: theme('colors.blood.500');
   }
 
@@ -41,7 +45,7 @@
   }
 
   .dark body {
-    @apply bg-shadow-900 text-parchment-100;
+    @apply bg-shadow-950 text-[#e0d8ca];
   }
 
   /* Typography defaults */
@@ -70,24 +74,33 @@
 @layer components {
   /* Fantasy button styles */
   .btn-primary {
-    @apply px-4 py-2 bg-gold text-ink-950 font-medium rounded-fantasy shadow-fantasy
-           hover:bg-gold-600 hover:shadow-gold-glow
-           active:bg-gold-700
+    @apply px-5 py-2.5 bg-gold text-shadow-950 font-semibold rounded-fantasy shadow-fantasy
+           hover:bg-gold-400 hover:shadow-gold-glow
+           active:bg-gold-600
            transition-all duration-200
-           disabled:opacity-50 disabled:cursor-not-allowed;
+           disabled:opacity-40 disabled:cursor-not-allowed;
   }
 
   .btn-secondary {
-    @apply px-4 py-2 bg-transparent border border-ink-300 text-ink-800 font-medium rounded-fantasy
+    @apply px-5 py-2.5 bg-transparent border-2 border-ink-300 text-ink-800 font-medium rounded-fantasy
            hover:bg-ink-100 hover:border-ink-400
            active:bg-ink-200
            transition-all duration-200
-           disabled:opacity-50 disabled:cursor-not-allowed;
+           disabled:opacity-40 disabled:cursor-not-allowed;
   }
 
   .dark .btn-secondary {
-    @apply border-parchment-400 text-parchment-100
-           hover:bg-shadow-700 hover:border-parchment-300;
+    @apply border-[rgba(215,169,100,0.4)] text-[#e0d8ca]
+           hover:bg-shadow-800 hover:border-gold hover:shadow-gold-glow-subtle;
+  }
+
+  /* Magic button variant */
+  .btn-magic {
+    @apply px-5 py-2.5 bg-magic text-white font-semibold rounded-fantasy shadow-fantasy
+           hover:bg-magic-light hover:shadow-magic-glow
+           active:bg-magic-dark
+           transition-all duration-200
+           disabled:opacity-40 disabled:cursor-not-allowed;
   }
 
   .btn-danger {
@@ -100,24 +113,89 @@
 
   /* Fantasy card styles */
   .card {
-    @apply bg-parchment-50 border border-ink-200 rounded-fantasy shadow-fantasy p-4;
+    @apply bg-parchment-50 border-2 border-ink-200 rounded-fantasy shadow-fantasy p-5
+           transition-all duration-200;
+  }
+
+  .card:hover {
+    @apply shadow-fantasy-lg;
   }
 
   .dark .card {
-    @apply bg-shadow-800 border-shadow-600;
+    @apply bg-shadow-800 border-[rgba(215,169,100,0.2)];
+  }
+
+  .dark .card:hover {
+    @apply border-[rgba(215,169,100,0.4)] shadow-gold-glow-subtle;
+  }
+
+  /* Decorative card variant for featured content */
+  .card-decorative {
+    @apply border-4 border-gold shadow-gold-glow;
+  }
+
+  .dark .card-decorative {
+    @apply border-gold;
   }
 
   /* Fantasy input styles */
   .input {
-    @apply w-full px-3 py-2 bg-parchment-50 border border-ink-300 rounded-fantasy
+    @apply w-full px-4 py-3 bg-parchment-50 border-2 border-ink-300 rounded-fantasy
            text-ink-900 placeholder-ink-400
-           focus:outline-none focus:ring-2 focus:ring-gold/50 focus:border-gold
+           focus:outline-none focus:ring-2 focus:ring-gold/30 focus:border-gold
            transition-all duration-200;
   }
 
   .dark .input {
-    @apply bg-shadow-800 border-shadow-500 text-parchment-100 placeholder-parchment-500
-           focus:ring-gold-400/50 focus:border-gold-400;
+    @apply bg-[rgba(0,0,0,0.2)] border-[rgba(215,169,100,0.2)] text-[#e0d8ca] placeholder-[#8a7d6d]
+           focus:ring-[rgba(215,169,100,0.3)] focus:border-gold;
+  }
+
+  /* Rarity badge styles */
+  .badge {
+    @apply inline-flex items-center px-3 py-1 text-xs font-semibold uppercase tracking-wide
+           rounded border transition-all duration-200;
+  }
+
+  .badge-common {
+    @apply bg-rarity-common/20 text-rarity-common border-rarity-common;
+  }
+
+  .badge-uncommon {
+    @apply bg-rarity-uncommon/20 text-rarity-uncommon border-rarity-uncommon;
+  }
+
+  .badge-rare {
+    @apply bg-rarity-rare/20 text-rarity-rare border-rarity-rare;
+  }
+
+  .badge-legendary {
+    @apply bg-rarity-legendary/20 text-rarity-legendary border-rarity-legendary;
+  }
+
+  .badge-artifact {
+    @apply bg-rarity-artifact/20 text-rarity-artifact border-rarity-artifact;
+  }
+
+  /* Content type badges */
+  .badge-character {
+    @apply bg-[#ee8600]/20 text-[#ee8600] border-[#ee8600];
+  }
+
+  .badge-spell {
+    @apply bg-magic/20 text-magic border-magic;
+  }
+
+  .badge-monster {
+    @apply bg-blood/20 text-blood border-blood;
+  }
+
+  .badge-item {
+    @apply bg-gold/20 text-gold border-gold;
+  }
+
+  .badge-location {
+    @apply bg-rarity-uncommon/20 text-rarity-uncommon border-rarity-uncommon;
   }
 }
 
@@ -188,6 +266,23 @@
     @apply text-gold-400;
   }
 
+  /* Gold-tinted border utilities */
+  .border-gold-subtle {
+    border-color: rgba(215, 169, 100, 0.2);
+  }
+
+  .border-gold-medium {
+    border-color: rgba(215, 169, 100, 0.4);
+  }
+
+  .border-gold-strong {
+    @apply border-gold;
+  }
+
+  .border-decorative {
+    @apply border-4 border-[#f0c75e];
+  }
+
   /* Scrollbar styling for dark mode */
   .scrollbar-fantasy {
     scrollbar-width: thin;
@@ -195,7 +290,7 @@
   }
 
   .dark .scrollbar-fantasy {
-    scrollbar-color: theme('colors.shadow.500') transparent;
+    scrollbar-color: rgba(215, 169, 100, 0.3) transparent;
   }
 
   .scrollbar-fantasy::-webkit-scrollbar {
@@ -211,6 +306,13 @@
   }
 
   .dark .scrollbar-fantasy::-webkit-scrollbar-thumb {
-    @apply bg-shadow-500;
+    background: rgba(215, 169, 100, 0.3);
+    @apply rounded-full;
+  }
+
+  /* Focus glow utility */
+  .focus-gold-glow:focus {
+    @apply outline-none ring-0;
+    box-shadow: 0 0 0 3px rgba(215, 169, 100, 0.3);
   }
 }
