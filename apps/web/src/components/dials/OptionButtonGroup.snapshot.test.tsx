@@ -105,4 +105,66 @@ describe('OptionButtonGroup Snapshots', () => {
       expect(container.firstChild).toMatchSnapshot();
     });
   });
+
+  describe('Default vs Confirmed States', () => {
+    it('renders default (unconfirmed) state with grayed styling', () => {
+      const { container } = render(
+        <OptionButtonGroup
+          options={TEST_OPTIONS}
+          value="option2"
+          onChange={() => {}}
+          label="Test Options"
+          isDefault={true}
+          isConfirmed={false}
+        />
+      );
+      expect(container.firstChild).toMatchSnapshot();
+    });
+
+    it('renders confirmed state with full gold styling', () => {
+      const { container } = render(
+        <OptionButtonGroup
+          options={TEST_OPTIONS}
+          value="option2"
+          onChange={() => {}}
+          label="Test Options"
+          isDefault={true}
+          isConfirmed={true}
+        />
+      );
+      expect(container.firstChild).toMatchSnapshot();
+    });
+
+    it('renders default state in dark mode', () => {
+      document.documentElement.classList.add('dark');
+      const { container } = render(
+        <OptionButtonGroup
+          options={TEST_OPTIONS}
+          value="option2"
+          onChange={() => {}}
+          label="Test Options"
+          isDefault={true}
+          isConfirmed={false}
+        />
+      );
+      expect(container.firstChild).toMatchSnapshot();
+      document.documentElement.classList.remove('dark');
+    });
+
+    it('renders confirmed state in dark mode', () => {
+      document.documentElement.classList.add('dark');
+      const { container } = render(
+        <OptionButtonGroup
+          options={TEST_OPTIONS}
+          value="option2"
+          onChange={() => {}}
+          label="Test Options"
+          isDefault={true}
+          isConfirmed={true}
+        />
+      );
+      expect(container.firstChild).toMatchSnapshot();
+      document.documentElement.classList.remove('dark');
+    });
+  });
 });

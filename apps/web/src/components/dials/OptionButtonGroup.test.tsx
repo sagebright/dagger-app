@@ -327,4 +327,119 @@ describe('OptionButtonGroup', () => {
       expect(screen.getByText('Expect casualties')).toBeInTheDocument();
     });
   });
+
+  describe('default confirmation behavior', () => {
+    const mockOnConfirm = vi.fn();
+
+    beforeEach(() => {
+      mockOnConfirm.mockClear();
+    });
+
+    it('calls onConfirm when clicking selected default value', async () => {
+      const user = userEvent.setup();
+      render(
+        <OptionButtonGroup
+          options={defaultOptions}
+          value="moderate"
+          onChange={mockOnChange}
+          isDefault={true}
+          isConfirmed={false}
+          onConfirm={mockOnConfirm}
+        />
+      );
+
+      await user.click(screen.getByRole('button', { name: /moderate/i }));
+
+      expect(mockOnConfirm).toHaveBeenCalledTimes(1);
+      expect(mockOnChange).not.toHaveBeenCalled();
+    });
+
+    it('does not call onConfirm when value is already confirmed', async () => {
+      const user = userEvent.setup();
+      render(
+        <OptionButtonGroup
+          options={defaultOptions}
+          value="moderate"
+          onChange={mockOnChange}
+          isDefault={true}
+          isConfirmed={true}
+          onConfirm={mockOnConfirm}
+        />
+      );
+
+      await user.click(screen.getByRole('button', { name: /moderate/i }));
+
+      expect(mockOnConfirm).not.toHaveBeenCalled();
+      expect(mockOnChange).not.toHaveBeenCalled();
+    });
+
+    it('does not call onConfirm when isDefault is false', async () => {
+      const user = userEvent.setup();
+      render(
+        <OptionButtonGroup
+          options={defaultOptions}
+          value="moderate"
+          onChange={mockOnChange}
+          isDefault={false}
+          isConfirmed={false}
+          onConfirm={mockOnConfirm}
+        />
+      );
+
+      await user.click(screen.getByRole('button', { name: /moderate/i }));
+
+      expect(mockOnConfirm).not.toHaveBeenCalled();
+      expect(mockOnChange).not.toHaveBeenCalled();
+    });
+
+    it('calls onChange for non-selected option even with confirmation props', async () => {
+      const user = userEvent.setup();
+      render(
+        <OptionButtonGroup
+          options={defaultOptions}
+          value="sparse"
+          onChange={mockOnChange}
+          isDefault={true}
+          isConfirmed={false}
+          onConfirm={mockOnConfirm}
+        />
+      );
+
+      await user.click(screen.getByRole('button', { name: /rich/i }));
+
+      expect(mockOnChange).toHaveBeenCalledWith('rich');
+      expect(mockOnConfirm).not.toHaveBeenCalled();
+    });
+
+    it('shows default visual state when isDefault is true and not confirmed', () => {
+      render(
+        <OptionButtonGroup
+          options={defaultOptions}
+          value="moderate"
+          onChange={mockOnChange}
+          isDefault={true}
+          isConfirmed={false}
+        />
+      );
+
+      const selectedButton = screen.getByRole('button', { name: /moderate/i });
+      expect(selectedButton).toHaveAttribute('data-default', 'true');
+      expect(selectedButton).not.toHaveAttribute('data-confirmed', 'true');
+    });
+
+    it('shows confirmed visual state when confirmed', () => {
+      render(
+        <OptionButtonGroup
+          options={defaultOptions}
+          value="moderate"
+          onChange={mockOnChange}
+          isDefault={true}
+          isConfirmed={true}
+        />
+      );
+
+      const selectedButton = screen.getByRole('button', { name: /moderate/i });
+      expect(selectedButton).toHaveAttribute('data-confirmed', 'true');
+    });
+  });
 });

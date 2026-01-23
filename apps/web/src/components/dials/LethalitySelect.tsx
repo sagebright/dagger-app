@@ -18,6 +18,12 @@ export interface LethalitySelectProps {
   label?: string;
   /** Whether the control is disabled */
   disabled?: boolean;
+  /** Whether current value is a default that can be confirmed */
+  isDefault?: boolean;
+  /** Whether the default value has been confirmed by user */
+  isConfirmed?: boolean;
+  /** Callback when user confirms a default value by clicking it */
+  onConfirm?: () => void;
   /** Additional CSS classes */
   className?: string;
 }
@@ -35,6 +41,9 @@ export function LethalitySelect({
   onChange,
   label,
   disabled = false,
+  isDefault = false,
+  isConfirmed = false,
+  onConfirm,
   className = '',
 }: LethalitySelectProps) {
   const handleChange = (selectedValue: string) => {
@@ -48,6 +57,9 @@ export function LethalitySelect({
       onChange={handleChange}
       label={label}
       disabled={disabled}
+      isDefault={isDefault}
+      isConfirmed={isConfirmed}
+      onConfirm={onConfirm}
       className={className}
     />
   );

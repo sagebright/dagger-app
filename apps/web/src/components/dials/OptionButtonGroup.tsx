@@ -30,6 +30,12 @@ export interface OptionButtonGroupProps {
   label?: string;
   /** Whether the control is disabled */
   disabled?: boolean;
+  /** Whether current value is a default that can be confirmed */
+  isDefault?: boolean;
+  /** Whether the default value has been confirmed by user */
+  isConfirmed?: boolean;
+  /** Callback when user confirms a default value by clicking it */
+  onConfirm?: () => void;
   /** Additional CSS classes */
   className?: string;
 }
@@ -40,6 +46,9 @@ export function OptionButtonGroup({
   onChange,
   label,
   disabled = false,
+  isDefault = false,
+  isConfirmed = false,
+  onConfirm,
   className = '',
 }: OptionButtonGroupProps) {
   const groupId = useId();
@@ -47,11 +56,22 @@ export function OptionButtonGroup({
 
   const handleClick = useCallback(
     (optionValue: string) => {
-      if (!disabled && optionValue !== value) {
-        onChange(optionValue);
+      if (disabled) return;
+
+      // If clicking on currently selected value
+      if (optionValue === value) {
+        // If it's a default value that hasn't been confirmed, trigger confirmation
+        if (isDefault && !isConfirmed && onConfirm) {
+          onConfirm();
+        }
+        // Otherwise, do nothing (no toggle off, no duplicate confirm)
+        return;
       }
+
+      // Clicking on a different option - trigger onChange
+      onChange(optionValue);
     },
-    [disabled, value, onChange]
+    [disabled, value, onChange, isDefault, isConfirmed, onConfirm]
   );
 
   return (
@@ -71,6 +91,8 @@ export function OptionButtonGroup({
       >
         {options.map((option) => {
           const isSelected = option.value === value;
+          const showAsDefault = isSelected && isDefault && !isConfirmed;
+          const showAsConfirmed = isSelected && isConfirmed;
           return (
             <button
               key={option.value}
@@ -78,15 +100,22 @@ export function OptionButtonGroup({
               role="button"
               aria-pressed={isSelected}
               disabled={disabled}
+              data-default={showAsDefault ? 'true' : undefined}
+              data-confirmed={showAsConfirmed ? 'true' : undefined}
               onClick={() => handleClick(option.value)}
               className={`
                 flex flex-col items-start px-4 py-2 rounded-lg border-2 transition-all
                 focus:outline-none focus:ring-2 focus:ring-gold-400 focus:ring-offset-2
                 focus:ring-offset-parchment-100 dark:focus:ring-offset-shadow-900
                 ${
-                  isSelected
-                    ? 'bg-gold-100 border-gold-500 text-ink-900 dark:bg-gold-600/20 dark:border-gold-500 dark:text-parchment-100'
-                    : 'bg-parchment-50 border-ink-300 text-ink-700 hover:bg-gold-50 hover:border-gold-300 dark:bg-shadow-800 dark:border-shadow-600 dark:text-parchment-300 dark:hover:border-shadow-500 dark:hover:bg-shadow-700'
+                  showAsDefault
+                    ? // Default (unconfirmed) state - grayed/muted appearance with dashed border
+                      'bg-ink-50 border-ink-300 border-dashed text-ink-600 dark:bg-shadow-700/50 dark:border-shadow-500 dark:text-parchment-400 hover:border-gold-400 hover:bg-gold-50/50 dark:hover:border-gold-600 dark:hover:bg-gold-900/20'
+                    : isSelected
+                      ? // Confirmed or user-selected state - full gold styling
+                        'bg-gold-100 border-gold-500 text-ink-900 dark:bg-gold-600/20 dark:border-gold-500 dark:text-parchment-100'
+                      : // Unselected state
+                        'bg-parchment-50 border-ink-300 text-ink-700 hover:bg-gold-50 hover:border-gold-300 dark:bg-shadow-800 dark:border-shadow-600 dark:text-parchment-300 dark:hover:border-shadow-500 dark:hover:bg-shadow-700'
                 }
                 ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
               `}
