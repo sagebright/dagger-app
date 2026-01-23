@@ -195,4 +195,90 @@ describe('EmotionalRegisterSelect', () => {
       });
     });
   });
+
+  describe('AI example generation', () => {
+    it('calls onRegenerateExample when regenerate button is clicked', async () => {
+      const mockOnRegenerateExample = vi.fn();
+      const user = userEvent.setup();
+      render(
+        <EmotionalRegisterSelect
+          value="heartfelt"
+          onChange={mockOnChange}
+          onRegenerateExample={mockOnRegenerateExample}
+        />
+      );
+
+      const regenerateButtons = screen.getAllByRole('button', { name: /regenerate example/i });
+      await user.click(regenerateButtons[0]); // Thrilling
+
+      expect(mockOnRegenerateExample).toHaveBeenCalledWith('thrilling');
+    });
+
+    it('shows loading spinner when generating example', () => {
+      render(
+        <EmotionalRegisterSelect
+          value="heartfelt"
+          onChange={mockOnChange}
+          loadingOption="thrilling"
+        />
+      );
+
+      // Find the Thrilling option's regenerate button - should have spinner
+      const thrillingOption = screen.getByText(/Braveheart/i).parentElement;
+      expect(thrillingOption).toContainHTML('animate-spin');
+    });
+
+    it('displays custom example when provided', () => {
+      render(
+        <EmotionalRegisterSelect
+          value="heartfelt"
+          onChange={mockOnChange}
+          customExamples={{ thrilling: "Custom thrilling like 'Mad Max: Fury Road'" }}
+        />
+      );
+
+      expect(screen.getByText(/like 'Mad Max: Fury Road'/i)).toBeInTheDocument();
+    });
+
+    it('uses default example when no custom example is provided', () => {
+      render(
+        <EmotionalRegisterSelect
+          value="heartfelt"
+          onChange={mockOnChange}
+          customExamples={{ tense: "Custom example for tense" }}
+        />
+      );
+
+      // Thrilling should still show default
+      expect(screen.getByText(/like 'Braveheart'/i)).toBeInTheDocument();
+    });
+
+    it('disables regenerate button while loading', () => {
+      render(
+        <EmotionalRegisterSelect
+          value="heartfelt"
+          onChange={mockOnChange}
+          loadingOption="thrilling"
+        />
+      );
+
+      const regenerateButtons = screen.getAllByRole('button', { name: /regenerate example/i });
+      // First button (Thrilling) should be disabled during loading
+      expect(regenerateButtons[0]).toBeDisabled();
+    });
+
+    it('shows error state for option with error', () => {
+      render(
+        <EmotionalRegisterSelect
+          value="heartfelt"
+          onChange={mockOnChange}
+          errorOption="thrilling"
+        />
+      );
+
+      // The Thrilling option should show an error indicator
+      const thrillingOption = screen.getByText(/Braveheart/i).closest('div');
+      expect(thrillingOption?.className).toContain('border-blood');
+    });
+  });
 });

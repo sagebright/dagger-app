@@ -22,6 +22,13 @@ import type {
   GenerateEchoesRequest,
   GenerateEchoesResponse,
   Echo,
+  GenerateExampleRequest,
+  GenerateExampleResponse,
+  ExampleDialType,
+} from '@dagger-app/shared-types';
+import {
+  TONE_OPTIONS,
+  EMOTIONAL_REGISTER_OPTIONS,
 } from '@dagger-app/shared-types';
 import {
   getFrames,
@@ -48,6 +55,7 @@ import { generateOutlineHandler } from '../mcp/tools/generateOutline.js';
 import { generateAdventureName, type SuggestNameParams } from '../services/name-suggestion.js';
 import { sendError, sendStructuredError } from './helpers.js';
 import type { StructuredErrorResponse } from '@dagger-app/shared-types';
+import { invokeClaudeCli } from '../services/claude-cli.js';
 
 const router: RouterType = Router();
 
@@ -526,6 +534,125 @@ router.post('/echoes/generate', async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Echo generation error:', error);
     sendError(res, 'PROCESSING_ERROR', 'Failed to generate echoes');
+  }
+});
+
+// =============================================================================
+// Pop Culture Example Routes (Issue #91)
+// =============================================================================
+
+/** Valid dial types for example generation */
+const VALID_DIAL_TYPES: ExampleDialType[] = ['tone', 'emotionalRegister'];
+
+/** Valid option values for each dial type */
+const VALID_OPTIONS: Record<ExampleDialType, readonly string[]> = {
+  tone: TONE_OPTIONS,
+  emotionalRegister: EMOTIONAL_REGISTER_OPTIONS,
+};
+
+/**
+ * Validate the dial type
+ */
+function isValidDialType(value: unknown): value is ExampleDialType {
+  return typeof value === 'string' && VALID_DIAL_TYPES.includes(value as ExampleDialType);
+}
+
+/**
+ * Validate the option value for a given dial type
+ */
+function isValidOptionValue(dialType: ExampleDialType, optionValue: unknown): boolean {
+  if (typeof optionValue !== 'string') return false;
+  return VALID_OPTIONS[dialType].includes(optionValue as (typeof VALID_OPTIONS)[ExampleDialType][number]);
+}
+
+/**
+ * Build the prompt for Claude to generate a pop culture example
+ */
+function buildExamplePrompt(
+  dialType: ExampleDialType,
+  optionValue: string,
+  context?: { themes?: string[]; tone?: string }
+): string {
+  const dialLabel = dialType === 'tone' ? 'tone' : 'emotional register';
+
+  let prompt = `Generate a brief pop culture example for a ${dialLabel} setting of "${optionValue}" in a tabletop RPG adventure.
+
+The example should be a single sentence in the format: "[Adjective phrase] like '[Movie/Show/Game Title]'"
+
+Requirements:
+- Reference a well-known movie, TV show, video game, or book
+- The reference should evoke the ${optionValue} ${dialLabel}
+- Keep it concise (under 60 characters)
+- Make it relatable and recognizable`;
+
+  if (context?.themes?.length) {
+    prompt += `\n\nThe adventure has these themes: ${context.themes.join(', ')}`;
+  }
+
+  prompt += `\n\nRespond with ONLY the example text, no explanation or quotes around it. Format: "[Adjective phrase] like '[Title]'"`;
+
+  return prompt;
+}
+
+/**
+ * POST /content/example/generate
+ *
+ * Generate a pop culture example for Tone or Emotional Register dials.
+ */
+router.post('/example/generate', async (req: Request, res: Response) => {
+  const body = req.body as Partial<GenerateExampleRequest>;
+
+  // Validate dialType
+  if (!body.dialType) {
+    sendError(res, 'INVALID_REQUEST', 'dialType is required', 400);
+    return;
+  }
+
+  if (!isValidDialType(body.dialType)) {
+    sendError(res, 'INVALID_REQUEST', 'dialType must be "tone" or "emotionalRegister"', 400);
+    return;
+  }
+
+  // Validate optionValue
+  if (!body.optionValue) {
+    sendError(res, 'INVALID_REQUEST', 'optionValue is required', 400);
+    return;
+  }
+
+  if (!isValidOptionValue(body.dialType, body.optionValue)) {
+    const validOptions = VALID_OPTIONS[body.dialType].join(', ');
+    sendError(res, 'INVALID_REQUEST', `optionValue must be one of: ${validOptions}`, 400);
+    return;
+  }
+
+  try {
+    // Build the prompt for Claude
+    const prompt = buildExamplePrompt(body.dialType, body.optionValue, body.context);
+
+    // Invoke Claude CLI to generate the example
+    const result = await invokeClaudeCli({
+      prompt,
+      timeout: 30000, // 30 second timeout for quick generation
+    });
+
+    // Parse the result
+    let example = result.output.trim();
+
+    // Clean up the example if it has extra quotes or formatting
+    if (example.startsWith('"') && example.endsWith('"')) {
+      example = example.slice(1, -1);
+    }
+
+    const response: GenerateExampleResponse = {
+      example,
+      dialType: body.dialType,
+      optionValue: body.optionValue,
+    };
+
+    res.json(response);
+  } catch (error) {
+    console.error('Example generation error:', error);
+    sendError(res, 'GENERATION_FAILED', 'Failed to generate pop culture example', 500);
   }
 });
 

@@ -1853,3 +1853,47 @@ export interface GenerateEchoesResponse {
   isComplete: boolean;
   followUpQuestion?: string;
 }
+
+// =============================================================================
+// Pop Culture Example Types (For Tone/Emotional Register Dials)
+// =============================================================================
+
+/**
+ * Type of dial that supports pop culture examples
+ */
+export type ExampleDialType = 'tone' | 'emotionalRegister';
+
+/**
+ * Request to generate a pop culture example for a dial option
+ */
+export interface GenerateExampleRequest {
+  /** The type of dial (tone or emotionalRegister) */
+  dialType: ExampleDialType;
+  /** The option value (e.g., 'grim', 'thrilling') */
+  optionValue: string;
+  /** Optional context for more relevant examples */
+  context?: {
+    themes?: string[];
+    tone?: string;
+  };
+}
+
+/**
+ * Response from pop culture example generation
+ */
+export interface GenerateExampleResponse {
+  /** The generated example text */
+  example: string;
+  /** The dial type this example is for */
+  dialType: ExampleDialType;
+  /** The option value this example is for */
+  optionValue: string;
+}
+
+/**
+ * Error response from example generation
+ */
+export interface GenerateExampleError {
+  error: string;
+  message: string;
+}

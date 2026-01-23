@@ -28,6 +28,14 @@ export interface EmotionalRegisterSelectProps {
   onConfirm?: () => void;
   /** Additional CSS classes */
   className?: string;
+  /** Callback when regenerate example button is clicked */
+  onRegenerateExample?: (registerValue: EmotionalRegisterOption) => void;
+  /** Register option currently loading an example */
+  loadingOption?: EmotionalRegisterOption;
+  /** Register option with an error */
+  errorOption?: EmotionalRegisterOption;
+  /** Custom examples keyed by register value */
+  customExamples?: Partial<Record<EmotionalRegisterOption, string>>;
 }
 
 /** Emotional register options with AI example stubs */
@@ -68,6 +76,10 @@ export function EmotionalRegisterSelect({
   isConfirmed = false,
   onConfirm,
   className = '',
+  onRegenerateExample,
+  loadingOption,
+  errorOption,
+  customExamples,
 }: EmotionalRegisterSelectProps) {
   const groupId = useId();
   const labelId = `${groupId}-label`;
@@ -89,11 +101,15 @@ export function EmotionalRegisterSelect({
   );
 
   const handleRegenerateClick = useCallback(
-    (e: React.MouseEvent, registerName: string) => {
+    (e: React.MouseEvent, registerValue: EmotionalRegisterOption, registerName: string) => {
       e.stopPropagation();
-      console.log(`Regenerate example for register: ${registerName} - Coming soon!`);
+      if (onRegenerateExample) {
+        onRegenerateExample(registerValue);
+      } else {
+        console.log(`Regenerate example for register: ${registerName} - Coming soon!`);
+      }
     },
-    []
+    [onRegenerateExample]
   );
 
   return (
@@ -145,25 +161,31 @@ export function EmotionalRegisterSelect({
                 className={`
                   flex items-center gap-1 px-4 py-1.5 rounded-b-lg border-2 border-t-0
                   ${
-                    showAsDefault
-                      ? 'bg-ink-50/50 border-ink-300 border-dashed dark:bg-shadow-700/30 dark:border-shadow-500'
-                      : isSelected
-                        ? 'bg-gold-50 border-gold-500 dark:bg-gold-600/10 dark:border-gold-500'
-                        : 'bg-parchment-100/50 border-ink-300 dark:bg-shadow-800/50 dark:border-shadow-600'
+                    errorOption === option.value
+                      ? 'bg-blood-50/50 border-blood-400 dark:bg-blood-900/20 dark:border-blood-600'
+                      : showAsDefault
+                        ? 'bg-ink-50/50 border-ink-300 border-dashed dark:bg-shadow-700/30 dark:border-shadow-500'
+                        : isSelected
+                          ? 'bg-gold-50 border-gold-500 dark:bg-gold-600/10 dark:border-gold-500'
+                          : 'bg-parchment-100/50 border-ink-300 dark:bg-shadow-800/50 dark:border-shadow-600'
                   }
                 `}
               >
                 <span className="text-xs italic text-ink-400 dark:text-parchment-500 flex-1">
-                  {option.example}
+                  {customExamples?.[option.value as EmotionalRegisterOption] || option.example}
                 </span>
                 <button
                   type="button"
                   aria-label={`Regenerate example for ${option.label}`}
-                  onClick={(e) => handleRegenerateClick(e, option.label)}
-                  disabled={disabled}
+                  onClick={(e) => handleRegenerateClick(e, option.value as EmotionalRegisterOption, option.label)}
+                  disabled={disabled || loadingOption === option.value}
                   className="p-0.5 rounded hover:bg-ink-200 dark:hover:bg-shadow-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <RefreshCw className="w-3 h-3 text-ink-400 dark:text-parchment-500" />
+                  {loadingOption === option.value ? (
+                    <RefreshCw className="w-3 h-3 text-ink-400 dark:text-parchment-500 animate-spin" />
+                  ) : (
+                    <RefreshCw className="w-3 h-3 text-ink-400 dark:text-parchment-500" />
+                  )}
                 </button>
               </div>
             </div>

@@ -194,5 +194,100 @@ describe('ToneSelect', () => {
         expect(button).toBeVisible();
       });
     });
+
+    it('disables regenerate buttons when component is disabled', () => {
+      render(<ToneSelect value="balanced" onChange={mockOnChange} disabled />);
+
+      const regenerateButtons = screen.getAllByRole('button', { name: /regenerate example/i });
+      regenerateButtons.forEach((button) => {
+        expect(button).toBeDisabled();
+      });
+    });
+  });
+
+  describe('AI example generation', () => {
+    it('calls onRegenerateExample when regenerate button is clicked', async () => {
+      const mockOnRegenerateExample = vi.fn();
+      const user = userEvent.setup();
+      render(
+        <ToneSelect
+          value="balanced"
+          onChange={mockOnChange}
+          onRegenerateExample={mockOnRegenerateExample}
+        />
+      );
+
+      const regenerateButtons = screen.getAllByRole('button', { name: /regenerate example/i });
+      await user.click(regenerateButtons[0]); // Grim
+
+      expect(mockOnRegenerateExample).toHaveBeenCalledWith('grim');
+    });
+
+    it('shows loading spinner when generating example', () => {
+      render(
+        <ToneSelect
+          value="balanced"
+          onChange={mockOnChange}
+          loadingOption="grim"
+        />
+      );
+
+      // Find the Grim option's regenerate button - should have spinner
+      const grimOption = screen.getByText(/Game of Thrones/i).parentElement;
+      expect(grimOption).toContainHTML('animate-spin');
+    });
+
+    it('displays custom example when provided', () => {
+      render(
+        <ToneSelect
+          value="balanced"
+          onChange={mockOnChange}
+          customExamples={{ grim: "Custom example like 'The Dark Knight'" }}
+        />
+      );
+
+      expect(screen.getByText(/like 'The Dark Knight'/i)).toBeInTheDocument();
+    });
+
+    it('uses default example when no custom example is provided', () => {
+      render(
+        <ToneSelect
+          value="balanced"
+          onChange={mockOnChange}
+          customExamples={{ serious: "Custom example for serious" }}
+        />
+      );
+
+      // Grim should still show default
+      expect(screen.getByText(/like 'Game of Thrones'/i)).toBeInTheDocument();
+    });
+
+    it('disables regenerate button while loading', () => {
+      render(
+        <ToneSelect
+          value="balanced"
+          onChange={mockOnChange}
+          loadingOption="grim"
+        />
+      );
+
+      const regenerateButtons = screen.getAllByRole('button', { name: /regenerate example/i });
+      // First button (Grim) should be disabled during loading
+      expect(regenerateButtons[0]).toBeDisabled();
+    });
+
+    it('shows error state for option with error', () => {
+      render(
+        <ToneSelect
+          value="balanced"
+          onChange={mockOnChange}
+          errorOption="grim"
+        />
+      );
+
+      // The Grim option should show an error indicator
+      const grimOption = screen.getByText(/Game of Thrones/i).closest('div');
+      expect(grimOption?.className).toContain('border-blood');
+    });
   });
 });

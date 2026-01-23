@@ -1334,4 +1334,159 @@ describe('Content Route', () => {
       expect(response.body.content.length).toBeGreaterThan(0);
     });
   });
+
+  // ===========================================================================
+  // Pop Culture Example Routes (Issue #91)
+  // ===========================================================================
+
+  describe('POST /content/example/generate', () => {
+    beforeEach(() => {
+      // Mock Claude CLI for example generation
+      // invokeClaudeCli returns { output: string, jsonResponse?: object, sessionId?: string }
+      vi.mocked(claudeCli.invokeClaudeCli).mockResolvedValue({
+        output: "Dark and brooding like 'The Dark Knight'",
+      });
+    });
+
+    it('should generate an example for tone dial', async () => {
+      const response = await request(app)
+        .post('/content/example/generate')
+        .send({
+          dialType: 'tone',
+          optionValue: 'grim',
+        });
+
+      expect(response.status).toBe(200);
+      expect(response.body).toHaveProperty('example');
+      expect(response.body).toHaveProperty('dialType', 'tone');
+      expect(response.body).toHaveProperty('optionValue', 'grim');
+      expect(typeof response.body.example).toBe('string');
+      expect(response.body.example.length).toBeGreaterThan(0);
+    });
+
+    it('should generate an example for emotionalRegister dial', async () => {
+      vi.mocked(claudeCli.invokeClaudeCli).mockResolvedValue({
+        output: "Heart-pounding action like 'Mad Max: Fury Road'",
+      });
+
+      const response = await request(app)
+        .post('/content/example/generate')
+        .send({
+          dialType: 'emotionalRegister',
+          optionValue: 'thrilling',
+        });
+
+      expect(response.status).toBe(200);
+      expect(response.body).toHaveProperty('example');
+      expect(response.body).toHaveProperty('dialType', 'emotionalRegister');
+      expect(response.body).toHaveProperty('optionValue', 'thrilling');
+    });
+
+    it('should return 400 if dialType is missing', async () => {
+      const response = await request(app)
+        .post('/content/example/generate')
+        .send({
+          optionValue: 'grim',
+        });
+
+      expect(response.status).toBe(400);
+      expect(response.body).toHaveProperty('code', 'INVALID_REQUEST');
+      expect(response.body.message).toContain('dialType');
+    });
+
+    it('should return 400 if optionValue is missing', async () => {
+      const response = await request(app)
+        .post('/content/example/generate')
+        .send({
+          dialType: 'tone',
+        });
+
+      expect(response.status).toBe(400);
+      expect(response.body).toHaveProperty('code', 'INVALID_REQUEST');
+      expect(response.body.message).toContain('optionValue');
+    });
+
+    it('should return 400 for invalid dialType', async () => {
+      const response = await request(app)
+        .post('/content/example/generate')
+        .send({
+          dialType: 'invalid',
+          optionValue: 'grim',
+        });
+
+      expect(response.status).toBe(400);
+      expect(response.body).toHaveProperty('code', 'INVALID_REQUEST');
+      expect(response.body.message).toContain('dialType');
+    });
+
+    it('should return 400 for invalid tone optionValue', async () => {
+      const response = await request(app)
+        .post('/content/example/generate')
+        .send({
+          dialType: 'tone',
+          optionValue: 'invalid-tone',
+        });
+
+      expect(response.status).toBe(400);
+      expect(response.body).toHaveProperty('code', 'INVALID_REQUEST');
+      expect(response.body.message).toContain('optionValue');
+    });
+
+    it('should return 400 for invalid emotionalRegister optionValue', async () => {
+      const response = await request(app)
+        .post('/content/example/generate')
+        .send({
+          dialType: 'emotionalRegister',
+          optionValue: 'invalid-register',
+        });
+
+      expect(response.status).toBe(400);
+      expect(response.body).toHaveProperty('code', 'INVALID_REQUEST');
+      expect(response.body.message).toContain('optionValue');
+    });
+
+    it('should accept optional context parameter', async () => {
+      const response = await request(app)
+        .post('/content/example/generate')
+        .send({
+          dialType: 'tone',
+          optionValue: 'grim',
+          context: {
+            themes: ['redemption', 'sacrifice'],
+            tone: 'grim',
+          },
+        });
+
+      expect(response.status).toBe(200);
+      expect(response.body).toHaveProperty('example');
+    });
+
+    it('should handle Claude CLI errors gracefully', async () => {
+      vi.mocked(claudeCli.invokeClaudeCli).mockRejectedValue(new Error('Claude CLI error'));
+
+      const response = await request(app)
+        .post('/content/example/generate')
+        .send({
+          dialType: 'tone',
+          optionValue: 'grim',
+        });
+
+      expect(response.status).toBe(500);
+      expect(response.body).toHaveProperty('code', 'GENERATION_FAILED');
+    });
+
+    it('should handle Claude CLI timeout', async () => {
+      vi.mocked(claudeCli.invokeClaudeCli).mockRejectedValue(new Error('Claude CLI timed out'));
+
+      const response = await request(app)
+        .post('/content/example/generate')
+        .send({
+          dialType: 'tone',
+          optionValue: 'grim',
+        });
+
+      expect(response.status).toBe(500);
+      expect(response.body).toHaveProperty('code', 'GENERATION_FAILED');
+    });
+  });
 });
