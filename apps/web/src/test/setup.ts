@@ -6,6 +6,61 @@
  * - crypto.randomUUID mock for deterministic test IDs
  * - React testing cleanup
  * - jest-dom matchers
+ *
+ * =============================================================================
+ * SNAPSHOT TESTING PATTERNS
+ * =============================================================================
+ *
+ * Vitest includes built-in snapshot testing support. Use snapshots for visual
+ * regression testing of UI components.
+ *
+ * FILE NAMING CONVENTION:
+ *   ComponentName.snapshot.test.tsx
+ *
+ * DIRECTORY STRUCTURE:
+ *   Vitest automatically creates __snapshots__/ directories next to test files:
+ *   src/components/dials/
+ *   ├── DialProgressBar.tsx
+ *   ├── DialProgressBar.test.tsx         # Unit/behavior tests
+ *   ├── DialProgressBar.snapshot.test.tsx # Snapshot tests
+ *   └── __snapshots__/
+ *       └── DialProgressBar.snapshot.test.tsx.snap
+ *
+ * WRITING SNAPSHOT TESTS:
+ *   ```tsx
+ *   import { render } from '@testing-library/react';
+ *   import { MyComponent } from './MyComponent';
+ *
+ *   describe('MyComponent Snapshots', () => {
+ *     it('renders default state', () => {
+ *       const { container } = render(<MyComponent />);
+ *       expect(container.firstChild).toMatchSnapshot();
+ *     });
+ *
+ *     it('renders loading state', () => {
+ *       const { container } = render(<MyComponent isLoading />);
+ *       expect(container.firstChild).toMatchSnapshot();
+ *     });
+ *   });
+ *   ```
+ *
+ * COMMANDS:
+ *   - Run tests:      pnpm test
+ *   - Update snaps:   pnpm test -- -u
+ *   - Filter by file: pnpm --filter web test ComponentName.snapshot
+ *
+ * BEST PRACTICES:
+ *   1. Test distinct visual states (empty, partial, complete, error)
+ *   2. Keep snapshot tests separate from behavior tests
+ *   3. Review snapshot diffs carefully before updating
+ *   4. Use descriptive test names for easy identification
+ *   5. Avoid snapshots with dynamic data (timestamps, random IDs)
+ *
+ * WHEN TO UPDATE SNAPSHOTS:
+ *   - After intentional UI changes
+ *   - NOT when investigating unexpected failures (fix the code instead)
+ *
+ * =============================================================================
  */
 
 import { cleanup } from '@testing-library/react';
