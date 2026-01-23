@@ -92,14 +92,16 @@ export function MultiSelectChips({
               disabled={isChipDisabled}
               aria-pressed={isSelected}
               className={`
-                px-3 py-1.5 rounded-full border text-sm font-medium
+                px-4 py-2 rounded-lg border-2 text-sm font-medium
                 transition-all duration-200
+                focus:outline-none focus:ring-2 focus:ring-gold-400 focus:ring-offset-2
+                focus:ring-offset-parchment-100 dark:focus:ring-offset-shadow-900
                 ${
                   isSelected
-                    ? 'bg-gold-100 border-gold-400 text-ink-900 dark:bg-gold-900/40 dark:border-gold-500 dark:text-parchment-100'
+                    ? 'bg-gold-100 border-gold-500 text-ink-900 dark:bg-gold-600/20 dark:border-gold-500 dark:text-parchment-100'
                     : isChipDisabled
                       ? 'bg-ink-100 border-ink-200 text-ink-400 cursor-not-allowed dark:bg-shadow-700 dark:border-shadow-600 dark:text-shadow-400'
-                      : 'bg-parchment-50 border-ink-300 text-ink-700 hover:bg-gold-50 hover:border-gold-300 dark:bg-shadow-800 dark:border-shadow-500 dark:text-parchment-200 dark:hover:bg-gold-900/20 dark:hover:border-gold-600'
+                      : 'bg-parchment-50 border-ink-300 text-ink-700 hover:bg-gold-50 hover:border-gold-300 dark:bg-shadow-800 dark:border-shadow-600 dark:text-parchment-300 dark:hover:border-shadow-500 dark:hover:bg-shadow-700'
                 }
               `}
             >

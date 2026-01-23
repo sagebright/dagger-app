@@ -362,4 +362,92 @@ describe('MultiSelectChips', () => {
       });
     });
   });
+
+  describe('unified button styling (issue #83)', () => {
+    it('uses rounded-lg border radius to match other dial buttons', () => {
+      render(
+        <MultiSelectChips
+          options={sampleOptions}
+          selected={[]}
+          maxSelections={3}
+          onChange={mockOnChange}
+        />
+      );
+
+      const chip = screen.getByText('Redemption').closest('button');
+      expect(chip).toHaveClass('rounded-lg');
+    });
+
+    it('uses border-2 width to match other dial buttons', () => {
+      render(
+        <MultiSelectChips
+          options={sampleOptions}
+          selected={[]}
+          maxSelections={3}
+          onChange={mockOnChange}
+        />
+      );
+
+      const chip = screen.getByText('Redemption').closest('button');
+      expect(chip).toHaveClass('border-2');
+    });
+
+    it('uses px-4 py-2 padding to match other dial buttons', () => {
+      render(
+        <MultiSelectChips
+          options={sampleOptions}
+          selected={[]}
+          maxSelections={3}
+          onChange={mockOnChange}
+        />
+      );
+
+      const chip = screen.getByText('Redemption').closest('button');
+      expect(chip).toHaveClass('px-4');
+      expect(chip).toHaveClass('py-2');
+    });
+
+    it('selected chips use gold-500 border to match other dial buttons', () => {
+      render(
+        <MultiSelectChips
+          options={sampleOptions}
+          selected={['redemption']}
+          maxSelections={3}
+          onChange={mockOnChange}
+        />
+      );
+
+      const selectedChip = screen.getByText('Redemption').closest('button');
+      expect(selectedChip).toHaveClass('border-gold-500');
+    });
+
+    it('unselected chips use ink-300 border in light mode', () => {
+      render(
+        <MultiSelectChips
+          options={sampleOptions}
+          selected={[]}
+          maxSelections={3}
+          onChange={mockOnChange}
+        />
+      );
+
+      const chip = screen.getByText('Redemption').closest('button');
+      expect(chip).toHaveClass('border-ink-300');
+    });
+
+    it('has focus ring styling matching other dial buttons', () => {
+      render(
+        <MultiSelectChips
+          options={sampleOptions}
+          selected={[]}
+          maxSelections={3}
+          onChange={mockOnChange}
+        />
+      );
+
+      const chip = screen.getByText('Redemption').closest('button');
+      expect(chip).toHaveClass('focus:ring-2');
+      expect(chip).toHaveClass('focus:ring-gold-400');
+    });
+  });
 });
