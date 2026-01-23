@@ -1,0 +1,145 @@
+# TTRPG Design Persona - Dagger-App Project Override
+# This file extends/overrides the global persona at ~/.claude/design-personas/ttrpg.yaml
+#
+# Override Mechanism:
+# - Values specified here take precedence over the global ttrpg.yaml
+# - Unspecified values inherit from the global persona
+# - Use this file for dagger-app-specific adjustments
+#
+# Source: Patterns validated during Dagger-App Dial Tuning UI revision (issues #79-#91)
+
+identity:
+  id: ttrpg-dagger-app
+  name: Modern Fantasy TTRPG (Dagger-App)
+  description: Dagger-App specific overrides for TTRPG persona
+  version: "1.0.0"
+  extends: "ttrpg"                # Indicates this overrides the global ttrpg persona
+
+# =============================================================================
+# PROJECT-SPECIFIC DEFAULTS
+# These values are validated through dagger-app implementation and may differ
+# from the global defaults based on app-specific requirements.
+# =============================================================================
+
+project_context:
+  app_name: "Dagger-App"
+  purpose: "Daggerheart TTRPG adventure generation"
+  primary_workflow: "Dial tuning via chat interface"
+
+# =============================================================================
+# VALIDATED PATTERNS FROM DIAL TUNING UI (Issues #79-#91)
+# =============================================================================
+
+validated_patterns:
+  # Pattern 1: Dark Mode as Default
+  # Confirmed working in: DialPanel, ReferenceChip, ConceptualPanel
+  dark_mode_default:
+    enabled: true
+    rationale: |
+      Dark mode creates immersive atmosphere for adventure creation.
+      Gold accents and glow effects are more impactful on dark backgrounds.
+      Reduces eye strain during extended dial tuning sessions.
+    implementation_notes:
+      - "Use bg-ink-900 as primary background"
+      - "Gold (#d7a964) provides excellent contrast on dark surfaces"
+      - "Glow effects (shadow-gold-glow) enhance selected states"
+
+  # Pattern 2: WCAG AA Contrast Minimum
+  # Validated contrast ratios for all dial tuning components
+  wcag_aa_contrast:
+    enabled: true
+    rationale: |
+      Long reading sessions require accessible contrast.
+      Selected/highlighted states must be clearly distinguishable.
+      Supports users with visual impairments during adventure creation.
+    implementation_notes:
+      - "Selected chips use gold border + subtle background shift"
+      - "Text contrast verified at 4.5:1 minimum"
+      - "Hover states provide additional visual feedback"
+    tested_components:
+      - "ReferenceChip (selected vs unselected)"
+      - "DialPanel (active dial indicators)"
+      - "ConceptualPanel (navigation highlights)"
+
+  # Pattern 3: AI-Generated Pop Culture Examples
+  # Core UX pattern for dial tuning abstract concepts
+  ai_pop_culture_examples:
+    enabled: true
+    rationale: |
+      Abstract concepts like "tone" or "balance" are hard to articulate.
+      Pop culture references provide shared vocabulary for creative intent.
+      Examples from games, movies, books bridge the gap between idea and implementation.
+    implementation_notes:
+      - "Display as clickable chips with hover states"
+      - "Show 3-5 examples per conceptual dial"
+      - "Include brief rationale for why each example fits"
+    example_sources:
+      - "Video games (Hollow Knight, Elden Ring, etc.)"
+      - "Movies (Princess Bride, LOTR, etc.)"
+      - "TV shows (Game of Thrones, Witcher, etc.)"
+      - "Books (Discworld, Stormlight Archive, etc.)"
+      - "Other TTRPGs (D&D, Pathfinder, etc.)"
+
+  # Pattern 4: Regenerate Examples Interaction
+  # User agency over AI-generated content
+  regenerate_examples:
+    enabled: true
+    rationale: |
+      Users may not connect with initial AI suggestions.
+      Different users have different pop culture backgrounds.
+      Regeneration respects user agency without requiring manual input.
+    implementation_notes:
+      - "Refresh icon button positioned near examples"
+      - "Preserves any existing user selection"
+      - "Non-blocking - user can continue while examples regenerate"
+    button_spec:
+      icon: "RefreshCw"
+      position: "inline-end"
+      tooltip: "Get different examples"
+      loading_state: "spinner"
+
+# =============================================================================
+# COMPONENT OVERRIDES (Dagger-App Specific)
+# =============================================================================
+
+components:
+  # Reference chips for pop culture examples
+  reference_chip:
+    base_style:
+      padding: "8px 16px"
+      border_radius: "9999px"      # Pill shape
+      font_size: "14px"
+      font_weight: "500"
+      transition: "all 0.2s ease"
+    states:
+      default:
+        background: "transparent"
+        border: "1px solid rgba(215, 169, 100, 0.3)"
+        text_color: "#b8a990"
+      hover:
+        background: "rgba(215, 169, 100, 0.1)"
+        border: "1px solid rgba(215, 169, 100, 0.5)"
+        text_color: "#e0d8ca"
+      selected:
+        background: "rgba(215, 169, 100, 0.15)"
+        border: "2px solid #d7a964"
+        text_color: "#d7a964"
+        shadow: "0 0 8px rgba(215, 169, 100, 0.3)"
+
+  # Dial summary panel
+  dial_panel:
+    background: "var(--surface)"
+    border: "1px solid var(--border-subtle)"
+    border_radius: "12px"
+    padding: "20px"
+    section_spacing: "16px"
+
+# =============================================================================
+# NOTES FOR FUTURE DEVELOPMENT
+# =============================================================================
+
+future_considerations:
+  - "Consider adding user preference for example categories"
+  - "Track which examples resonate most for ML improvement"
+  - "Add 'suggest your own' option for power users"
+  - "Consider regional/cultural example variations"
