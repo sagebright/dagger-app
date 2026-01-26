@@ -13,6 +13,8 @@ export interface SceneBriefCardProps {
   scene: SceneBrief;
   /** Whether this scene card is expanded to show full details */
   expanded?: boolean;
+  /** Whether this scene has been confirmed by the user */
+  isConfirmed?: boolean;
   /** Callback when scene card is clicked */
   onToggleExpand?: (sceneId: string) => void;
   /** Callback when user wants to edit this scene */
@@ -95,6 +97,7 @@ function getSceneTypeLabel(sceneType: SceneBrief['sceneType']): string {
 export function SceneBriefCard({
   scene,
   expanded = false,
+  isConfirmed = false,
   onToggleExpand,
   onEdit,
   className = '',
@@ -128,11 +131,14 @@ export function SceneBriefCard({
       className={`
         relative flex flex-col p-4 rounded-fantasy border-2 cursor-pointer
         transition-all duration-200
+        motion-safe:hover:-translate-y-0.5
+        motion-safe:hover:shadow-gold-glow-subtle
         ${colors.bg} ${colors.border}
         hover:shadow-md hover:border-gold-400
         focus:outline-none focus:ring-2 focus:ring-gold-400 focus:ring-offset-2
         dark:focus:ring-offset-shadow-900
         ${expanded ? 'shadow-md' : ''}
+        ${isConfirmed ? 'shadow-gold-glow motion-safe:animate-selection-glow' : ''}
         ${className}
       `}
     >
