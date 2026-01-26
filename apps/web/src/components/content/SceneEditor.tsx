@@ -282,19 +282,15 @@ export function SceneEditor({
                 <h4 className="text-sm font-medium text-ink-700 dark:text-parchment-300 mb-2">
                   NPCs
                 </h4>
-                <div className="space-y-2">
+                <div className="flex flex-wrap gap-2">
                   {sceneDraft.extractedEntities.npcs.map((npc, i) => (
-                    <div
+                    <span
                       key={i}
-                      className="bg-parchment-100 dark:bg-shadow-700 rounded px-3 py-2"
+                      className="badge badge-compact badge-character"
                     >
-                      <span className="font-medium text-ink-800 dark:text-parchment-100">
-                        {npc.name}
-                      </span>
-                      <span className="text-ink-500 dark:text-parchment-500 ml-2">
-                        ({npc.role})
-                      </span>
-                    </div>
+                      {npc.name}
+                      <span className="ml-1 opacity-75">({npc.role})</span>
+                    </span>
                   ))}
                 </div>
               </div>
@@ -306,19 +302,15 @@ export function SceneEditor({
                 <h4 className="text-sm font-medium text-blood-700 dark:text-blood-400 mb-2">
                   Adversaries
                 </h4>
-                <div className="space-y-2">
+                <div className="flex flex-wrap gap-2">
                   {sceneDraft.extractedEntities.adversaries.map((adv, i) => (
-                    <div
+                    <span
                       key={i}
-                      className="bg-blood-50 dark:bg-blood-900/20 rounded px-3 py-2 border border-blood-200 dark:border-blood-800"
+                      className="badge badge-compact badge-monster"
                     >
-                      <span className="font-medium text-ink-800 dark:text-parchment-100">
-                        {adv.name}
-                      </span>
-                      <span className="text-blood-600 dark:text-blood-400 ml-2">
-                        ({adv.type}, Tier {adv.tier})
-                      </span>
-                    </div>
+                      {adv.name}
+                      <span className="ml-1 opacity-75">({adv.type}, T{adv.tier})</span>
+                    </span>
                   ))}
                 </div>
               </div>
@@ -330,19 +322,15 @@ export function SceneEditor({
                 <h4 className="text-sm font-medium text-gold-700 dark:text-gold-400 mb-2">
                   Items
                 </h4>
-                <div className="space-y-2">
+                <div className="flex flex-wrap gap-2">
                   {sceneDraft.extractedEntities.items.map((item, i) => (
-                    <div
+                    <span
                       key={i}
-                      className="bg-gold-50 dark:bg-gold-900/20 rounded px-3 py-2 border border-gold-200 dark:border-gold-800"
+                      className="badge badge-compact badge-item"
                     >
-                      <span className="font-medium text-ink-800 dark:text-parchment-100">
-                        {item.name}
-                      </span>
-                      <span className="text-gold-600 dark:text-gold-400 ml-2">
-                        (Tier {item.suggestedTier})
-                      </span>
-                    </div>
+                      {item.name}
+                      <span className="ml-1 opacity-75">(T{item.suggestedTier})</span>
+                    </span>
                   ))}
                 </div>
               </div>
