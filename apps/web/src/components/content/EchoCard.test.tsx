@@ -227,6 +227,111 @@ describe('EchoCard', () => {
     });
   });
 
+  describe('animations', () => {
+    describe('hover lift', () => {
+      it('applies motion-safe hover lift to card', () => {
+        render(<EchoCard {...defaultProps} />);
+        const card = screen.getByTestId('echo-card');
+        expect(card).toHaveClass('motion-safe:hover:-translate-y-1');
+      });
+    });
+
+    describe('confirmation glow', () => {
+      it('applies selection glow animation when confirmed', () => {
+        render(<EchoCard {...defaultProps} echo={mockConfirmedEcho} />);
+        const card = screen.getByTestId('echo-card');
+        expect(card).toHaveClass('motion-safe:animate-selection-glow');
+      });
+
+      it('does not apply selection glow animation when not confirmed', () => {
+        render(<EchoCard {...defaultProps} />);
+        const card = screen.getByTestId('echo-card');
+        expect(card).not.toHaveClass('motion-safe:animate-selection-glow');
+      });
+    });
+
+    describe('category-specific hover glow', () => {
+      it('applies category-appropriate hover glow for complications', () => {
+        render(<EchoCard {...defaultProps} />);
+        const card = screen.getByTestId('echo-card');
+        expect(card).toHaveClass('motion-safe:hover:shadow-blood-glow');
+      });
+
+      it('applies category-appropriate hover glow for rumors', () => {
+        render(<EchoCard {...defaultProps} echo={mockConfirmedEcho} />);
+        const card = screen.getByTestId('echo-card');
+        expect(card).toHaveClass('motion-safe:hover:shadow-gold-glow-subtle');
+      });
+
+      it('applies category-appropriate hover glow for discoveries', () => {
+        const discoveryEcho = { ...mockEcho, category: 'discoveries' as const };
+        render(<EchoCard {...defaultProps} echo={discoveryEcho} />);
+        const card = screen.getByTestId('echo-card');
+        expect(card).toHaveClass('motion-safe:hover:shadow-gold-glow-subtle');
+      });
+
+      it('applies category-appropriate hover glow for intrusions', () => {
+        const intrusionEcho = { ...mockEcho, category: 'intrusions' as const };
+        render(<EchoCard {...defaultProps} echo={intrusionEcho} />);
+        const card = screen.getByTestId('echo-card');
+        expect(card).toHaveClass('motion-safe:hover:shadow-fantasy');
+      });
+
+      it('applies category-appropriate hover glow for wonders', () => {
+        const wondersEcho = { ...mockEcho, category: 'wonders' as const };
+        render(<EchoCard {...defaultProps} echo={wondersEcho} />);
+        const card = screen.getByTestId('echo-card');
+        expect(card).toHaveClass('motion-safe:hover:shadow-magic-glow');
+      });
+    });
+
+    describe('focus rings', () => {
+      it('applies focus ring to confirm button', () => {
+        render(<EchoCard {...defaultProps} />);
+        const button = screen.getByRole('button', { name: /confirm/i });
+        expect(button).toHaveClass('focus:ring-2');
+        expect(button).toHaveClass('focus:ring-gold-400');
+        expect(button).toHaveClass('focus:outline-none');
+      });
+
+      it('applies focus ring to edit button', () => {
+        render(<EchoCard {...defaultProps} />);
+        const button = screen.getByRole('button', { name: /edit/i });
+        expect(button).toHaveClass('focus:ring-2');
+        expect(button).toHaveClass('focus:ring-gold-400');
+        expect(button).toHaveClass('focus:outline-none');
+      });
+
+      it('applies focus ring to regenerate button', () => {
+        render(<EchoCard {...defaultProps} />);
+        const button = screen.getByRole('button', { name: /regenerate/i });
+        expect(button).toHaveClass('focus:ring-2');
+        expect(button).toHaveClass('focus:ring-gold-400');
+        expect(button).toHaveClass('focus:outline-none');
+      });
+
+      it('applies focus ring offset for accessibility', () => {
+        render(<EchoCard {...defaultProps} />);
+        const button = screen.getByRole('button', { name: /confirm/i });
+        expect(button).toHaveClass('focus:ring-offset-2');
+      });
+    });
+
+    describe('smooth transitions', () => {
+      it('applies transition-all to card', () => {
+        render(<EchoCard {...defaultProps} />);
+        const card = screen.getByTestId('echo-card');
+        expect(card).toHaveClass('transition-all');
+      });
+
+      it('applies transition duration to card', () => {
+        render(<EchoCard {...defaultProps} />);
+        const card = screen.getByTestId('echo-card');
+        expect(card).toHaveClass('duration-200');
+      });
+    });
+  });
+
   describe('dark mode support', () => {
     it('applies dark mode background to card', () => {
       render(<EchoCard {...defaultProps} />);

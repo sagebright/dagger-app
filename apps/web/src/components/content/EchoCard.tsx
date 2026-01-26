@@ -34,31 +34,41 @@ export interface EchoCardProps {
 // Category Styling
 // =============================================================================
 
-const categoryStyles: Record<EchoCategory, { bg: string; text: string; border: string }> = {
+const categoryStyles: Record<EchoCategory, {
+  bg: string;
+  text: string;
+  border: string;
+  hoverGlow: string;
+}> = {
   complications: {
     bg: 'bg-blood-100 dark:bg-blood-900',
     text: 'text-blood-700 dark:text-blood-200',
     border: 'border-blood-200 dark:border-blood-700',
+    hoverGlow: 'motion-safe:hover:shadow-blood-glow',
   },
   rumors: {
     bg: 'bg-gold-100 dark:bg-gold-900',
     text: 'text-gold-700 dark:text-gold-200',
     border: 'border-gold-200 dark:border-gold-700',
+    hoverGlow: 'motion-safe:hover:shadow-gold-glow-subtle',
   },
   discoveries: {
     bg: 'bg-parchment-100 dark:bg-parchment-900',
     text: 'text-parchment-700 dark:text-parchment-200',
     border: 'border-parchment-300 dark:border-parchment-700',
+    hoverGlow: 'motion-safe:hover:shadow-gold-glow-subtle',
   },
   intrusions: {
     bg: 'bg-shadow-100 dark:bg-shadow-700',
     text: 'text-shadow-700 dark:text-shadow-200',
     border: 'border-shadow-200 dark:border-shadow-600',
+    hoverGlow: 'motion-safe:hover:shadow-fantasy',
   },
   wonders: {
     bg: 'bg-ink-100 dark:bg-ink-900',
     text: 'text-ink-700 dark:text-ink-200',
     border: 'border-ink-200 dark:border-ink-700',
+    hoverGlow: 'motion-safe:hover:shadow-magic-glow',
   },
 };
 
@@ -83,10 +93,12 @@ export function EchoCard({
     <article
       data-testid="echo-card"
       className={`
-        relative rounded-lg border p-4 transition-all
+        relative rounded-lg border p-4 transition-all duration-200
+        motion-safe:hover:-translate-y-1
         ${styles.border}
+        ${styles.hoverGlow}
         ${isConfirmed
-          ? 'bg-parchment-50 dark:bg-shadow-900 ring-1 ring-gold-300 dark:ring-gold-500'
+          ? 'bg-parchment-50 dark:bg-shadow-900 ring-1 ring-gold-300 dark:ring-gold-500 motion-safe:animate-selection-glow'
           : 'bg-parchment-50 dark:bg-shadow-800'}
         ${compact ? 'compact' : ''}
       `}
@@ -179,6 +191,8 @@ export function EchoCard({
             }
             disabled:opacity-50 disabled:cursor-not-allowed
             transition-colors
+            focus:outline-none focus:ring-2 focus:ring-gold-400 focus:ring-offset-2
+            focus:ring-offset-parchment-100 dark:focus:ring-offset-shadow-900
           `}
         >
           Confirm
@@ -195,6 +209,8 @@ export function EchoCard({
               hover:bg-parchment-50 dark:hover:bg-shadow-700
               disabled:opacity-50 disabled:cursor-not-allowed
               transition-colors
+              focus:outline-none focus:ring-2 focus:ring-gold-400 focus:ring-offset-2
+              focus:ring-offset-parchment-100 dark:focus:ring-offset-shadow-900
             "
           >
             Edit
@@ -212,6 +228,8 @@ export function EchoCard({
               hover:bg-parchment-50 dark:hover:bg-shadow-700
               disabled:opacity-50 disabled:cursor-not-allowed
               transition-colors
+              focus:outline-none focus:ring-2 focus:ring-gold-400 focus:ring-offset-2
+              focus:ring-offset-parchment-100 dark:focus:ring-offset-shadow-900
             "
           >
             Regenerate
