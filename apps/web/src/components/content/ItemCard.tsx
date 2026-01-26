@@ -193,8 +193,10 @@ export function ItemCard({
         bg-parchment-50 dark:bg-shadow-800
         border border-ink-200 dark:border-shadow-600
         rounded-fantasy overflow-hidden
-        ${isSelected ? 'ring-2 ring-gold-400 dark:ring-gold-500' : ''}
-        ${isConfirmed ? 'border-gold-400 dark:border-gold-600' : ''}
+        transition-all duration-200
+        motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-gold-glow-subtle
+        ${isSelected ? 'ring-2 ring-gold-400 dark:ring-gold-500 motion-safe:animate-selection-glow' : ''}
+        ${isConfirmed ? 'border-2 border-gold-400 dark:border-gold-500 shadow-gold-glow-subtle' : ''}
         ${className}
       `}
     >
@@ -211,8 +213,10 @@ export function ItemCard({
                 className="
                   w-4 h-4 rounded
                   border-ink-300 dark:border-shadow-500
-                  text-gold-500 focus:ring-gold-400
+                  text-gold-500
                   dark:bg-shadow-700
+                  focus:outline-none focus:ring-2 focus:ring-gold-400 focus:ring-offset-2
+                  focus:ring-offset-parchment-100 dark:focus:ring-offset-shadow-900
                 "
                 aria-label={`Select ${item.data.name}`}
               />
@@ -260,7 +264,13 @@ export function ItemCard({
           <button
             type="button"
             onClick={handleToggleExpand}
-            className="text-xs text-gold-600 dark:text-gold-400 hover:text-gold-500 dark:hover:text-gold-300 font-medium"
+            className="
+              text-xs text-gold-600 dark:text-gold-400
+              hover:text-gold-500 dark:hover:text-gold-300 font-medium
+              focus:outline-none focus:ring-2 focus:ring-gold-400 focus:ring-offset-1
+              focus:ring-offset-parchment-100 dark:focus:ring-offset-shadow-800
+              rounded
+            "
             aria-label={isExpanded ? 'Show less details' : 'Show more details'}
           >
             {isExpanded ? 'Show less' : 'Show more'}
@@ -289,6 +299,8 @@ export function ItemCard({
                     hover:bg-gold-100 dark:hover:bg-gold-900/30
                     disabled:opacity-50 disabled:cursor-not-allowed
                     transition-colors
+                    focus:outline-none focus:ring-2 focus:ring-gold-400 focus:ring-offset-1
+                    focus:ring-offset-parchment-100 dark:focus:ring-offset-shadow-800
                   "
                   aria-label="Decrease quantity"
                 >
@@ -317,6 +329,8 @@ export function ItemCard({
                     hover:bg-gold-100 dark:hover:bg-gold-900/30
                     disabled:opacity-50 disabled:cursor-not-allowed
                     transition-colors
+                    focus:outline-none focus:ring-2 focus:ring-gold-400 focus:ring-offset-1
+                    focus:ring-offset-parchment-100 dark:focus:ring-offset-shadow-800
                   "
                   aria-label="Increase quantity"
                 >
@@ -338,6 +352,8 @@ export function ItemCard({
                   dark:bg-gold-600 dark:border-gold-500 dark:text-ink-900
                   dark:hover:bg-gold-500 dark:hover:border-gold-400
                   transition-colors
+                  focus:outline-none focus:ring-2 focus:ring-gold-400 focus:ring-offset-2
+                  focus:ring-offset-parchment-100 dark:focus:ring-offset-shadow-800
                 "
                 aria-label="Confirm item selection"
               >
