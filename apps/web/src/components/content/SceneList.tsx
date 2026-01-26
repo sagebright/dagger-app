@@ -114,10 +114,11 @@ export function SceneList({
                 disabled={!canNavigate}
                 className={`
                   w-full text-left p-3 rounded-fantasy border transition-all
+                  focus:outline-none focus:ring-2 focus:ring-gold-400 focus:ring-offset-2 focus:ring-offset-parchment-100 dark:focus:ring-offset-shadow-900
                   ${
                     isCurrent
-                      ? 'ring-2 ring-gold-500 border-gold-400 bg-gold-50 dark:bg-gold-900/30 dark:border-gold-600'
-                      : 'border-ink-200 dark:border-shadow-600 hover:border-gold-300 dark:hover:border-gold-700'
+                      ? 'ring-2 ring-gold-500 border-gold-400 bg-gold-50 dark:bg-gold-900/30 dark:border-gold-600 motion-safe:animate-phase-glow'
+                      : 'border-ink-200 dark:border-shadow-600 hover:border-gold-300 dark:hover:border-gold-700 motion-safe:hover:-translate-y-0.5'
                   }
                   ${
                     !canNavigate
