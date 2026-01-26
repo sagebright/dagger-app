@@ -122,6 +122,22 @@ const config: Config = {
       borderRadius: {
         'fantasy': '0.5rem',
       },
+      /* ==========================================================================
+       * Focus Ring Configuration
+       *
+       * Consistent keyboard accessibility pattern for all interactive elements.
+       *
+       * Copy-paste pattern for inline Tailwind usage:
+       * focus:outline-none focus:ring-2 focus:ring-gold-400 focus:ring-offset-2 focus:ring-offset-parchment-100 dark:focus:ring-offset-shadow-900
+       *
+       * Or use the .focus-ring utility class from globals.css
+       * ========================================================================== */
+      ringColor: {
+        DEFAULT: '#e5bc7a', // gold-400 - primary focus ring color
+      },
+      ringOffsetColor: {
+        DEFAULT: '#f9f5eb', // parchment-100 - light mode offset
+      },
     },
   },
   plugins: [],
