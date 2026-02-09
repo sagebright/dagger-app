@@ -46,9 +46,9 @@ A local web application for generating Daggerheart TTRPG adventures. Converts a 
    NODE_ENV=development
    ALLOWED_ORIGINS=http://localhost:5173
 
-   # Supabase
+   # Supabase (bridge uses service_role key - never expose to clients)
    SUPABASE_URL=https://your-project.supabase.co
-   SUPABASE_ANON_KEY=your_anon_key_here
+   SUPABASE_SERVICE_ROLE_KEY=your_service_role_key_here
    ```
 
 4. Start the development servers:
@@ -79,7 +79,7 @@ curl http://localhost:3001/health
 | `NODE_ENV` | Environment mode | `development` |
 | `ALLOWED_ORIGINS` | CORS allowed origins | `http://localhost:5173` |
 | `SUPABASE_URL` | Supabase project URL | Required |
-| `SUPABASE_ANON_KEY` | Supabase anonymous key | Required |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key (server-side only) | Required |
 
 ## Usage
 

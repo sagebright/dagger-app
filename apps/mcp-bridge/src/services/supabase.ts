@@ -21,12 +21,16 @@ function getSupabaseUrl(): string {
 }
 
 /**
- * Get the Supabase anon key from environment variables
+ * Get the Supabase service role key from environment variables.
+ *
+ * The bridge uses service_role (bypasses RLS) intentionally.
+ * RLS protects against direct anon key abuse; the bridge mediates all client access.
+ * SECURITY: Never expose this key to frontend or client code.
  */
-function getSupabaseAnonKey(): string {
-  const key = process.env.SUPABASE_ANON_KEY;
+function getSupabaseServiceRoleKey(): string {
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!key) {
-    throw new Error('SUPABASE_ANON_KEY environment variable is required');
+    throw new Error('SUPABASE_SERVICE_ROLE_KEY environment variable is required');
   }
   return key;
 }
@@ -36,7 +40,7 @@ function getSupabaseAnonKey(): string {
  */
 export function getSupabase(): SupabaseClient {
   if (!supabaseClient) {
-    supabaseClient = createClient(getSupabaseUrl(), getSupabaseAnonKey(), {
+    supabaseClient = createClient(getSupabaseUrl(), getSupabaseServiceRoleKey(), {
       auth: {
         persistSession: false,
         autoRefreshToken: false,

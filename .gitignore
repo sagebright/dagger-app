@@ -42,3 +42,6 @@ coverage/
 
 # Claude CLI temp files
 .claude/temp/
+
+# Supabase CLI temp files
+supabase/.temp/

@@ -216,7 +216,7 @@ ALLOWED_ORIGINS=http://localhost:5173
 
 # Supabase (JMK project)
 SUPABASE_URL=https://ogvbbfzfljglfanceest.supabase.co
-SUPABASE_ANON_KEY=your_anon_key_here
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key_here
 ```
 
 ## Daggerheart Content Tables
