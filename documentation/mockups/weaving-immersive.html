@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dagger-App — Weaving (Immersive Mockup)</title>
+
+  <!--
+    ==========================================================================
+    STAGE 4: WEAVING — How does the plot unfold?
+    ==========================================================================
+    Panel pattern: SCENE BRIEF LIST WITH STATUS BADGES
+    The user and Sage collaborate on 3–6 scene briefs, reviewing and locking
+    each one before advancing to Inscription.
+
+    Panel shows scrollable scene brief rows with number, title, description,
+    and a status badge (Draft / Reviewed / Locked). The "Continue to
+    Inscription" button is disabled until all scenes are Locked.
+
+    DESIGN RATIONALE: Weaving is an iterative draft-feedback loop. The panel
+    needs to communicate progress at a glance — which scenes are settled and
+    which still need attention. Status badges borrow the gold treatment from
+    Binding's selected frame: Locked scenes are "done," Reviewed scenes are
+    close, and Drafts still need work. This gives the user a clear sense of
+    momentum without overwhelming them with detail.
+    ==========================================================================
+  -->
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Source+Serif+4:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+
+  <style>
+    /* =======================================================================
+       DESIGN TOKENS — Shared across all mockups
+       ======================================================================= */
+    :root {
+      --bg-primary: #1c1b1f;
+      --bg-secondary: #252428;
+      --bg-surface: #2e2d32;
+      --bg-surface-hover: #353439;
+      --text-primary: #e8e4de;
+      --text-secondary: #9d9a93;
+      --text-muted: #6b6862;
+      --accent-gold: #d7a964;
+      --accent-gold-hover: #e5bc7a;
+      --accent-gold-dim: rgba(215, 169, 100, 0.12);
+      --accent-gold-border: rgba(215, 169, 100, 0.25);
+      --accent-gold-glow: rgba(215, 169, 100, 0.15);
+      --border-subtle: rgba(255, 255, 255, 0.06);
+      --border-medium: rgba(255, 255, 255, 0.10);
+      --border-hover: rgba(255, 255, 255, 0.14);
+      --user-msg-bg: rgba(255, 255, 255, 0.07);
+      --font-serif: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+      --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+      --message-gap: 28px;
+      --section-padding: 24px;
+      --panel-padding: 20px;
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-xl: 20px;
+    }
+
+    /* === RESET & BASE === */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      height: 100%; overflow: hidden;
+      background: var(--bg-primary); color: var(--text-primary);
+      font-family: var(--font-sans); font-size: 15px; line-height: 1.6;
+      -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* === LAYOUT === */
+    .app-shell { display: flex; flex-direction: column; height: 100vh; width: 100%; }
+    .app-header {
+      flex-shrink: 0; display: flex; align-items: center;
+      padding: 0 16px; height: 56px;
+      background: var(--bg-secondary); border-bottom: 1px solid var(--border-subtle);
+    }
+    .app-header-home {
+      display: flex; align-items: center; justify-content: center;
+      width: 32px; height: 32px; border-radius: var(--radius-sm);
+      background: none; border: none; color: var(--text-muted);
+      cursor: pointer; transition: color 0.15s ease, background 0.15s ease; flex-shrink: 0;
+    }
+    .app-header-home:hover { color: var(--text-secondary); background: var(--bg-surface); }
+    .app-header-title {
+      font-family: var(--font-serif); font-size: 16px; font-weight: 500;
+      color: var(--accent-gold); white-space: nowrap; overflow: hidden;
+      text-overflow: ellipsis; min-width: 0; flex: 1; text-align: center;
+    }
+    .app-layout { display: grid; grid-template-columns: 13fr 7fr; flex: 1; min-height: 0; width: 100%; }
+
+    /* === CHAT SIDE === */
+    .chat-side { display: flex; flex-direction: column; min-height: 0; min-width: 0; border-right: 1px solid var(--border-subtle); }
+    .message-area {
+      flex: 1; overflow-y: auto; padding: 36px var(--section-padding) 8px;
+      scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.08) transparent;
+    }
+    .message-area::-webkit-scrollbar { width: 6px; }
+    .message-area::-webkit-scrollbar-track { background: transparent; }
+    .message-area::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 3px; }
+    .messages { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: var(--message-gap); }
+    .message { max-width: 88%; animation: message-appear 0.4s ease-out both; }
+    @keyframes message-appear {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .message-sage { align-self: flex-start; }
+    .message-sage .message-text { font-family: var(--font-serif); font-size: 16px; }
+    .message-user {
+      align-self: flex-end; background: var(--user-msg-bg);
+      border: 1px solid var(--border-subtle); padding: 12px 16px; border-radius: var(--radius-md);
+    }
+    .sage-label {
+      font-family: var(--font-serif); font-size: 12px; font-weight: 500;
+      color: var(--text-muted); letter-spacing: 0.03em; margin-bottom: 6px;
+    }
+    .message-text { color: var(--text-primary); line-height: 1.65; }
+    .message-text p + p { margin-top: 12px; }
+    .message:nth-child(1) { animation-delay: 0s; }
+    .message:nth-child(2) { animation-delay: 0.06s; }
+    .message:nth-child(3) { animation-delay: 0.12s; }
+    .message:nth-child(4) { animation-delay: 0.18s; }
+    .message:nth-child(5) { animation-delay: 0.24s; }
+    .message:nth-child(6) { animation-delay: 0.30s; }
+    .message:nth-child(7) { animation-delay: 0.36s; }
+    .thinking-indicator { display: flex; align-items: center; gap: 5px; padding: 4px 0; align-self: flex-start; }
+    .thinking-indicator .sage-label { margin-bottom: 0; margin-right: 4px; }
+    .thinking-dot {
+      width: 5px; height: 5px; border-radius: 50%;
+      background: var(--accent-gold); opacity: 0.3;
+      animation: thinking-pulse 1.4s ease-in-out infinite;
+    }
+    .thinking-dot:nth-child(2) { animation-delay: 0.2s; }
+    .thinking-dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes thinking-pulse {
+      0%, 80%, 100% { opacity: 0.2; transform: scale(0.85); }
+      40% { opacity: 0.9; transform: scale(1); }
+    }
+
+    /* === INPUT === */
+    .input-area { flex-shrink: 0; padding: 12px var(--section-padding) var(--section-padding); }
+    .input-container { position: relative; max-width: 720px; margin: 0 auto; }
+    .chat-input {
+      width: 100%; min-height: 88px; max-height: 180px;
+      padding: 14px 52px 14px 18px; background: var(--bg-secondary);
+      border: 1px solid var(--border-subtle); border-radius: var(--radius-lg);
+      color: var(--text-primary); font-family: var(--font-sans);
+      font-size: 15px; line-height: 1.55; resize: none; outline: none;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    .chat-input::placeholder { color: var(--text-muted); font-style: italic; }
+    .chat-input:focus { border-color: var(--accent-gold-border); box-shadow: 0 0 0 3px var(--accent-gold-glow); }
+    .submit-btn {
+      position: absolute; bottom: 12px; right: 12px; width: 36px; height: 36px;
+      border-radius: 50%; border: none; background: var(--accent-gold);
+      color: var(--bg-primary); cursor: pointer; display: flex; align-items: center;
+      justify-content: center; transition: background 0.15s ease, transform 0.15s ease; opacity: 0.7;
+    }
+    .submit-btn:hover { background: var(--accent-gold-hover); opacity: 1; transform: scale(1.05); }
+    .submit-btn svg { width: 20px; height: 20px; }
+
+    /* === PANEL SIDE === */
+    .panel-side {
+      display: flex; flex-direction: column; min-height: 0; min-width: 0; background: var(--bg-secondary);
+    }
+    .panel-header {
+      flex-shrink: 0; padding: 12px var(--panel-padding) 4px;
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    }
+
+    /* Phase dropdown trigger + dropdown */
+    .app-header-phase {
+      position: relative; display: flex; align-items: center; gap: 8px;
+      cursor: pointer; padding: 4px 10px 4px 4px; border-radius: var(--radius-sm);
+      border: none; background: none; transition: background 0.15s ease; flex-shrink: 0;
+    }
+    .app-header-phase:hover { background: var(--bg-surface); }
+    .phase-name { font-family: var(--font-sans); font-size: 13px; font-weight: 500; color: var(--accent-gold); }
+    .phase-progress { font-family: var(--font-sans); font-size: 12px; color: var(--text-muted); }
+    .phase-chevron { color: var(--text-muted); font-size: 10px; transition: transform 0.2s ease; margin-left: -2px; }
+    .phase-chevron.open { transform: rotate(180deg); }
+    .phase-dropdown {
+      position: absolute; top: calc(100% + 6px); left: 50%; transform: translateX(-50%);
+      min-width: 260px; background: var(--bg-surface); border: 1px solid var(--border-medium);
+      border-radius: var(--radius-md); box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+      padding: 6px; z-index: 100; opacity: 0; pointer-events: none; transition: opacity 0.15s ease;
+    }
+    .phase-dropdown.open { opacity: 1; pointer-events: auto; }
+    .phase-dropdown-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 8px 12px; border-radius: var(--radius-sm); font-family: var(--font-sans);
+      font-size: 13px; color: var(--text-secondary); cursor: pointer;
+      transition: background 0.12s ease; border: none; background: none; width: 100%; text-align: left;
+    }
+    .phase-dropdown-item:hover { background: var(--bg-surface-hover); }
+    .phase-dropdown-item.current { color: var(--accent-gold); font-weight: 600; background: var(--accent-gold-dim); }
+    .phase-dropdown-item.completed { color: var(--text-secondary); }
+    .phase-dropdown-item.future { color: var(--text-muted); cursor: default; opacity: 0.6; }
+    .phase-dropdown-item.future:hover { background: none; }
+    .phase-item-icon { display: flex; align-items: center; flex-shrink: 0; margin-left: auto; padding-left: 12px; }
+    .phase-item-icon svg { width: 12px; height: 12px; }
+    .phase-item-text { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+    .phase-item-desc { font-size: 11px; font-weight: 400; color: var(--text-muted); }
+    .phase-dropdown-item.current .phase-item-desc { color: var(--accent-gold); opacity: 0.7; }
+
+    /* === SCENE BRIEF LIST (Weaving-specific) ===
+       DESIGN RATIONALE: Scene brief rows are compact compared to Binding's
+       frame cards — Weaving is about progress through a sequence, not a
+       single high-stakes selection. The status badges communicate workflow
+       state at a glance: Draft (needs work), Reviewed (close), Locked (done).
+       Locked badges use the same gold-fill treatment as Binding's selected
+       frame — visual continuity across stages. The scene number in gold serif
+       creates a subtle rhythm that reinforces the narrative arc.
+    */
+    .scene-brief-list {
+      flex: 1; overflow-y: auto; padding: 8px var(--panel-padding);
+      scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.06) transparent;
+    }
+    .scene-brief-list::-webkit-scrollbar { width: 5px; }
+    .scene-brief-list::-webkit-scrollbar-track { background: transparent; }
+    .scene-brief-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.06); border-radius: 3px; }
+
+    .scene-brief-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 16px;
+      border: 1px solid var(--border-medium);
+      border-left: 3px solid transparent;
+      border-radius: var(--radius-sm);
+      margin-bottom: 10px;
+      transition: all 0.15s ease;
+    }
+    .scene-brief-row:hover {
+      background: var(--bg-surface);
+      border-color: var(--border-hover);
+      border-left-color: var(--border-hover);
+    }
+    .scene-brief-row.locked {
+      border-left-color: var(--accent-gold);
+      background: var(--accent-gold-dim);
+      border-color: var(--accent-gold-border);
+    }
+    .scene-brief-row.reviewed {
+      border-left-color: var(--accent-gold-border);
+    }
+
+    .scene-brief-number {
+      font-family: var(--font-serif);
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--accent-gold);
+      flex-shrink: 0;
+      width: 24px;
+      text-align: center;
+      line-height: 1;
+    }
+
+    .scene-brief-info {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      min-width: 0;
+      flex: 1;
+    }
+    .scene-brief-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+      line-height: 1.3;
+    }
+    .scene-brief-row.locked .scene-brief-title {
+      color: var(--accent-gold-hover);
+    }
+    .scene-brief-desc {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.4;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .scene-status-badge {
+      flex-shrink: 0;
+      font-family: var(--font-sans);
+      font-size: 11px;
+      font-weight: 500;
+      padding: 3px 10px;
+      border-radius: 12px;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      line-height: 1;
+    }
+    .scene-status-badge.draft {
+      border: 1px solid var(--border-medium);
+      color: var(--text-muted);
+      background: none;
+    }
+    .scene-status-badge.reviewed {
+      border: 1px solid var(--accent-gold-border);
+      color: var(--accent-gold);
+      background: none;
+    }
+    .scene-status-badge.locked {
+      border: 1px solid var(--accent-gold);
+      color: var(--bg-primary);
+      background: var(--accent-gold);
+    }
+    .scene-status-badge .badge-check {
+      width: 10px;
+      height: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .btn-continue-compact {
+      flex-shrink: 0; padding: 7px 16px; border: none; border-radius: var(--radius-sm);
+      background: var(--accent-gold); color: var(--bg-primary);
+      font-family: var(--font-sans); font-size: 13px; font-weight: 600;
+      cursor: pointer; transition: background 0.15s ease, box-shadow 0.2s ease;
+      letter-spacing: 0.01em; white-space: nowrap;
+    }
+    .btn-continue-compact:hover { background: var(--accent-gold-hover); box-shadow: 0 0 16px var(--accent-gold-glow); }
+    .btn-continue-compact:disabled { opacity: 0.3; cursor: default; box-shadow: none; }
+    .btn-continue-compact:disabled:hover { background: var(--accent-gold); box-shadow: none; }
+
+    .streaming-cursor::after {
+      content: '\25CB'; color: var(--accent-gold);
+      animation: cursor-blink 1s step-end infinite; margin-left: 1px; font-size: 12px;
+    }
+    @keyframes cursor-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-shell">
+
+    <header class="app-header">
+      <button class="app-header-home" aria-label="Return to home">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+          <polyline points="9 22 9 12 15 12 15 22"></polyline>
+        </svg>
+      </button>
+      <span class="app-header-title">Calamity in the Witherwild</span>
+    </header>
+
+    <div class="app-layout">
+
+    <!-- ================================================================
+         CHAT SIDE (60%)
+         ================================================================ -->
+    <div class="chat-side">
+      <div class="message-area">
+        <div class="messages">
+
+          <!-- Sage: Opening — presents initial 4-scene outline -->
+          <div class="message message-sage">
+            <div class="sage-label">Sage</div>
+            <div class="message-text">
+              <p>The frame is bound and the Witherwild stirs. Now we weave the threads of your story into a pattern — a scene-by-scene arc that'll carry your players from first steps to final reckoning.</p>
+              <p>Based on your frame and the components you've tuned — balanced tenor, discovery-led pillars, four party members at tier two — I've drafted four scenes in the panel. They move from investigation to negotiation to exploration to confrontation, which gives your players room to breathe between the tense moments.</p>
+              <p>Take a look and tell me what feels right, what doesn't, and where you'd push things in a different direction.</p>
+            </div>
+          </div>
+
+          <!-- User: Adjusts Scene 3 concept -->
+          <div class="message message-user">
+            <div class="message-text">
+              I like the overall flow but Scene 3 feels too passive. I don't want the party just "searching" for the artifact — I want them to have to earn it. Maybe there's a guardian or a trial?
+            </div>
+          </div>
+
+          <!-- Sage: Revises Scene 3 -->
+          <div class="message message-sage">
+            <div class="sage-label">Sage</div>
+            <div class="message-text">
+              <p>Good instinct — a passive search at tier two would feel flat. I've reworked Scene 3. Instead of stumbling onto the Eye, the party discovers it's guarded by <strong>the Reaping Eye's own defense</strong> — an overgrown sanctum where the forest itself tests intruders. Think living bramble walls, shifting paths, and a final trial that forces the party to prove they understand what the Eye actually does.</p>
+              <p>That gives you a discovery-pillar scene that's earned, not handed over. I've updated the brief in the panel — check Scene 3 and let me know if that's closer to what you want.</p>
+            </div>
+          </div>
+
+          <!-- User: Approves, locks first two, reviews Scene 3 -->
+          <div class="message message-user">
+            <div class="message-text">
+              That's much better. Scenes 1 and 2 are solid — lock those. Scene 3 is close but I want to review it one more time before locking.
+            </div>
+          </div>
+
+          <!-- Sage: Confirms status updates -->
+          <div class="message message-sage">
+            <div class="sage-label">Sage</div>
+            <div class="message-text">
+              <p>Done — Scenes 1 and 2 are locked and sealed. Scene 3 is marked as Reviewed so you can revisit it whenever you're ready. Scene 4 is still in draft, waiting for your attention.</p>
+              <p>Once all four are locked, we'll move into <strong>Inscription</strong> — where each scene gets fully written out with encounters, dialogue hooks, and decision points. Take your time; we're building the bones of the story right now.</p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="input-area">
+        <div class="input-container">
+          <textarea class="chat-input" placeholder="Adjust a scene, lock it, or ask for alternatives…" rows="3"></textarea>
+          <button class="submit-btn" aria-label="Send message">
+            <svg viewBox="0 0 24 24" fill="currentColor" stroke="none">
+              <polygon points="12,2 16,12 12,22 8,12"></polygon>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================================================================
+         PANEL SIDE (40%) — Scene Brief List
+         ================================================================ -->
+    <div class="panel-side">
+
+      <div class="panel-header">
+        <div class="app-header-phase" onclick="togglePhaseDropdown()" role="button" tabindex="0" aria-expanded="false" aria-haspopup="true">
+          <span class="phase-name">Weaving</span>
+          <span class="phase-progress">How does the plot unfold?</span>
+          <span class="phase-chevron" id="phase-chevron">&#x25BE;</span>
+
+          <div class="phase-dropdown" id="phase-dropdown" role="menu">
+            <div class="phase-dropdown-item completed" role="menuitem" tabindex="0">
+              <div class="phase-item-text"><span>Invocation</span><span class="phase-item-desc">What shape will your adventure take?</span></div>
+            </div>
+            <div class="phase-dropdown-item completed" role="menuitem" tabindex="0">
+              <div class="phase-item-text"><span>Attunement</span><span class="phase-item-desc">How should it feel?</span></div>
+            </div>
+            <div class="phase-dropdown-item completed" role="menuitem" tabindex="0">
+              <div class="phase-item-text"><span>Binding</span><span class="phase-item-desc">Which frame holds the story?</span></div>
+            </div>
+            <div class="phase-dropdown-item current" role="menuitem" tabindex="0">
+              <div class="phase-item-text"><span>Weaving</span><span class="phase-item-desc">How does the plot unfold?</span></div>
+            </div>
+            <div class="phase-dropdown-item future" role="menuitem" tabindex="-1">
+              <div class="phase-item-text"><span>Inscription</span><span class="phase-item-desc">What unfolds in each scene?</span></div>
+              <span class="phase-item-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></span>
+            </div>
+            <div class="phase-dropdown-item future" role="menuitem" tabindex="-1">
+              <div class="phase-item-text"><span>Conjuring</span><span class="phase-item-desc">Who will the party meet?</span></div>
+              <span class="phase-item-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></span>
+            </div>
+            <div class="phase-dropdown-item future" role="menuitem" tabindex="-1">
+              <div class="phase-item-text"><span>Summoning</span><span class="phase-item-desc">What stands in their way?</span></div>
+              <span class="phase-item-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></span>
+            </div>
+            <div class="phase-dropdown-item future" role="menuitem" tabindex="-1">
+              <div class="phase-item-text"><span>Enchanting</span><span class="phase-item-desc">What treasures await?</span></div>
+              <span class="phase-item-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></span>
+            </div>
+            <div class="phase-dropdown-item future" role="menuitem" tabindex="-1">
+              <div class="phase-item-text"><span>Scrying</span><span class="phase-item-desc">What might happen at the table?</span></div>
+              <span class="phase-item-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></span>
+            </div>
+            <div class="phase-dropdown-item future" role="menuitem" tabindex="-1">
+              <div class="phase-item-text"><span>Sealing</span><span class="phase-item-desc">Is the spell complete?</span></div>
+              <span class="phase-item-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Scene Brief List — scrollable -->
+      <div class="scene-brief-list">
+
+        <!-- Scene 1 — Locked -->
+        <div class="scene-brief-row locked">
+          <div class="scene-brief-number">1</div>
+          <div class="scene-brief-info">
+            <div class="scene-brief-title">The Overgrown Road</div>
+            <div class="scene-brief-desc">The party discovers a trade route consumed by the Witherwild, with an overturned merchant caravan and signs of a desperate last stand.</div>
+          </div>
+          <div class="scene-status-badge locked">
+            <span class="badge-check"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 6 5 9 10 3"></polyline></svg></span>
+            Locked
+          </div>
+        </div>
+
+        <!-- Scene 2 — Locked -->
+        <div class="scene-brief-row locked">
+          <div class="scene-brief-number">2</div>
+          <div class="scene-brief-info">
+            <div class="scene-brief-title">Wickling Hollow</div>
+            <div class="scene-brief-desc">A hidden forest settlement where the party must negotiate with Wickling elders who distrust outsiders — especially anyone connected to Haven.</div>
+          </div>
+          <div class="scene-status-badge locked">
+            <span class="badge-check"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 6 5 9 10 3"></polyline></svg></span>
+            Locked
+          </div>
+        </div>
+
+        <!-- Scene 3 — Reviewed -->
+        <div class="scene-brief-row reviewed">
+          <div class="scene-brief-number">3</div>
+          <div class="scene-brief-info">
+            <div class="scene-brief-title">The Reaping Eye</div>
+            <div class="scene-brief-desc">Deep into the overgrowth, the party searches for the stolen artifact that triggered the Witherwild's uncontrolled expansion.</div>
+          </div>
+          <div class="scene-status-badge reviewed">Reviewed</div>
+        </div>
+
+        <!-- Scene 4 — Draft -->
+        <div class="scene-brief-row">
+          <div class="scene-brief-number">4</div>
+          <div class="scene-brief-info">
+            <div class="scene-brief-title">Nikta's Judgment</div>
+            <div class="scene-brief-desc">Confrontation at the Great Owl's corrupted sanctum, where the party must choose between restoring the Eye or destroying it.</div>
+          </div>
+          <div class="scene-status-badge draft">Draft</div>
+        </div>
+
+        <!-- Continue button — disabled (not all scenes locked) -->
+        <button class="btn-continue-compact" style="margin: 16px auto 12px; display: block;" disabled>Continue to Inscription</button>
+
+      </div>
+
+    </div>
+
+    </div><!-- /app-layout -->
+  </div><!-- /app-shell -->
+
+  <script>
+    function togglePhaseDropdown() {
+      const dropdown = document.getElementById('phase-dropdown');
+      const chevron = document.getElementById('phase-chevron');
+      const trigger = document.querySelector('.app-header-phase');
+      const isOpen = dropdown.classList.contains('open');
+      if (isOpen) {
+        dropdown.classList.remove('open'); chevron.classList.remove('open');
+        trigger.setAttribute('aria-expanded', 'false');
+      } else {
+        dropdown.classList.add('open'); chevron.classList.add('open');
+        trigger.setAttribute('aria-expanded', 'true');
+      }
+    }
+
+    document.addEventListener('click', function(e) {
+      const trigger = document.querySelector('.app-header-phase');
+      const dropdown = document.getElementById('phase-dropdown');
+      if (!trigger.contains(e.target)) {
+        dropdown.classList.remove('open');
+        document.getElementById('phase-chevron').classList.remove('open');
+        trigger.setAttribute('aria-expanded', 'false');
+      }
+    });
+
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        const dropdown = document.getElementById('phase-dropdown');
+        if (dropdown.classList.contains('open')) {
+          dropdown.classList.remove('open');
+          document.getElementById('phase-chevron').classList.remove('open');
+          document.querySelector('.app-header-phase').setAttribute('aria-expanded', 'false');
+        }
+      }
+    });
+
+    const textarea = document.querySelector('.chat-input');
+    textarea.addEventListener('input', function() {
+      this.style.height = 'auto';
+      this.style.height = Math.min(this.scrollHeight, 180) + 'px';
+    });
+
+    document.querySelector('.message-area').scrollTop = document.querySelector('.message-area').scrollHeight;
+  </script>
+
+</body>
+</html>

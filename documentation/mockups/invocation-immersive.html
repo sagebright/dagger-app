@@ -1,0 +1,1120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dagger-App — Invocation (Immersive Mockup)</title>
+
+  <!--
+    ==========================================================================
+    DESIGN RATIONALE
+    ==========================================================================
+    This mockup demonstrates the "reimagined" Dagger-App UI for the invocation
+    phase. The core thesis: immersion comes from restraint, not decoration.
+    See documentation/reimagine-ui.md for the full rationale.
+
+    Key principles:
+    1. The interface disappears — warm dark neutrals, no saturated surfaces
+    2. Gold is the ONLY chromatic color, used sparingly for meaning
+    3. Generous spacing signals "stay a while"
+    4. Motion creates presence (annotated where not simulatable)
+
+    Typography: Source Serif 4 (serif, headers/labels) + Inter (sans, body/UI)
+    Color: No purple anywhere. The Daggerheart identity comes from gold
+    accents on warm neutrals + the Sage's voice, not from surface color.
+
+    Invocation is a freeform conversational stage — no predefined card choices.
+    The user shares their initial vision ("Spark") and optionally names the
+    adventure. This mockup captures a mid-conversation snapshot: the user has
+    just shared their vision and the Sage is thinking.
+    ==========================================================================
+  -->
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Source+Serif+4:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+
+  <style>
+    /* =======================================================================
+       DESIGN TOKENS
+       All colors, spacing, and typography defined as CSS custom properties.
+       When porting to React+Tailwind, these map directly to tailwind.config.ts
+       theme extensions.
+       ======================================================================= */
+    :root {
+      /* Backgrounds — warm dark neutrals, NO purple */
+      --bg-primary: #1c1b1f;       /* Main background. Warm near-black. */
+      --bg-secondary: #252428;     /* Elevated surfaces: panel, input area. */
+      --bg-surface: #2e2d32;       /* Cards, hover states. Barely visible lift. */
+      --bg-surface-hover: #353439; /* Hover on interactive surfaces. */
+
+      /* Text — warm off-whites and grays */
+      --text-primary: #e8e4de;     /* Body text. Warm cream, not sterile white. */
+      --text-secondary: #9d9a93;   /* Labels, metadata. Visible but quiet. */
+      --text-muted: #6b6862;       /* Lowest priority text. Placeholders, unset values. */
+
+      /* Gold — the ONLY chromatic color */
+      --accent-gold: #d7a964;           /* Primary accent. Confirmed components, CTAs, focus. */
+      --accent-gold-hover: #e5bc7a;     /* Gold on hover — slightly brighter. */
+      --accent-gold-dim: rgba(215, 169, 100, 0.12);    /* Faint wash. Selected cards. */
+      --accent-gold-border: rgba(215, 169, 100, 0.25);  /* Subtle border on focus/confirmed. */
+      --accent-gold-glow: rgba(215, 169, 100, 0.15);    /* Focus ring glow. */
+
+      /* Borders — nearly invisible structural lines */
+      --border-subtle: rgba(255, 255, 255, 0.06);  /* Panel dividers. Felt, not seen. */
+      --border-medium: rgba(255, 255, 255, 0.10);  /* Slightly more visible. Choice cards. */
+      --border-hover: rgba(255, 255, 255, 0.14);   /* Hover state borders. */
+
+      /* User message background — visible but restrained */
+      --user-msg-bg: rgba(255, 255, 255, 0.07);
+
+      /* Typography */
+      --font-serif: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+      --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+
+      /* Spacing */
+      --message-gap: 28px;
+      --section-padding: 24px;
+      --panel-padding: 20px;
+
+      /* Radius */
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-xl: 20px;
+    }
+
+    /* =======================================================================
+       RESET & BASE
+       ======================================================================= */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      height: 100%;
+      overflow: hidden; /* CRITICAL: No outer scroll. Ever. */
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      font-size: 15px;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* =======================================================================
+       LAYOUT — Viewport-locked flex column with header + 65/35 grid
+       ======================================================================= */
+    .app-shell {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      width: 100%;
+    }
+
+    /* ---- App Header Bar ---- */
+    .app-header {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      height: 56px;
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .app-header-home {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: var(--radius-sm);
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: color 0.15s ease, background 0.15s ease;
+      flex-shrink: 0;
+    }
+
+    .app-header-home:hover {
+      color: var(--text-secondary);
+      background: var(--bg-surface);
+    }
+
+    /* Right — Phase name + progress indicator, clickable */
+    .app-header-phase {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      padding: 4px 10px 4px 4px;
+      border-radius: var(--radius-sm);
+      border: none;
+      background: none;
+      transition: background 0.15s ease;
+      flex-shrink: 0;
+    }
+
+    .app-header-phase:hover {
+      background: var(--bg-surface);
+    }
+
+    .phase-name {
+      font-family: var(--font-sans);
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--accent-gold);
+    }
+
+    .phase-progress {
+      font-family: var(--font-sans);
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .phase-chevron {
+      color: var(--text-muted);
+      font-size: 10px;
+      transition: transform 0.2s ease;
+      margin-left: -2px;
+    }
+
+    .phase-chevron.open {
+      transform: rotate(180deg);
+    }
+
+    /* Phase dropdown */
+    .phase-dropdown {
+      position: absolute;
+      top: calc(100% + 6px);
+      left: 50%;
+      transform: translateX(-50%);
+      min-width: 260px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-medium);
+      border-radius: var(--radius-md);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+      padding: 6px;
+      z-index: 100;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.15s ease;
+    }
+
+    .phase-dropdown.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .phase-dropdown-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
+      font-family: var(--font-sans);
+      font-size: 13px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: background 0.12s ease;
+      border: none;
+      background: none;
+      width: 100%;
+      text-align: left;
+    }
+
+    .phase-dropdown-item:hover {
+      background: var(--bg-surface-hover);
+    }
+
+    .phase-dropdown-item.current {
+      color: var(--accent-gold);
+      font-weight: 600;
+      background: var(--accent-gold-dim);
+    }
+
+    .phase-dropdown-item.completed {
+      color: var(--text-secondary);
+    }
+
+    .phase-dropdown-item.future {
+      color: var(--text-muted);
+      cursor: default;
+      opacity: 0.6;
+    }
+
+    .phase-dropdown-item.future:hover {
+      background: none;
+    }
+
+    .phase-item-icon {
+      display: flex;
+      align-items: center;
+      flex-shrink: 0;
+      margin-left: auto;
+      padding-left: 12px;
+    }
+
+    .phase-item-icon svg {
+      width: 12px;
+      height: 12px;
+    }
+
+    .phase-item-text {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      min-width: 0;
+    }
+
+    .phase-item-desc {
+      font-size: 11px;
+      font-weight: 400;
+      color: var(--text-muted);
+    }
+
+    .phase-dropdown-item.current .phase-item-desc {
+      color: var(--accent-gold);
+      opacity: 0.7;
+    }
+
+    /* Adventure title — gold accent, centered in header */
+    .app-header-title {
+      font-family: var(--font-serif);
+      font-size: 16px;
+      font-weight: 500;
+      color: var(--accent-gold);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      min-width: 0;
+      flex: 1;
+      text-align: center;
+    }
+
+    .app-layout {
+      display: grid;
+      grid-template-columns: 13fr 7fr;
+      flex: 1;
+      min-height: 0;
+      width: 100%;
+    }
+
+    /* =======================================================================
+       CHAT SIDE
+       ======================================================================= */
+    .chat-side {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      border-right: 1px solid var(--border-subtle);
+    }
+
+    /* ---- Message Area ---- */
+    .message-area {
+      flex: 1;
+      overflow-y: auto;
+      padding: 36px var(--section-padding) 8px;
+
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255,255,255,0.08) transparent;
+    }
+    .message-area::-webkit-scrollbar { width: 6px; }
+    .message-area::-webkit-scrollbar-track { background: transparent; }
+    .message-area::-webkit-scrollbar-thumb {
+      background: rgba(255,255,255,0.08);
+      border-radius: 3px;
+    }
+    .message-area::-webkit-scrollbar-thumb:hover {
+      background: rgba(255,255,255,0.14);
+    }
+
+    .messages {
+      max-width: 720px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: var(--message-gap);
+    }
+
+    /* ---- Messages ---- */
+    .message {
+      max-width: 88%;
+      animation: message-appear 0.4s ease-out both;
+    }
+
+    @keyframes message-appear {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .message-sage {
+      align-self: flex-start;
+    }
+
+    .message-sage .message-text {
+      font-family: var(--font-serif);
+      font-size: 16px;
+    }
+
+    .message-user {
+      align-self: flex-end;
+      background: var(--user-msg-bg);
+      border: 1px solid var(--border-subtle);
+      padding: 12px 16px;
+      border-radius: var(--radius-md);
+    }
+
+    .sage-label {
+      font-family: var(--font-serif);
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-muted);
+      letter-spacing: 0.03em;
+      margin-bottom: 6px;
+    }
+
+    .message-text {
+      color: var(--text-primary);
+      line-height: 1.65;
+    }
+
+    .message-text p + p {
+      margin-top: 12px;
+    }
+
+    .message-user .message-text {
+      color: var(--text-primary);
+    }
+
+    /* Stagger animation delays for existing messages on load */
+    .message:nth-child(1) { animation-delay: 0s; }
+    .message:nth-child(2) { animation-delay: 0.06s; }
+    .message:nth-child(3) { animation-delay: 0.12s; }
+    .message:nth-child(4) { animation-delay: 0.18s; }
+    .message:nth-child(5) { animation-delay: 0.24s; }
+    .message:nth-child(6) { animation-delay: 0.30s; }
+    .message:nth-child(7) { animation-delay: 0.36s; }
+    .message:nth-child(8) { animation-delay: 0.42s; }
+
+    /* ---- Thinking Indicator ---- */
+    .thinking-indicator {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 0;
+      align-self: flex-start;
+    }
+
+    .thinking-indicator .sage-label {
+      margin-bottom: 0;
+      margin-right: 4px;
+    }
+
+    .thinking-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--accent-gold);
+      opacity: 0.3;
+      animation: thinking-pulse 1.4s ease-in-out infinite;
+    }
+
+    .thinking-dot:nth-child(2) { animation-delay: 0.2s; }
+    .thinking-dot:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes thinking-pulse {
+      0%, 80%, 100% { opacity: 0.2; transform: scale(0.85); }
+      40% { opacity: 0.9; transform: scale(1); }
+    }
+
+    /* ---- Input Area ---- */
+    .input-area {
+      flex-shrink: 0;
+      padding: 12px var(--section-padding) var(--section-padding);
+    }
+
+    .input-container {
+      position: relative;
+      max-width: 720px;
+      margin: 0 auto;
+    }
+
+    .chat-input {
+      width: 100%;
+      min-height: 88px;
+      max-height: 180px;
+      padding: 14px 52px 14px 18px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      font-size: 15px;
+      line-height: 1.55;
+      resize: none;
+      outline: none;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .chat-input::placeholder {
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    .chat-input:focus {
+      border-color: var(--accent-gold-border);
+      box-shadow: 0 0 0 3px var(--accent-gold-glow);
+    }
+
+    .submit-btn {
+      position: absolute;
+      bottom: 12px;
+      right: 12px;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: none;
+      background: var(--accent-gold);
+      color: var(--bg-primary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s ease, transform 0.15s ease;
+      opacity: 0.7;
+    }
+
+    .submit-btn:hover {
+      background: var(--accent-gold-hover);
+      opacity: 1;
+      transform: scale(1.05);
+    }
+
+    .submit-btn svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    /* =======================================================================
+       PANEL SIDE
+       ======================================================================= */
+    .panel-side {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      background: var(--bg-secondary);
+    }
+
+    .panel-header {
+      flex-shrink: 0;
+      padding: 12px var(--panel-padding) 4px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .panel-header-left {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .panel-title {
+      font-family: var(--font-serif);
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-primary);
+      letter-spacing: 0.01em;
+    }
+
+    .panel-subtitle {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .panel-subtitle .confirmed-count {
+      color: var(--accent-gold);
+      font-weight: 500;
+    }
+
+    .btn-continue-compact {
+      flex-shrink: 0;
+      padding: 7px 16px;
+      border: none;
+      border-radius: var(--radius-sm);
+      background: var(--accent-gold);
+      color: var(--bg-primary);
+      font-family: var(--font-sans);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s ease, box-shadow 0.2s ease;
+      letter-spacing: 0.01em;
+      white-space: nowrap;
+    }
+
+    .btn-continue-compact:hover {
+      background: var(--accent-gold-hover);
+      box-shadow: 0 0 16px var(--accent-gold-glow);
+    }
+
+    .btn-continue-compact:disabled {
+      opacity: 0.3;
+      cursor: default;
+      box-shadow: none;
+    }
+
+    .btn-continue-compact:disabled:hover {
+      background: var(--accent-gold);
+      box-shadow: none;
+    }
+
+    /* ---- Component List ---- */
+    .component-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px var(--panel-padding);
+
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255,255,255,0.06) transparent;
+    }
+    .component-list::-webkit-scrollbar { width: 5px; }
+    .component-list::-webkit-scrollbar-track { background: transparent; }
+    .component-list::-webkit-scrollbar-thumb {
+      background: rgba(255,255,255,0.06);
+      border-radius: 3px;
+    }
+
+    /* ---- Component Rows ---- */
+    .component-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 12px;
+      border-radius: var(--radius-sm);
+      border-left: 3px solid transparent;
+      cursor: pointer;
+      transition: background 0.15s ease, border-color 0.15s ease;
+      gap: 12px;
+    }
+
+    .component-row:hover {
+      background: var(--bg-surface);
+    }
+
+    .component-row.confirmed {
+      border-left-color: var(--accent-gold);
+    }
+
+    .component-row.confirmed .component-value {
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+
+    .component-row.unconfirmed {
+      opacity: 0.45;
+    }
+
+    .component-row.unconfirmed:hover {
+      opacity: 0.65;
+    }
+
+    .component-label {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+    }
+
+    .component-row.confirmed .component-label {
+      color: var(--text-secondary);
+    }
+
+    .component-value {
+      font-size: 13px;
+      font-weight: 400;
+      color: var(--text-muted);
+      text-align: right;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 55%;
+    }
+
+    .component-check {
+      color: var(--accent-gold);
+      font-size: 13px;
+      margin-left: 4px;
+      flex-shrink: 0;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .component-row.confirmed .component-check {
+      opacity: 1;
+    }
+
+    /* =======================================================================
+       CHOICE PANEL (Edit Mode)
+       ======================================================================= */
+    .choice-panel {
+      display: none;
+      flex-direction: column;
+      min-height: 0;
+      background: var(--bg-secondary);
+    }
+
+    .choice-panel.visible {
+      display: flex;
+    }
+
+    .panel-side.hidden {
+      display: none;
+    }
+
+    .choice-header {
+      flex-shrink: 0;
+      padding: var(--panel-padding);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .back-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-family: var(--font-sans);
+      font-size: 13px;
+      cursor: pointer;
+      padding: 4px 0;
+      margin-bottom: 8px;
+      transition: color 0.15s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .back-btn:hover {
+      color: var(--accent-gold);
+    }
+
+    .choice-component-name {
+      font-family: var(--font-serif);
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .choice-question {
+      font-family: var(--font-serif);
+      font-size: 14px;
+      font-style: italic;
+      color: var(--text-secondary);
+      margin-top: 8px;
+      line-height: 1.5;
+    }
+
+    /* ---- Choice Content Area ---- */
+    .choice-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px var(--panel-padding);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255,255,255,0.06) transparent;
+    }
+
+    /* ---- Read-Only Summary Placeholder ----
+       Used in Invocation for Spark and Title — no interactive cards,
+       just a muted bordered area showing that the Sage will populate
+       this once the conversation distills the answer.
+    */
+    .summary-placeholder {
+      padding: 20px;
+      border: 1px dashed var(--border-medium);
+      border-radius: var(--radius-md);
+      color: var(--text-muted);
+      font-family: var(--font-serif);
+      font-size: 14px;
+      font-style: italic;
+      line-height: 1.6;
+      text-align: center;
+    }
+
+    /* =======================================================================
+       STREAMING CURSOR
+       ======================================================================= */
+    .streaming-cursor::after {
+      content: '\25CB';
+      color: var(--accent-gold);
+      animation: cursor-blink 1s step-end infinite;
+      margin-left: 1px;
+      font-size: 12px;
+    }
+
+    @keyframes cursor-blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+
+    /* =======================================================================
+       UTILITY
+       ======================================================================= */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-shell">
+
+    <!-- ================================================================
+         HEADER BAR
+         ================================================================ -->
+    <header class="app-header">
+
+      <!-- Home icon -->
+      <button class="app-header-home" aria-label="Return to home">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+          <polyline points="9 22 9 12 15 12 15 22"></polyline>
+        </svg>
+      </button>
+
+      <!-- Adventure title — centered -->
+      <span class="app-header-title">Untitled</span>
+
+    </header>
+
+    <!-- ================================================================
+         MAIN LAYOUT — 65/35 grid
+         ================================================================ -->
+    <div class="app-layout">
+
+    <!-- ================================================================
+         CHAT SIDE (65%)
+         ================================================================ -->
+    <div class="chat-side">
+
+      <!-- Message Area — scrollable -->
+      <div class="message-area">
+        <div class="messages">
+
+          <!-- Sage Opening (combined intro + naming prompt) -->
+          <div class="message message-sage">
+            <div class="sage-label">Sage</div>
+            <div class="message-text">
+              <p>My friend, you've got me at your table. I'm here, sleeves rolled up, ready to talk about the craft — whether that's building a world that breathes, designing encounters that make your players lean forward in their chairs, untangling a thorny moment at the table, or just geeking out about why stories matter.</p>
+              <p>So — what are we working on? What's the thing you're wrestling with, the idea you're excited about, the question that's been rattling around in your head? Let's dig in.</p>
+              <p>Here's the thing — everything starts with a name. And I don't mean something precious or overthought. I mean the phrase that, when you say it to your players, makes them lean forward. "The Hollow Vigil" does that, right? "The Silent Auction" does that. It promises a mood and a mystery in three words.</p>
+              <p>So — what are we calling this adventure? If you've got a name already, lay it on me. If you've got a vibe but not the words yet, tell me the feeling and we'll find it together.</p>
+            </div>
+          </div>
+
+          <!-- User: vibe request -->
+          <div class="message message-user">
+            <div class="message-text">
+              I have a vibe, help me name it.
+            </div>
+          </div>
+
+          <!-- Sage: probing questions -->
+          <div class="message message-sage">
+            <div class="sage-label">Sage</div>
+            <div class="message-text">
+              <p>I love this. Okay, so tell me — what's rattling around in your head? And don't worry about being precise. The messier the better, honestly. Some prompts to shake it loose:</p>
+              <p>Is there an image that keeps coming back to you? A place, a creature, a moment?</p>
+              <p>Is there a feeling you want at the table? Dread? Wonder? That electric moment where everyone goes quiet?</p>
+              <p>Is there a genre touchstone — a game, a film, a book — where you thought "I want to run THAT"?</p>
+              <p>Is there a question at the heart of it? The best adventures are built around a question the players have to answer through play.</p>
+              <p>Give me whatever you've got — a sentence, a list of words, a rambling paragraph. We'll distill it down to something sharp.</p>
+            </div>
+          </div>
+
+          <!-- User: the vision -->
+          <div class="message message-user">
+            <div class="message-text">
+              3 party members. None of them remember who they are or how they got to where they are. They wake up in the study of what appears to be a mansion. The study — lined with bookshelves — has a desk at one end. The desk is completely empty except for a single opened book. If they examine the book, they see a single message. That message kicks off an adventure to find out their identities, where they are and why, and what their futures hold.
+            </div>
+          </div>
+
+          <!-- Thinking indicator — Sage is processing the user's vision -->
+          <div class="thinking-indicator message">
+            <div class="sage-label">Sage</div>
+            <div class="thinking-dot"></div>
+            <div class="thinking-dot"></div>
+            <div class="thinking-dot"></div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Input Area — pinned to bottom -->
+      <div class="input-area">
+        <div class="input-container">
+          <textarea
+            class="chat-input"
+            placeholder="What path shall we take?"
+            rows="3"
+          ></textarea>
+          <button class="submit-btn" aria-label="Send message">
+            <svg viewBox="0 0 24 24" fill="currentColor" stroke="none">
+              <polygon points="12,2 16,12 12,22 8,12"></polygon>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ================================================================
+         PANEL SIDE (35%) — Component Summary (Default State)
+         ================================================================ -->
+    <div class="panel-side" id="summary-panel">
+
+      <!-- Panel Header — Phase trigger with dropdown -->
+      <div class="panel-header">
+        <div class="app-header-phase" onclick="togglePhaseDropdown()" role="button" tabindex="0" aria-expanded="false" aria-haspopup="true">
+          <span class="phase-name">Invocation</span>
+          <span class="phase-progress">What shape will your adventure take?</span>
+          <span class="phase-chevron" id="phase-chevron">&#9662;</span>
+
+          <!-- Phase dropdown — all 10 stages -->
+          <div class="phase-dropdown" id="phase-dropdown" role="menu">
+            <div class="phase-dropdown-item current" role="menuitem" tabindex="0">
+              <div class="phase-item-text">
+                <span>Invocation</span>
+                <span class="phase-item-desc">What shape will your adventure take?</span>
+              </div>
+            </div>
+            <div class="phase-dropdown-item future" role="menuitem" tabindex="-1">
+              <div class="phase-item-text">
+                <span>Attunement</span>
+                <span class="phase-item-desc">How should it feel?</span>
+              </div>
+              <span class="phase-item-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></span>
+            </div>
+            <div class="phase-dropdown-item future" role="menuitem" tabindex="-1">
+              <div class="phase-item-text">
+                <span>Binding</span>
+                <span class="phase-item-desc">Which frame holds the story?</span>
+              </div>
+              <span class="phase-item-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></span>
+            </div>
+            <div class="phase-dropdown-item future" role="menuitem" tabindex="-1">
+              <div class="phase-item-text">
+                <span>Weaving</span>
+                <span class="phase-item-desc">How does the plot unfold?</span>
+              </div>
+              <span class="phase-item-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></span>
+            </div>
+            <div class="phase-dropdown-item future" role="menuitem" tabindex="-1">
+              <div class="phase-item-text">
+                <span>Inscription</span>
+                <span class="phase-item-desc">What unfolds in each scene?</span>
+              </div>
+              <span class="phase-item-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></span>
+            </div>
+            <div class="phase-dropdown-item future" role="menuitem" tabindex="-1">
+              <div class="phase-item-text">
+                <span>Conjuring</span>
+                <span class="phase-item-desc">Who will the party meet?</span>
+              </div>
+              <span class="phase-item-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></span>
+            </div>
+            <div class="phase-dropdown-item future" role="menuitem" tabindex="-1">
+              <div class="phase-item-text">
+                <span>Summoning</span>
+                <span class="phase-item-desc">What stands in their way?</span>
+              </div>
+              <span class="phase-item-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></span>
+            </div>
+            <div class="phase-dropdown-item future" role="menuitem" tabindex="-1">
+              <div class="phase-item-text">
+                <span>Enchanting</span>
+                <span class="phase-item-desc">What treasures await?</span>
+              </div>
+              <span class="phase-item-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></span>
+            </div>
+            <div class="phase-dropdown-item future" role="menuitem" tabindex="-1">
+              <div class="phase-item-text">
+                <span>Scrying</span>
+                <span class="phase-item-desc">What might happen at the table?</span>
+              </div>
+              <span class="phase-item-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></span>
+            </div>
+            <div class="phase-dropdown-item future" role="menuitem" tabindex="-1">
+              <div class="phase-item-text">
+                <span>Sealing</span>
+                <span class="phase-item-desc">Is the spell complete?</span>
+              </div>
+              <span class="phase-item-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Component List — 2 ungrouped components -->
+      <div class="component-list">
+
+        <div class="component-row unconfirmed" onclick="showChoicePanel('spark')" style="margin-top: 12px;">
+          <span class="component-label">Spark</span>
+          <span class="component-value">&mdash;</span>
+        </div>
+
+        <div class="component-row unconfirmed" onclick="showChoicePanel('title')">
+          <span class="component-label">Title</span>
+          <span class="component-value">&mdash;</span>
+        </div>
+
+        <!-- Continue button — disabled until Spark is confirmed -->
+        <button class="btn-continue-compact" style="margin: 16px auto 12px; display: block;" disabled>Continue to Attunement</button>
+
+      </div>
+
+    </div>
+
+    <!-- ================================================================
+         CHOICE PANEL (Edit State)
+         ================================================================ -->
+    <div class="choice-panel" id="choice-panel">
+
+      <div class="choice-header">
+        <button class="back-btn" onclick="showSummaryPanel()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+          Return to Invocation
+        </button>
+        <div class="choice-component-name" id="choice-title">Spark</div>
+        <div class="choice-question" id="choice-question">What's the seed of your adventure?</div>
+      </div>
+
+      <!-- ---- Spark (read-only summary placeholder) ---- -->
+      <div class="choice-content" data-example="spark" style="display:none;">
+        <div class="summary-placeholder">
+          Your spark will appear here once the Sage distills it from your conversation.
+        </div>
+      </div>
+
+      <!-- ---- Title (read-only summary placeholder) ---- -->
+      <div class="choice-content" data-example="title" style="display:none;">
+        <div class="summary-placeholder">
+          Your title will appear here once you and the Sage settle on a name.
+        </div>
+      </div>
+
+    </div>
+
+  </div><!-- /app-layout -->
+
+  </div><!-- /app-shell -->
+
+  <!-- ====================================================================
+       INTERACTIVE BEHAVIOR (Mockup Only)
+       ==================================================================== -->
+  <script>
+    // Example metadata: titles and questions for each panel
+    const EXAMPLE_META = {
+      spark: { title: 'Spark', question: "What’s the seed of your adventure?" },
+      title: { title: 'Title', question: "What will you call this adventure?" },
+    };
+
+    // Show the choice panel for a specific component
+    function showChoicePanel(exampleName) {
+      // Hide all choice content areas, show the requested one
+      document.querySelectorAll('.choice-content').forEach(el => el.style.display = 'none');
+      const target = document.querySelector(`.choice-content[data-example="${exampleName}"]`);
+      if (target) target.style.display = 'flex';
+
+      // Update header text
+      const meta = EXAMPLE_META[exampleName];
+      if (meta) {
+        document.getElementById('choice-title').textContent = meta.title;
+        document.getElementById('choice-question').textContent = meta.question;
+      }
+
+      // Toggle panels
+      document.getElementById('summary-panel').classList.add('hidden');
+      document.getElementById('choice-panel').classList.add('visible');
+    }
+
+    function showSummaryPanel() {
+      document.getElementById('choice-panel').classList.remove('visible');
+      document.getElementById('summary-panel').classList.remove('hidden');
+    }
+
+    // ---- Phase dropdown toggle ----
+    function togglePhaseDropdown() {
+      const dropdown = document.getElementById('phase-dropdown');
+      const chevron = document.getElementById('phase-chevron');
+      const trigger = document.querySelector('.app-header-phase');
+      const isOpen = dropdown.classList.contains('open');
+
+      if (isOpen) {
+        dropdown.classList.remove('open');
+        chevron.classList.remove('open');
+        trigger.setAttribute('aria-expanded', 'false');
+      } else {
+        dropdown.classList.add('open');
+        chevron.classList.add('open');
+        trigger.setAttribute('aria-expanded', 'true');
+      }
+    }
+
+    // Close dropdown on click outside
+    document.addEventListener('click', function(e) {
+      const trigger = document.querySelector('.app-header-phase');
+      const dropdown = document.getElementById('phase-dropdown');
+      if (!trigger.contains(e.target)) {
+        dropdown.classList.remove('open');
+        document.getElementById('phase-chevron').classList.remove('open');
+        trigger.setAttribute('aria-expanded', 'false');
+      }
+    });
+
+    // Close dropdown on Escape
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        const dropdown = document.getElementById('phase-dropdown');
+        if (dropdown.classList.contains('open')) {
+          dropdown.classList.remove('open');
+          document.getElementById('phase-chevron').classList.remove('open');
+          document.querySelector('.app-header-phase').setAttribute('aria-expanded', 'false');
+        }
+      }
+    });
+
+    // Auto-resize textarea as user types
+    const textarea = document.querySelector('.chat-input');
+    textarea.addEventListener('input', function() {
+      this.style.height = 'auto';
+      this.style.height = Math.min(this.scrollHeight, 180) + 'px';
+    });
+
+    // Scroll messages to bottom on load
+    const messageArea = document.querySelector('.message-area');
+    messageArea.scrollTop = messageArea.scrollHeight;
+  </script>
+
+</body>
+</html>

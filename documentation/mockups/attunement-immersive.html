@@ -1,0 +1,1582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dagger-App — Component Tuning (Immersive Mockup)</title>
+
+  <!--
+    ==========================================================================
+    DESIGN RATIONALE
+    ==========================================================================
+    This mockup demonstrates the "reimagined" Dagger-App UI for the component
+    tuning phase. The core thesis: immersion comes from restraint, not
+    decoration. See documentation/reimagine-ui.md for the full rationale.
+
+    Key principles:
+    1. The interface disappears — warm dark neutrals, no saturated surfaces
+    2. Gold is the ONLY chromatic color, used sparingly for meaning
+    3. Generous spacing signals "stay a while"
+    4. Motion creates presence (annotated where not simulatable)
+
+    Typography: Lora (serif, headers/labels) + Inter (sans, body/UI)
+    - Lora was chosen over Cinzel because it signals "crafted" without
+      shouting "medieval." Cinzel is decorative; Lora is warm and readable.
+    - Inter is deliberately plain — in a chat interface, the font should
+      be invisible. The conversation is what matters, not the typeface.
+
+    Color: No purple anywhere. The Daggerheart identity comes from gold
+    accents on warm neutrals + the Sage's voice, not from surface color.
+    ==========================================================================
+  -->
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Source+Serif+4:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+
+  <style>
+    /* =======================================================================
+       DESIGN TOKENS
+       All colors, spacing, and typography defined as CSS custom properties.
+       When porting to React+Tailwind, these map directly to tailwind.config.ts
+       theme extensions.
+       ======================================================================= */
+    :root {
+      /* Backgrounds — warm dark neutrals, NO purple */
+      --bg-primary: #1c1b1f;       /* Main background. Warm near-black. */
+      --bg-secondary: #252428;     /* Elevated surfaces: panel, input area. */
+      --bg-surface: #2e2d32;       /* Cards, hover states. Barely visible lift. */
+      --bg-surface-hover: #353439; /* Hover on interactive surfaces. */
+
+      /* Text — warm off-whites and grays */
+      --text-primary: #e8e4de;     /* Body text. Warm cream, not sterile white. */
+      --text-secondary: #9d9a93;   /* Labels, metadata. Visible but quiet. */
+      --text-muted: #6b6862;       /* Lowest priority text. Placeholders, unset values. */
+
+      /* Gold — the ONLY chromatic color */
+      --accent-gold: #d7a964;           /* Primary accent. Confirmed components, CTAs, focus. */
+      --accent-gold-hover: #e5bc7a;     /* Gold on hover — slightly brighter. */
+      --accent-gold-dim: rgba(215, 169, 100, 0.12);    /* Faint wash. Selected cards. */
+      --accent-gold-border: rgba(215, 169, 100, 0.25);  /* Subtle border on focus/confirmed. */
+      --accent-gold-glow: rgba(215, 169, 100, 0.15);    /* Focus ring glow. */
+
+      /* Borders — nearly invisible structural lines */
+      --border-subtle: rgba(255, 255, 255, 0.06);  /* Panel dividers. Felt, not seen. */
+      --border-medium: rgba(255, 255, 255, 0.10);  /* Slightly more visible. Choice cards. */
+      --border-hover: rgba(255, 255, 255, 0.14);   /* Hover state borders. */
+
+      /* User message background — visible but restrained */
+      --user-msg-bg: rgba(255, 255, 255, 0.07);
+
+      /* Typography */
+      --font-serif: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+      --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+
+      /* Spacing */
+      --message-gap: 28px;
+      --section-padding: 24px;
+      --panel-padding: 20px;
+
+      /* Radius */
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-xl: 20px;
+    }
+
+    /* =======================================================================
+       RESET & BASE
+       ======================================================================= */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      height: 100%;
+      overflow: hidden; /* CRITICAL: No outer scroll. Ever. */
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      font-size: 15px;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* =======================================================================
+       LAYOUT — Viewport-locked flex column with header + 60/40 grid
+       -----------------------------------------------------------------------
+       RATIONALE: The entire interface must fit the viewport with zero outer
+       scroll. The header is pinned at the top. Below it, the chat side and
+       panel side each manage their own internal scrolling. This prevents
+       the user from ever "losing" the input bar or the panel header.
+       ======================================================================= */
+    .app-shell {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      width: 100%;
+    }
+
+    /* ---- App Header Bar ----
+       Simple flex row: home icon left, adventure title centered.
+       Attunement lives in the panel header, not the app header.
+    */
+    .app-header {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      height: 56px;
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    /* Home icon — muted, icon-only */
+    .app-header-home {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: var(--radius-sm);
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: color 0.15s ease, background 0.15s ease;
+      flex-shrink: 0;
+    }
+
+    .app-header-home:hover {
+      color: var(--text-secondary);
+      background: var(--bg-surface);
+    }
+
+    /* Right — Phase name + progress indicator, clickable */
+    .app-header-phase {
+      position: relative; /* anchor for dropdown */
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      padding: 4px 10px 4px 4px;
+      border-radius: var(--radius-sm);
+      border: none;
+      background: none;
+      transition: background 0.15s ease;
+      flex-shrink: 0;
+    }
+
+    .app-header-phase:hover {
+      background: var(--bg-surface);
+    }
+
+    .phase-name {
+      font-family: var(--font-sans);
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--accent-gold);
+    }
+
+    .phase-progress {
+      font-family: var(--font-sans);
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .phase-chevron {
+      color: var(--text-muted);
+      font-size: 10px;
+      transition: transform 0.2s ease;
+      margin-left: -2px;
+    }
+
+    .phase-chevron.open {
+      transform: rotate(180deg);
+    }
+
+    /* Phase dropdown — floating menu below center trigger */
+    .phase-dropdown {
+      position: absolute;
+      top: calc(100% + 6px);
+      left: 50%;
+      transform: translateX(-50%);
+      min-width: 260px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-medium);
+      border-radius: var(--radius-md);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+      padding: 6px;
+      z-index: 100;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.15s ease;
+    }
+
+    .phase-dropdown.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .phase-dropdown-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
+      font-family: var(--font-sans);
+      font-size: 13px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: background 0.12s ease;
+      border: none;
+      background: none;
+      width: 100%;
+      text-align: left;
+    }
+
+    .phase-dropdown-item:hover {
+      background: var(--bg-surface-hover);
+    }
+
+    .phase-dropdown-item.current {
+      color: var(--accent-gold);
+      font-weight: 600;
+      background: var(--accent-gold-dim);
+    }
+
+    .phase-dropdown-item.completed {
+      color: var(--text-secondary);
+    }
+
+    .phase-dropdown-item.future {
+      color: var(--text-muted);
+      cursor: default;
+      opacity: 0.6;
+    }
+
+    .phase-dropdown-item.future:hover {
+      background: none;
+    }
+
+    .phase-item-icon {
+      display: flex;
+      align-items: center;
+      flex-shrink: 0;
+      margin-left: auto;
+      padding-left: 12px;
+    }
+
+    .phase-item-icon svg {
+      width: 12px;
+      height: 12px;
+    }
+
+    .phase-item-text {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      min-width: 0;
+    }
+
+    .phase-item-desc {
+      font-size: 11px;
+      font-weight: 400;
+      color: var(--text-muted);
+    }
+
+    .phase-dropdown-item.current .phase-item-desc {
+      color: var(--accent-gold);
+      opacity: 0.7;
+    }
+
+    /* Adventure title — gold accent, centered in header */
+    .app-header-title {
+      font-family: var(--font-serif);
+      font-size: 16px;
+      font-weight: 500;
+      color: var(--accent-gold);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      min-width: 0;
+      flex: 1;
+      text-align: center;
+    }
+
+    .app-layout {
+      display: grid;
+      grid-template-columns: 13fr 7fr;
+      flex: 1;
+      min-height: 0;
+      width: 100%;
+    }
+
+    /* =======================================================================
+       CHAT SIDE
+       -----------------------------------------------------------------------
+       Flex column: messages fill and scroll, input is pinned to bottom.
+       ======================================================================= */
+    .chat-side {
+      display: flex;
+      flex-direction: column;
+      min-height: 0; /* Prevents flex children from overflowing */
+      border-right: 1px solid var(--border-subtle);
+    }
+
+    /* ---- Message Area ---- */
+    .message-area {
+      flex: 1;
+      overflow-y: auto;
+      padding: 36px var(--section-padding) 8px;
+
+      /* Custom scrollbar — thin and subtle */
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255,255,255,0.08) transparent;
+    }
+    .message-area::-webkit-scrollbar { width: 6px; }
+    .message-area::-webkit-scrollbar-track { background: transparent; }
+    .message-area::-webkit-scrollbar-thumb {
+      background: rgba(255,255,255,0.08);
+      border-radius: 3px;
+    }
+    .message-area::-webkit-scrollbar-thumb:hover {
+      background: rgba(255,255,255,0.14);
+    }
+
+    .messages {
+      max-width: 720px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: var(--message-gap);
+    }
+
+    /* ---- Messages ----
+       RATIONALE: No heavy bubble backgrounds. Sage messages are just text
+       on the page with a small serif label. User messages get the faintest
+       surface shift + right alignment. This makes the conversation feel
+       continuous — like reading a story, not reviewing a chat log.
+    */
+    .message {
+      max-width: 88%;
+
+      /*
+        ANIMATION: Message Appear
+        - Trigger: When a new message is added to the DOM
+        - Effect: Fade in + slide up 8px over 250ms
+        - Implementation: CSS @keyframes on the message element, applied
+          via a class that React adds on mount
+        - Easing: ease-out (fast start, gentle land)
+      */
+      animation: message-appear 0.4s ease-out both;
+    }
+
+    @keyframes message-appear {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .message-sage {
+      align-self: flex-start;
+    }
+
+    .message-sage .message-text {
+      font-family: var(--font-serif);
+      font-size: 16px;
+    }
+
+    .message-user {
+      align-self: flex-end;
+      background: var(--user-msg-bg);
+      border: 1px solid var(--border-subtle);
+      padding: 12px 16px;
+      border-radius: var(--radius-md);
+    }
+
+    /*
+      RATIONALE: The Sage label uses Lora serif at a muted color. It's small
+      and quiet — you know who's speaking, but the label doesn't compete with
+      the message content. No avatar: avatars add UI weight and make the
+      interface feel like a "chat app" rather than a conversation.
+    */
+    .sage-label {
+      font-family: var(--font-serif);
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-muted);
+      letter-spacing: 0.03em;
+      margin-bottom: 6px;
+    }
+
+    .message-text {
+      color: var(--text-primary);
+      line-height: 1.65;
+    }
+
+    .message-text p + p {
+      margin-top: 12px;
+    }
+
+    .message-user .message-text {
+      color: var(--text-primary);
+    }
+
+    /* Stagger animation delays for existing messages on load */
+    .message:nth-child(1) { animation-delay: 0s; }
+    .message:nth-child(2) { animation-delay: 0.06s; }
+    .message:nth-child(3) { animation-delay: 0.12s; }
+    .message:nth-child(4) { animation-delay: 0.18s; }
+    .message:nth-child(5) { animation-delay: 0.24s; }
+    .message:nth-child(6) { animation-delay: 0.30s; }
+    .message:nth-child(7) { animation-delay: 0.36s; }
+    .message:nth-child(8) { animation-delay: 0.42s; }
+
+    /* ---- Thinking Indicator ----
+       Three gold dots with staggered fade-pulse. This is simulatable
+       in CSS and demonstrates what the user sees while waiting for
+       the Sage to respond.
+    */
+    .thinking-indicator {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 0;
+      align-self: flex-start;
+    }
+
+    .thinking-indicator .sage-label {
+      margin-bottom: 0;
+      margin-right: 4px;
+    }
+
+    .thinking-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--accent-gold);
+      opacity: 0.3;
+      animation: thinking-pulse 1.4s ease-in-out infinite;
+    }
+
+    .thinking-dot:nth-child(2) { animation-delay: 0.2s; }
+    .thinking-dot:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes thinking-pulse {
+      0%, 80%, 100% { opacity: 0.2; transform: scale(0.85); }
+      40% { opacity: 0.9; transform: scale(1); }
+    }
+
+    /* ---- Input Area ----
+       RATIONALE: This is the single highest-leverage change for immersion.
+       The input is where the user LIVES. A thin single-line input says
+       "submit a query." A generous multi-line area with soft edges says
+       "write to the Sage."
+
+       3+ visible lines, large radius, generous padding. The gold focus
+       glow is one of the few places gold appears — it acknowledges
+       the user's attention.
+    */
+    .input-area {
+      flex-shrink: 0;
+      padding: 12px var(--section-padding) var(--section-padding);
+    }
+
+    .input-container {
+      position: relative;
+      max-width: 720px;
+      margin: 0 auto;
+    }
+
+    .chat-input {
+      width: 100%;
+      min-height: 88px;
+      max-height: 180px;
+      padding: 14px 52px 14px 18px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      font-size: 15px;
+      line-height: 1.55;
+      resize: none;
+      outline: none;
+
+      /*
+        ANIMATION: Input Focus Glow
+        - Trigger: textarea receives focus
+        - Effect: Border transitions from nearly invisible to faint gold,
+          plus a subtle gold box-shadow glow
+        - Duration: 200ms ease
+        - Why: Acknowledges the user's attention. "I'm ready for you."
+      */
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .chat-input::placeholder {
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    .chat-input:focus {
+      border-color: var(--accent-gold-border);
+      box-shadow: 0 0 0 3px var(--accent-gold-glow);
+    }
+
+    /*
+      Submit button — small, circular, gold. Positioned inside the textarea
+      at bottom-right. Visually subtle until hovered.
+    */
+    .submit-btn {
+      position: absolute;
+      bottom: 12px;
+      right: 12px;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: none;
+      background: var(--accent-gold);
+      color: var(--bg-primary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s ease, transform 0.15s ease;
+      opacity: 0.7;
+    }
+
+    .submit-btn:hover {
+      background: var(--accent-gold-hover);
+      opacity: 1;
+      transform: scale(1.05);
+    }
+
+    .submit-btn svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    /* =======================================================================
+       PANEL SIDE
+       -----------------------------------------------------------------------
+       RATIONALE: The panel should feel like a reference sidebar, not a
+       dashboard. Dashboards are busy and analytical. A reference sidebar
+       is calm and glanceable. The user's attention stays on the chat;
+       the panel is peripheral awareness.
+
+       Structure: pinned header, scrollable component list, pinned footer button.
+       The entire panel fits within the viewport.
+       ======================================================================= */
+    .panel-side {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      background: var(--bg-secondary);
+    }
+
+    /* ---- Panel Header — phase trigger sits here ---- */
+    .panel-header {
+      flex-shrink: 0;
+      padding: 12px var(--panel-padding) 4px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .panel-header-left {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .panel-title {
+      font-family: var(--font-serif);
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-primary);
+      letter-spacing: 0.01em;
+    }
+
+    .panel-subtitle {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .panel-subtitle .confirmed-count {
+      color: var(--accent-gold);
+      font-weight: 500;
+    }
+
+    .btn-continue-compact {
+      flex-shrink: 0;
+      padding: 7px 16px;
+      border: none;
+      border-radius: var(--radius-sm);
+      background: var(--accent-gold);
+      color: var(--bg-primary);
+      font-family: var(--font-sans);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s ease, box-shadow 0.2s ease;
+      letter-spacing: 0.01em;
+      white-space: nowrap;
+    }
+
+    .btn-continue-compact:hover {
+      background: var(--accent-gold-hover);
+      box-shadow: 0 0 16px var(--accent-gold-glow);
+    }
+
+    .btn-continue-compact:disabled {
+      opacity: 0.3;
+      cursor: default;
+      box-shadow: none;
+    }
+
+    .btn-continue-compact:disabled:hover {
+      background: var(--accent-gold);
+      box-shadow: none;
+    }
+
+    /* ---- Component List ---- */
+    .component-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px var(--panel-padding);
+
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255,255,255,0.06) transparent;
+    }
+    .component-list::-webkit-scrollbar { width: 5px; }
+    .component-list::-webkit-scrollbar-track { background: transparent; }
+    .component-list::-webkit-scrollbar-thumb {
+      background: rgba(255,255,255,0.06);
+      border-radius: 3px;
+    }
+
+    /* ---- Component Groups ---- */
+    .component-group {
+      margin-top: 20px;
+    }
+
+    .component-group:first-child {
+      margin-top: 12px;
+    }
+
+    .component-group-label {
+      font-family: var(--font-serif);
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 6px;
+      padding-left: 4px;
+    }
+
+    /* ---- Component Rows ----
+       RATIONALE: No card backgrounds. Each component is a simple row. The visual
+       difference between confirmed and unconfirmed is stark but subtle:
+       confirmed = gold left-border + full opacity.
+       Unconfirmed = no border + half opacity.
+
+       This means gold ONLY appears on rows that the user has completed.
+       As you work through components, gold gradually fills the panel — a quiet
+       sense of progress without a progress bar.
+    */
+    .component-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 12px;
+      border-radius: var(--radius-sm);
+      border-left: 3px solid transparent;
+      cursor: pointer;
+      transition: background 0.15s ease, border-color 0.15s ease;
+      gap: 12px;
+    }
+
+    .component-row:hover {
+      background: var(--bg-surface);
+    }
+
+    /* Confirmed component: gold left border, full text */
+    .component-row.confirmed {
+      border-left-color: var(--accent-gold);
+
+      /*
+        ANIMATION: Component Confirmation Shimmer
+        - Trigger: When a component transitions from unconfirmed → confirmed
+        - Effect: A brief gold shimmer sweeps left-to-right across the row
+          (background-position animation on a linear-gradient)
+        - Duration: 600ms, ease-out, no repeat
+        - Implementation: Add a .just-confirmed class with a @keyframes
+          animation, remove the class after animation completes
+        - Why: Celebrates the moment without fanfare. "The system noticed."
+      */
+    }
+
+    .component-row.confirmed .component-value {
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+
+    /* Unconfirmed component: muted, transparent */
+    .component-row.unconfirmed {
+      opacity: 0.45;
+    }
+
+    .component-row.unconfirmed:hover {
+      opacity: 0.65;
+    }
+
+    /* Active state removed — components are binary: gathered or ungathered */
+
+    .component-label {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+    }
+
+    .component-row.confirmed .component-label {
+      color: var(--text-secondary);
+    }
+
+    .component-value {
+      font-size: 13px;
+      font-weight: 400;
+      color: var(--text-muted);
+      text-align: right;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 55%;
+    }
+
+    .component-check {
+      color: var(--accent-gold);
+      font-size: 13px;
+      margin-left: 4px;
+      flex-shrink: 0;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .component-row.confirmed .component-check {
+      opacity: 1;
+    }
+
+    /* =======================================================================
+       CHOICE PANEL (Edit Mode)
+       -----------------------------------------------------------------------
+       Shown when the user clicks a component row to edit it. Replaces the
+       summary panel with a focused view for that single component.
+
+       ANIMATION: Panel Cross-Fade
+       - Trigger: User clicks a component row (summary → choice) or Back (choice → summary)
+       - Effect: Current panel fades out (opacity 1→0, 150ms), incoming panel
+         fades in (opacity 0→1, 150ms). Brief overlap where both exist in DOM.
+       - Implementation: React state drives which panel renders. Outgoing panel
+         gets "exiting" class (opacity: 0, transition: 150ms). Incoming panel
+         gets "entering" class (opacity: 0→1, transition: 150ms).
+       - Why: Hard cuts break flow. Cross-fade maintains continuity.
+       ======================================================================= */
+    .choice-panel {
+      display: none; /* Toggled via JS in this mockup */
+      flex-direction: column;
+      min-height: 0;
+      background: var(--bg-secondary);
+    }
+
+    .choice-panel.visible {
+      display: flex;
+    }
+
+    .panel-side.hidden {
+      display: none;
+    }
+
+    .choice-header {
+      flex-shrink: 0;
+      padding: var(--panel-padding);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .back-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-family: var(--font-sans);
+      font-size: 13px;
+      cursor: pointer;
+      padding: 4px 0;
+      margin-bottom: 8px;
+      transition: color 0.15s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .back-btn:hover {
+      color: var(--accent-gold);
+    }
+
+    .choice-component-name {
+      font-family: var(--font-serif);
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .choice-question {
+      font-family: var(--font-serif);
+      font-size: 14px;
+      font-style: italic;
+      color: var(--text-secondary);
+      margin-top: 8px;
+      line-height: 1.5;
+    }
+
+    /* ---- Choice Cards ----
+       RATIONALE: Minimal treatment. Text + subtle border. Gold only appears
+       on selection — making the moment of choosing feel intentional.
+    */
+    .choice-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px var(--panel-padding);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255,255,255,0.06) transparent;
+    }
+
+    .choice-card {
+      padding: 14px 16px;
+      border: 1px solid var(--border-medium);
+      border-left: 3px solid transparent;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .choice-card:hover {
+      background: var(--bg-surface);
+      border-color: var(--border-hover);
+      border-left-color: var(--border-hover);
+    }
+
+    /*
+      ANIMATION: Choice Card Select
+      - Trigger: User clicks a choice card
+      - Effect: Gold background wash fades in, gold left-border appears,
+        border transitions to gold-tinted
+      - Duration: 200ms ease
+      - Why: The moment of selection should feel affirming. Gold appears
+        precisely when the user makes a choice.
+    */
+    .choice-card.selected {
+      background: var(--accent-gold-dim);
+      border-color: var(--accent-gold-border);
+      border-left-color: var(--accent-gold);
+    }
+
+    .choice-card-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+
+    .choice-card.selected .choice-card-title {
+      color: var(--accent-gold-hover);
+    }
+
+    .choice-card-desc {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    /* Group labels within choice lists (e.g., Themes: Inner Journey / Outer Tension) */
+    .choice-group-label {
+      font-family: var(--font-serif);
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding-left: 4px;
+      margin-top: 8px;
+    }
+
+    .choice-group-label:first-child {
+      margin-top: 0;
+    }
+
+    .choice-footer {
+      flex-shrink: 0;
+      padding: 16px var(--panel-padding) var(--panel-padding);
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    .btn-confirm {
+      width: 100%;
+      padding: 12px 20px;
+      border: none;
+      border-radius: var(--radius-md);
+      background: var(--accent-gold);
+      color: var(--bg-primary);
+      font-family: var(--font-sans);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+      opacity: 0.35;
+      pointer-events: none;
+    }
+
+    .btn-confirm.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .btn-confirm.active:hover {
+      background: var(--accent-gold-hover);
+      box-shadow: 0 0 20px var(--accent-gold-glow);
+    }
+
+    /* =======================================================================
+       STREAMING CURSOR
+       -----------------------------------------------------------------------
+       Gold blinking cursor appended to the last token during streaming.
+       Already implemented in StreamingText.tsx — shown here for visual ref.
+       ======================================================================= */
+    .streaming-cursor::after {
+      content: '\25CB'; /* thin circle — less aggressive than a block cursor */
+      color: var(--accent-gold);
+      animation: cursor-blink 1s step-end infinite;
+      margin-left: 1px;
+      font-size: 12px;
+    }
+
+    @keyframes cursor-blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+
+    /* =======================================================================
+       UTILITY
+       ======================================================================= */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-shell">
+
+    <!-- ================================================================
+         HEADER BAR — Icon-only edges, phase dropdown center
+         ================================================================ -->
+    <header class="app-header">
+
+      <!-- Home icon -->
+      <button class="app-header-home" aria-label="Return to home">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+          <polyline points="9 22 9 12 15 12 15 22"></polyline>
+        </svg>
+      </button>
+
+      <!-- Adventure title — centered -->
+      <span class="app-header-title">Calamity in the Witherwild</span>
+
+    </header>
+
+    <!-- ================================================================
+         MAIN LAYOUT — 60/40 grid
+         ================================================================ -->
+    <div class="app-layout">
+
+    <!-- ================================================================
+         CHAT SIDE (60%)
+         ================================================================ -->
+    <div class="chat-side">
+
+      <!-- Message Area — scrollable -->
+      <div class="message-area">
+        <div class="messages">
+
+          <!-- Sage Opening -->
+          <div class="message message-sage">
+            <div class="sage-label">Sage</div>
+            <div class="message-text">
+              <p>Welcome, storyteller. I'm here to help you shape the world your players will explore.</p>
+              <p>Before we build scenes and encounters, let's tune the components that define your adventure's character. Think of these as the knobs on a mixing board — each one shapes the feel of what we create together.</p>
+              <p>Let's start with <strong>tone</strong>. How would you describe the overall feel you're going for?</p>
+            </div>
+          </div>
+
+          <!-- User Response: Tone -->
+          <div class="message message-user">
+            <div class="message-text">
+              I want something balanced — serious enough that choices matter, but with room for humor and lighter moments. Not grimdark, but not a comedy either.
+            </div>
+          </div>
+
+          <!-- Sage: Confirm Tone + Pivot to Pillars -->
+          <div class="message message-sage">
+            <div class="sage-label">Sage</div>
+            <div class="message-text">
+              <p>Balanced it is — weight where it counts, levity where it breathes. That's a good instinct for keeping players engaged without exhausting them.</p>
+              <p>Now, the three <strong>pillars of play</strong>: combat, discovery, and social. Every session leans on all three, but one usually leads. Which pillar do you want as the primary focus, and which comes second?</p>
+            </div>
+          </div>
+
+          <!-- User Response: Pillars -->
+          <div class="message message-user">
+            <div class="message-text">
+              Discovery first, combat second. I want the players uncovering a story, with fights that feel earned.
+            </div>
+          </div>
+
+          <!-- Sage: Confirm Pillars + NPC Density -->
+          <div class="message message-sage">
+            <div class="sage-label">Sage</div>
+            <div class="message-text">
+              <p>Discovery leading with combat as the backbone — the fights that happen will feel like punctuation, not filler. Social rounds it out as the connective tissue between revelations.</p>
+              <p>Next: <strong>how populated</strong> should your world feel? Some adventures are intimate — a handful of named characters who each matter deeply. Others are bustling with faces. What density feels right?</p>
+            </div>
+          </div>
+
+          <!-- User Response: NPC Density -->
+          <div class="message message-user">
+            <div class="message-text">
+              Moderate. Enough characters that the world feels alive, but not so many my players can't keep track.
+            </div>
+          </div>
+
+          <!-- Sage: Confirm Chorus + Ask Threads -->
+          <div class="message message-sage">
+            <div class="sage-label">Sage</div>
+            <div class="message-text">
+              <p>A roster deep enough to populate your scenes without overwhelming the table. Smart choice.</p>
+              <p>Last piece of the essence: <strong>threads</strong>. These are the thematic currents running beneath your story — the big ideas that give scenes weight. Pick up to three that resonate with the adventure you're imagining.</p>
+            </div>
+          </div>
+
+          <!--
+            ANIMATION: Thinking Indicator
+            - Appears here after the user sends their next message
+            - Shows 3 gold dots pulsing while the Sage "thinks"
+            - Duration: loops until first streaming token arrives
+            - The dots below are a live CSS animation demo
+          -->
+          <!--
+          <div class="thinking-indicator message">
+            <div class="sage-label">Sage</div>
+            <div class="thinking-dot"></div>
+            <div class="thinking-dot"></div>
+            <div class="thinking-dot"></div>
+          </div>
+          -->
+
+        </div>
+      </div>
+
+      <!-- Input Area — pinned to bottom -->
+      <div class="input-area">
+        <div class="input-container">
+          <textarea
+            class="chat-input"
+            placeholder="What path shall we take?"
+            rows="3"
+          ></textarea>
+          <button class="submit-btn" aria-label="Send message">
+            <svg viewBox="0 0 24 24" fill="currentColor" stroke="none">
+              <polygon points="12,2 16,12 12,22 8,12"></polygon>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ================================================================
+         PANEL SIDE (40%) — Component Summary (Default State)
+         ================================================================ -->
+    <div class="panel-side" id="summary-panel">
+
+      <!-- Panel Header — Phase trigger with dropdown -->
+      <div class="panel-header">
+        <div class="app-header-phase" onclick="togglePhaseDropdown()" role="button" tabindex="0" aria-expanded="false" aria-haspopup="true">
+          <span class="phase-name">Attunement</span>
+          <span class="phase-progress">How should it feel?</span>
+          <span class="phase-chevron" id="phase-chevron">▾</span>
+
+          <!-- Phase dropdown — all 10 stages -->
+          <div class="phase-dropdown" id="phase-dropdown" role="menu">
+            <div class="phase-dropdown-item completed" role="menuitem" tabindex="0">
+              <div class="phase-item-text">
+                <span>Invocation</span>
+                <span class="phase-item-desc">What shape will your adventure take?</span>
+              </div>
+            </div>
+            <div class="phase-dropdown-item current" role="menuitem" tabindex="0">
+              <div class="phase-item-text">
+                <span>Attunement</span>
+                <span class="phase-item-desc">How should it feel?</span>
+              </div>
+            </div>
+            <div class="phase-dropdown-item future" role="menuitem" tabindex="-1">
+              <div class="phase-item-text">
+                <span>Binding</span>
+                <span class="phase-item-desc">Which frame holds the story?</span>
+              </div>
+              <span class="phase-item-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></span>
+            </div>
+            <div class="phase-dropdown-item future" role="menuitem" tabindex="-1">
+              <div class="phase-item-text">
+                <span>Weaving</span>
+                <span class="phase-item-desc">How does the plot unfold?</span>
+              </div>
+              <span class="phase-item-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></span>
+            </div>
+            <div class="phase-dropdown-item future" role="menuitem" tabindex="-1">
+              <div class="phase-item-text">
+                <span>Inscription</span>
+                <span class="phase-item-desc">What unfolds in each scene?</span>
+              </div>
+              <span class="phase-item-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></span>
+            </div>
+            <div class="phase-dropdown-item future" role="menuitem" tabindex="-1">
+              <div class="phase-item-text">
+                <span>Conjuring</span>
+                <span class="phase-item-desc">Who will the party meet?</span>
+              </div>
+              <span class="phase-item-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></span>
+            </div>
+            <div class="phase-dropdown-item future" role="menuitem" tabindex="-1">
+              <div class="phase-item-text">
+                <span>Summoning</span>
+                <span class="phase-item-desc">What stands in their way?</span>
+              </div>
+              <span class="phase-item-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></span>
+            </div>
+            <div class="phase-dropdown-item future" role="menuitem" tabindex="-1">
+              <div class="phase-item-text">
+                <span>Enchanting</span>
+                <span class="phase-item-desc">What treasures await?</span>
+              </div>
+              <span class="phase-item-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></span>
+            </div>
+            <div class="phase-dropdown-item future" role="menuitem" tabindex="-1">
+              <div class="phase-item-text">
+                <span>Scrying</span>
+                <span class="phase-item-desc">What might happen at the table?</span>
+              </div>
+              <span class="phase-item-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></span>
+            </div>
+            <div class="phase-dropdown-item future" role="menuitem" tabindex="-1">
+              <div class="phase-item-text">
+                <span>Sealing</span>
+                <span class="phase-item-desc">Is the spell complete?</span>
+              </div>
+              <span class="phase-item-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Component List — scrollable -->
+      <div class="component-list">
+
+        <!-- Session Group -->
+        <div class="component-group">
+          <div class="component-group-label">Session</div>
+
+          <div class="component-row unconfirmed" onclick="showChoicePanel('span')">
+            <span class="component-label">Span</span>
+            <span class="component-value">&mdash;</span>
+          </div>
+
+          <div class="component-row unconfirmed" onclick="showChoicePanel('scenes')">
+            <span class="component-label">Scenes</span>
+            <span class="component-value">&mdash;</span>
+          </div>
+        </div>
+
+        <!-- Party Group -->
+        <div class="component-group">
+          <div class="component-group-label">Party</div>
+
+          <div class="component-row unconfirmed" onclick="showChoicePanel('members')">
+            <span class="component-label">Members</span>
+            <span class="component-value">&mdash;</span>
+          </div>
+
+          <div class="component-row unconfirmed" onclick="showChoicePanel('tier')">
+            <span class="component-label">Tier</span>
+            <span class="component-value">&mdash;</span>
+          </div>
+        </div>
+
+        <!-- Atmosphere Group -->
+        <div class="component-group">
+          <div class="component-group-label">Essence</div>
+
+          <div class="component-row confirmed" onclick="showChoicePanel('tone')">
+            <span class="component-label">Tenor</span>
+            <span class="component-value" style="color: var(--text-primary);">Balanced</span>
+          </div>
+
+          <div class="component-row confirmed" onclick="showChoicePanel('pillars')">
+            <span class="component-label">Pillars</span>
+            <span class="component-value" style="color: var(--text-primary);">Discovery-Led</span>
+          </div>
+
+          <div class="component-row confirmed" onclick="showChoicePanel('npcDensity')">
+            <span class="component-label">Chorus</span>
+            <span class="component-value" style="color: var(--text-primary);">Moderate</span>
+          </div>
+
+          <div class="component-row unconfirmed" onclick="showChoicePanel('themes')">
+            <span class="component-label">Threads</span>
+            <span class="component-value">&mdash;</span>
+          </div>
+        </div>
+
+        <!-- Continue button — inside component list, snug below Threads -->
+        <button class="btn-continue-compact" style="margin: 16px auto 12px; display: block;" disabled>Continue to Binding</button>
+
+      </div>
+
+    </div>
+
+    <!-- ================================================================
+         CHOICE PANEL (Edit State)
+         -----------------------------------------------------------------------
+         Shown when user clicks a component row. Each data-example block
+         holds a different component's choices. Clicking a choice card
+         immediately registers the selection (single-select) or toggles
+         it (multi-select for Themes).
+         ================================================================ -->
+    <div class="choice-panel" id="choice-panel">
+
+      <div class="choice-header">
+        <button class="back-btn" onclick="showSummaryPanel()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+          Return to Attunement
+        </button>
+        <div class="choice-component-name" id="choice-title">Lethality</div>
+        <div class="choice-question" id="choice-question">How dangerous should this world feel? Pick what matches your table.</div>
+      </div>
+
+      <!-- ---- Pillar Balance (4 cards, single-select) ---- -->
+      <div class="choice-list" data-example="pillars" style="display:none;">
+        <div class="choice-card" onclick="selectChoice(this, 'single')">
+          <div class="choice-card-title">Interwoven</div>
+          <div class="choice-card-desc">All three pillars share the stage — no single focus dominates.</div>
+        </div>
+        <div class="choice-card" onclick="selectChoice(this, 'single')">
+          <div class="choice-card-title">Battle-Led</div>
+          <div class="choice-card-desc">Fights are the centerpiece; discovery and intrigue support them.</div>
+        </div>
+        <div class="choice-card" onclick="selectChoice(this, 'single')">
+          <div class="choice-card-title">Discovery-Led</div>
+          <div class="choice-card-desc">Discovery drives the story; combat and social arise from what's found.</div>
+        </div>
+        <div class="choice-card" onclick="selectChoice(this, 'single')">
+          <div class="choice-card-title">Intrigue-Led</div>
+          <div class="choice-card-desc">Relationships and intrigue lead; combat and discovery serve the drama.</div>
+        </div>
+      </div>
+
+      <!-- ---- NPC Density (3 cards) ---- -->
+      <div class="choice-list" data-example="npcDensity" style="display:none;">
+        <div class="choice-card" onclick="selectChoice(this, 'single')">
+          <div class="choice-card-title">Sparse</div>
+          <div class="choice-card-desc">A few key figures — lonely roads and meaningful encounters.</div>
+        </div>
+        <div class="choice-card" onclick="selectChoice(this, 'single')">
+          <div class="choice-card-title">Moderate</div>
+          <div class="choice-card-desc">A solid cast without overwhelm — enough to fill a tavern.</div>
+        </div>
+        <div class="choice-card" onclick="selectChoice(this, 'single')">
+          <div class="choice-card-title">Rich</div>
+          <div class="choice-card-desc">A bustling world — names and faces around every corner.</div>
+        </div>
+      </div>
+
+      <!-- ---- Span (3 cards) ---- -->
+      <div class="choice-list" data-example="span" style="display:none;">
+        <div class="choice-card" onclick="selectChoice(this, 'single')">
+          <div class="choice-card-title">2–3 Hours</div>
+          <div class="choice-card-desc">A tight session — get in, play hard, get out.</div>
+        </div>
+        <div class="choice-card" onclick="selectChoice(this, 'single')">
+          <div class="choice-card-title">3–4 Hours</div>
+          <div class="choice-card-desc">The standard session — pacing and depth.</div>
+        </div>
+        <div class="choice-card" onclick="selectChoice(this, 'single')">
+          <div class="choice-card-title">4–5 Hours</div>
+          <div class="choice-card-desc">A long session — room for everything.</div>
+        </div>
+      </div>
+
+      <!-- ---- Scenes (4 cards) ---- -->
+      <div class="choice-list" data-example="scenes" style="display:none;">
+        <div class="choice-card" onclick="selectChoice(this, 'single')">
+          <div class="choice-card-title">3 Scenes</div>
+          <div class="choice-card-desc">Quick and punchy — a focused one-shot.</div>
+        </div>
+        <div class="choice-card" onclick="selectChoice(this, 'single')">
+          <div class="choice-card-title">4 Scenes</div>
+          <div class="choice-card-desc">Room to breathe — the sweet spot for most sessions.</div>
+        </div>
+        <div class="choice-card" onclick="selectChoice(this, 'single')">
+          <div class="choice-card-title">5 Scenes</div>
+          <div class="choice-card-desc">Expansive — more room for subplots and twists.</div>
+        </div>
+        <div class="choice-card" onclick="selectChoice(this, 'single')">
+          <div class="choice-card-title">6 Scenes</div>
+          <div class="choice-card-desc">Epic scope — a full day of adventure.</div>
+        </div>
+      </div>
+
+      <!-- ---- Members (4 cards) ---- -->
+      <div class="choice-list" data-example="members" style="display:none;">
+        <div class="choice-card" onclick="selectChoice(this, 'single')">
+          <div class="choice-card-title">2 Players</div>
+          <div class="choice-card-desc">Intimate duo — every choice carries weight.</div>
+        </div>
+        <div class="choice-card" onclick="selectChoice(this, 'single')">
+          <div class="choice-card-title">3 Players</div>
+          <div class="choice-card-desc">A tight-knit trio — nimble and focused.</div>
+        </div>
+        <div class="choice-card" onclick="selectChoice(this, 'single')">
+          <div class="choice-card-title">4 Players</div>
+          <div class="choice-card-desc">The classic party — balanced and versatile.</div>
+        </div>
+        <div class="choice-card" onclick="selectChoice(this, 'single')">
+          <div class="choice-card-title">5 Players</div>
+          <div class="choice-card-desc">A full company — more chaos, more fun.</div>
+        </div>
+      </div>
+
+      <!-- ---- Tier (4 cards) ---- -->
+      <div class="choice-list" data-example="tier" style="display:none;">
+        <div class="choice-card" onclick="selectChoice(this, 'single')">
+          <div class="choice-card-title">Tier 1</div>
+          <div class="choice-card-desc">Levels 1–4 — fresh adventurers finding their footing.</div>
+        </div>
+        <div class="choice-card" onclick="selectChoice(this, 'single')">
+          <div class="choice-card-title">Tier 2</div>
+          <div class="choice-card-desc">Levels 5–8 — proven heroes with growing renown.</div>
+        </div>
+        <div class="choice-card" onclick="selectChoice(this, 'single')">
+          <div class="choice-card-title">Tier 3</div>
+          <div class="choice-card-desc">Levels 9–12 — legendary figures shaping the world.</div>
+        </div>
+        <div class="choice-card" onclick="selectChoice(this, 'single')">
+          <div class="choice-card-title">Tier 4</div>
+          <div class="choice-card-desc">Levels 13+ — mythic power, world-altering stakes.</div>
+        </div>
+      </div>
+
+      <!-- ---- Tone (5 cards) ---- -->
+      <div class="choice-list" data-example="tone" style="display:none;">
+        <div class="choice-card" onclick="selectChoice(this, 'single')">
+          <div class="choice-card-title">Grim</div>
+          <div class="choice-card-desc">Dark, oppressive, and relentless — think Dark Souls or The Witcher.</div>
+        </div>
+        <div class="choice-card" onclick="selectChoice(this, 'single')">
+          <div class="choice-card-title">Serious</div>
+          <div class="choice-card-desc">Grounded stakes with moments of levity — Lord of the Rings territory.</div>
+        </div>
+        <div class="choice-card" onclick="selectChoice(this, 'single')">
+          <div class="choice-card-title">Balanced</div>
+          <div class="choice-card-desc">Equal parts drama and fun — your classic D&D session.</div>
+        </div>
+        <div class="choice-card" onclick="selectChoice(this, 'single')">
+          <div class="choice-card-title">Lighthearted</div>
+          <div class="choice-card-desc">Fun-first with real stakes underneath — Adventure Time vibes.</div>
+        </div>
+        <div class="choice-card" onclick="selectChoice(this, 'single')">
+          <div class="choice-card-title">Whimsical</div>
+          <div class="choice-card-desc">Playful, absurd, and joyful — Discworld energy.</div>
+        </div>
+      </div>
+
+      <!-- ---- Themes (6 paired tensions, multi-select up to 3) ---- -->
+      <div class="choice-list" data-example="themes" style="display:none;">
+        <div class="choice-card" onclick="selectChoice(this, 'multi')">
+          <div class="choice-card-title">Redemption & Sacrifice</div>
+          <div class="choice-card-desc">What would you give to make things right?</div>
+        </div>
+        <div class="choice-card" onclick="selectChoice(this, 'multi')">
+          <div class="choice-card-title">Identity & Legacy</div>
+          <div class="choice-card-desc">Who are you, and what will endure?</div>
+        </div>
+        <div class="choice-card" onclick="selectChoice(this, 'multi')">
+          <div class="choice-card-title">Found Family</div>
+          <div class="choice-card-desc">Bonds forged by choice, not blood.</div>
+        </div>
+        <div class="choice-card" onclick="selectChoice(this, 'multi')">
+          <div class="choice-card-title">Power & Corruption</div>
+          <div class="choice-card-desc">What does power cost those who wield it?</div>
+        </div>
+        <div class="choice-card" onclick="selectChoice(this, 'multi')">
+          <div class="choice-card-title">Trust & Betrayal</div>
+          <div class="choice-card-desc">Who can you believe when it matters most?</div>
+        </div>
+        <div class="choice-card" onclick="selectChoice(this, 'multi')">
+          <div class="choice-card-title">Survival & Justice</div>
+          <div class="choice-card-desc">When staying alive conflicts with doing right.</div>
+        </div>
+      </div>
+
+    </div>
+
+  </div><!-- /app-layout -->
+
+  </div><!-- /app-shell -->
+
+  <!-- ====================================================================
+       INTERACTIVE BEHAVIOR (Mockup Only)
+       This minimal JS enables panel switching and choice selection for
+       demonstration purposes. In the real app, these are React state changes.
+       ==================================================================== -->
+  <script>
+    // Example metadata: titles and questions for each panel
+    const EXAMPLE_META = {
+      pillars:           { title: 'Pillars', question: 'Every adventure leans on three pillars — combat, discovery, and social. Which should lead?' },
+      npcDensity:        { title: 'Chorus', question: 'How populated should this world feel? More voices means richer roleplay but more to track.' },
+      span:              { title: 'Span', question: 'How long is this session?' },
+      scenes:            { title: 'Scenes', question: 'How many scenes should the adventure have?' },
+      members:           { title: 'Members', question: 'How many players will be at the table?' },
+      tier:              { title: 'Tier', question: 'What tier are the characters?' },
+      tone:              { title: 'Tenor', question: "Let's set the mood. What kind of tenor should your adventure have?" },
+      themes:            { title: 'Threads', question: 'Last one — pick up to 3 threads that resonate with your story.' },
+    };
+
+    // Show the choice panel for a specific example
+    function showChoicePanel(exampleName) {
+      // Hide all choice lists, show the requested one
+      document.querySelectorAll('.choice-list').forEach(el => el.style.display = 'none');
+      const target = document.querySelector(`.choice-list[data-example="${exampleName}"]`);
+      if (target) target.style.display = 'flex';
+
+      // Update header text
+      const meta = EXAMPLE_META[exampleName];
+      if (meta) {
+        document.getElementById('choice-title').textContent = meta.title;
+        document.getElementById('choice-question').textContent = meta.question;
+      }
+
+      // Toggle panels
+      document.getElementById('summary-panel').classList.add('hidden');
+      document.getElementById('choice-panel').classList.add('visible');
+    }
+
+    function showSummaryPanel() {
+      document.getElementById('choice-panel').classList.remove('visible');
+      document.getElementById('summary-panel').classList.remove('hidden');
+    }
+
+    // Choice card selection
+    function selectChoice(card, mode) {
+      const list = card.closest('.choice-list');
+      if (mode === 'multi') {
+        // Multi-select: toggle this card, cap at 3
+        if (card.classList.contains('selected')) {
+          card.classList.remove('selected');
+        } else {
+          const selected = list.querySelectorAll('.choice-card.selected');
+          if (selected.length < 3) {
+            card.classList.add('selected');
+          }
+        }
+      } else {
+        // Single-select: deselect siblings, select this one
+        list.querySelectorAll('.choice-card').forEach(c => c.classList.remove('selected'));
+        card.classList.add('selected');
+      }
+    }
+
+    // ---- Phase dropdown toggle ----
+    function togglePhaseDropdown() {
+      const dropdown = document.getElementById('phase-dropdown');
+      const chevron = document.getElementById('phase-chevron');
+      const trigger = document.querySelector('.app-header-phase');
+      const isOpen = dropdown.classList.contains('open');
+
+      if (isOpen) {
+        dropdown.classList.remove('open');
+        chevron.classList.remove('open');
+        trigger.setAttribute('aria-expanded', 'false');
+      } else {
+        dropdown.classList.add('open');
+        chevron.classList.add('open');
+        trigger.setAttribute('aria-expanded', 'true');
+      }
+    }
+
+    // Close dropdown on click outside
+    document.addEventListener('click', function(e) {
+      const trigger = document.querySelector('.app-header-phase');
+      const dropdown = document.getElementById('phase-dropdown');
+      if (!trigger.contains(e.target)) {
+        dropdown.classList.remove('open');
+        document.getElementById('phase-chevron').classList.remove('open');
+        trigger.setAttribute('aria-expanded', 'false');
+      }
+    });
+
+    // Close dropdown on Escape
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        const dropdown = document.getElementById('phase-dropdown');
+        if (dropdown.classList.contains('open')) {
+          dropdown.classList.remove('open');
+          document.getElementById('phase-chevron').classList.remove('open');
+          document.querySelector('.app-header-phase').setAttribute('aria-expanded', 'false');
+        }
+      }
+    });
+
+    // Auto-resize textarea as user types
+    const textarea = document.querySelector('.chat-input');
+    textarea.addEventListener('input', function() {
+      this.style.height = 'auto';
+      this.style.height = Math.min(this.scrollHeight, 180) + 'px';
+    });
+
+    // Scroll messages to bottom on load
+    const messageArea = document.querySelector('.message-area');
+    messageArea.scrollTop = messageArea.scrollHeight;
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dagger-App — Inscription (Immersive Mockup)</title>
+
+  <!--
+    ==========================================================================
+    STAGE 5: INSCRIPTION — What unfolds in each scene?
+    ==========================================================================
+    Panel pattern: SCENE NAVIGATOR + CONTENT PREVIEW
+    The user inscribes each scene into the Book — draft, feedback, revise per
+    scene. The panel shows numbered scene tabs and collapsible content sections
+    for the active scene.
+
+    Scene tabs track progress: complete (gold fill), active (gold outline),
+    pending (muted). Content sections expand/collapse to let the user scan
+    scene structure at a glance without drowning in detail.
+
+    DESIGN RATIONALE: Inscription is the most content-dense phase. Each scene
+    has 8 facets (overview, setup, developments, NPCs, adversaries, items,
+    transitions, GM notes). Collapsible sections keep cognitive load
+    manageable — the user expands what they want to review and collapses
+    the rest. The scene tabs provide spatial orientation across the full arc.
+    ==========================================================================
+  -->
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Source+Serif+4:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+
+  <style>
+    /* =======================================================================
+       DESIGN TOKENS — Shared across all mockups
+       ======================================================================= */
+    :root {
+      --bg-primary: #1c1b1f;
+      --bg-secondary: #252428;
+      --bg-surface: #2e2d32;
+      --bg-surface-hover: #353439;
+      --text-primary: #e8e4de;
+      --text-secondary: #9d9a93;
+      --text-muted: #6b6862;
+      --accent-gold: #d7a964;
+      --accent-gold-hover: #e5bc7a;
+      --accent-gold-dim: rgba(215, 169, 100, 0.12);
+      --accent-gold-border: rgba(215, 169, 100, 0.25);
+      --accent-gold-glow: rgba(215, 169, 100, 0.15);
+      --border-subtle: rgba(255, 255, 255, 0.06);
+      --border-medium: rgba(255, 255, 255, 0.10);
+      --border-hover: rgba(255, 255, 255, 0.14);
+      --user-msg-bg: rgba(255, 255, 255, 0.07);
+      --font-serif: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+      --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+      --message-gap: 28px;
+      --section-padding: 24px;
+      --panel-padding: 20px;
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-xl: 20px;
+    }
+
+    /* === RESET & BASE === */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      height: 100%; overflow: hidden;
+      background: var(--bg-primary); color: var(--text-primary);
+      font-family: var(--font-sans); font-size: 15px; line-height: 1.6;
+      -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* === LAYOUT === */
+    .app-shell { display: flex; flex-direction: column; height: 100vh; width: 100%; }
+    .app-header {
+      flex-shrink: 0; display: flex; align-items: center;
+      padding: 0 16px; height: 56px;
+      background: var(--bg-secondary); border-bottom: 1px solid var(--border-subtle);
+    }
+    .app-header-home {
+      display: flex; align-items: center; justify-content: center;
+      width: 32px; height: 32px; border-radius: var(--radius-sm);
+      background: none; border: none; color: var(--text-muted);
+      cursor: pointer; transition: color 0.15s ease, background 0.15s ease; flex-shrink: 0;
+    }
+    .app-header-home:hover { color: var(--text-secondary); background: var(--bg-surface); }
+    .app-header-title {
+      font-family: var(--font-serif); font-size: 16px; font-weight: 500;
+      color: var(--accent-gold); white-space: nowrap; overflow: hidden;
+      text-overflow: ellipsis; min-width: 0; flex: 1; text-align: center;
+    }
+    .app-layout { display: grid; grid-template-columns: 13fr 7fr; flex: 1; min-height: 0; width: 100%; }
+
+    /* === CHAT SIDE === */
+    .chat-side { display: flex; flex-direction: column; min-height: 0; border-right: 1px solid var(--border-subtle); }
+    .message-area {
+      flex: 1; overflow-y: auto; padding: 36px var(--section-padding) 8px;
+      scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.08) transparent;
+    }
+    .message-area::-webkit-scrollbar { width: 6px; }
+    .message-area::-webkit-scrollbar-track { background: transparent; }
+    .message-area::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 3px; }
+    .messages { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: var(--message-gap); }
+    .message { max-width: 88%; animation: message-appear 0.4s ease-out both; }
+    @keyframes message-appear {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .message-sage { align-self: flex-start; }
+    .message-sage .message-text { font-family: var(--font-serif); font-size: 16px; }
+    .message-user {
+      align-self: flex-end; background: var(--user-msg-bg);
+      border: 1px solid var(--border-subtle); padding: 12px 16px; border-radius: var(--radius-md);
+    }
+    .sage-label {
+      font-family: var(--font-serif); font-size: 12px; font-weight: 500;
+      color: var(--text-muted); letter-spacing: 0.03em; margin-bottom: 6px;
+    }
+    .message-text { color: var(--text-primary); line-height: 1.65; }
+    .message-text p + p { margin-top: 12px; }
+    .message:nth-child(1) { animation-delay: 0s; }
+    .message:nth-child(2) { animation-delay: 0.06s; }
+    .message:nth-child(3) { animation-delay: 0.12s; }
+    .message:nth-child(4) { animation-delay: 0.18s; }
+    .message:nth-child(5) { animation-delay: 0.24s; }
+    .message:nth-child(6) { animation-delay: 0.30s; }
+    .thinking-indicator { display: flex; align-items: center; gap: 5px; padding: 4px 0; align-self: flex-start; }
+    .thinking-indicator .sage-label { margin-bottom: 0; margin-right: 4px; }
+    .thinking-dot {
+      width: 5px; height: 5px; border-radius: 50%;
+      background: var(--accent-gold); opacity: 0.3;
+      animation: thinking-pulse 1.4s ease-in-out infinite;
+    }
+    .thinking-dot:nth-child(2) { animation-delay: 0.2s; }
+    .thinking-dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes thinking-pulse {
+      0%, 80%, 100% { opacity: 0.2; transform: scale(0.85); }
+      40% { opacity: 0.9; transform: scale(1); }
+    }
+
+    /* === INPUT === */
+    .input-area { flex-shrink: 0; padding: 12px var(--section-padding) var(--section-padding); }
+    .input-container { position: relative; max-width: 720px; margin: 0 auto; }
+    .chat-input {
+      width: 100%; min-height: 88px; max-height: 180px;
+      padding: 14px 52px 14px 18px; background: var(--bg-secondary);
+      border: 1px solid var(--border-subtle); border-radius: var(--radius-lg);
+      color: var(--text-primary); font-family: var(--font-sans);
+      font-size: 15px; line-height: 1.55; resize: none; outline: none;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    .chat-input::placeholder { color: var(--text-muted); font-style: italic; }
+    .chat-input:focus { border-color: var(--accent-gold-border); box-shadow: 0 0 0 3px var(--accent-gold-glow); }
+    .submit-btn {
+      position: absolute; bottom: 12px; right: 12px; width: 36px; height: 36px;
+      border-radius: 50%; border: none; background: var(--accent-gold);
+      color: var(--bg-primary); cursor: pointer; display: flex; align-items: center;
+      justify-content: center; transition: background 0.15s ease, transform 0.15s ease; opacity: 0.7;
+    }
+    .submit-btn:hover { background: var(--accent-gold-hover); opacity: 1; transform: scale(1.05); }
+    .submit-btn svg { width: 20px; height: 20px; }
+
+    /* === PANEL SIDE === */
+    .panel-side {
+      display: flex; flex-direction: column; min-height: 0; background: var(--bg-secondary);
+    }
+    .panel-header {
+      flex-shrink: 0; padding: 12px var(--panel-padding) 4px;
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    }
+
+    /* Phase dropdown trigger + dropdown */
+    .app-header-phase {
+      position: relative; display: flex; align-items: center; gap: 8px;
+      cursor: pointer; padding: 4px 10px 4px 4px; border-radius: var(--radius-sm);
+      border: none; background: none; transition: background 0.15s ease; flex-shrink: 0;
+    }
+    .app-header-phase:hover { background: var(--bg-surface); }
+    .phase-name { font-family: var(--font-sans); font-size: 13px; font-weight: 500; color: var(--accent-gold); }
+    .phase-progress { font-family: var(--font-sans); font-size: 12px; color: var(--text-muted); }
+    .phase-chevron { color: var(--text-muted); font-size: 10px; transition: transform 0.2s ease; margin-left: -2px; }
+    .phase-chevron.open { transform: rotate(180deg); }
+    .phase-dropdown {
+      position: absolute; top: calc(100% + 6px); left: 50%; transform: translateX(-50%);
+      min-width: 260px; background: var(--bg-surface); border: 1px solid var(--border-medium);
+      border-radius: var(--radius-md); box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+      padding: 6px; z-index: 100; opacity: 0; pointer-events: none; transition: opacity 0.15s ease;
+    }
+    .phase-dropdown.open { opacity: 1; pointer-events: auto; }
+    .phase-dropdown-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 8px 12px; border-radius: var(--radius-sm); font-family: var(--font-sans);
+      font-size: 13px; color: var(--text-secondary); cursor: pointer;
+      transition: background 0.12s ease; border: none; background: none; width: 100%; text-align: left;
+    }
+    .phase-dropdown-item:hover { background: var(--bg-surface-hover); }
+    .phase-dropdown-item.current { color: var(--accent-gold); font-weight: 600; background: var(--accent-gold-dim); }
+    .phase-dropdown-item.completed { color: var(--text-secondary); }
+    .phase-dropdown-item.future { color: var(--text-muted); cursor: default; opacity: 0.6; }
+    .phase-dropdown-item.future:hover { background: none; }
+    .phase-item-icon { display: flex; align-items: center; flex-shrink: 0; margin-left: auto; padding-left: 12px; }
+    .phase-item-icon svg { width: 12px; height: 12px; }
+    .phase-item-text { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+    .phase-item-desc { font-size: 11px; font-weight: 400; color: var(--text-muted); }
+    .phase-dropdown-item.current .phase-item-desc { color: var(--accent-gold); opacity: 0.7; }
+
+    /* === SCENE TABS (Inscription-specific) ===
+       DESIGN RATIONALE: Horizontal numbered tabs give spatial orientation
+       across the full scene arc. Gold fill = done, gold outline = in progress,
+       muted = pending. Compact sizing (48px min) keeps them scannable even
+       with 6 scenes.
+    */
+    .scene-selector {
+      display: flex; flex-direction: row; gap: 6px;
+      padding: 0 var(--panel-padding); margin-bottom: 12px;
+    }
+    .scene-selector-tab {
+      min-width: 48px; padding: 6px 12px; border-radius: var(--radius-sm);
+      font-family: var(--font-sans); font-size: 13px; cursor: pointer;
+      text-align: center; border: none; transition: background 0.15s ease, color 0.15s ease;
+    }
+    .scene-selector-tab.complete {
+      background: var(--accent-gold); color: var(--bg-primary); font-weight: 600;
+    }
+    .scene-selector-tab.complete:hover {
+      background: var(--accent-gold-hover);
+    }
+    .scene-selector-tab.active {
+      background: var(--accent-gold); color: var(--bg-primary); font-weight: 600;
+    }
+    .scene-selector-tab.pending {
+      background: var(--bg-surface); color: var(--text-secondary);
+    }
+    .scene-selector-tab.pending:hover {
+      background: var(--bg-surface-hover); color: var(--text-primary);
+    }
+
+    /* === SCENE CONTENT (Inscription-specific) ===
+       DESIGN RATIONALE: Collapsible sections keep cognitive load manageable.
+       Expanded sections show preview text; collapsed sections show a single
+       metadata line. The chevron rotation provides clear open/closed state.
+    */
+    .scene-content {
+      flex: 1; overflow-y: auto; padding: 0 var(--panel-padding);
+      scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.06) transparent;
+    }
+    .scene-content::-webkit-scrollbar { width: 5px; }
+    .scene-content::-webkit-scrollbar-track { background: transparent; }
+    .scene-content::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.06); border-radius: 3px; }
+
+    .scene-section { margin-bottom: 2px; }
+    .scene-section-header {
+      display: flex; flex-direction: row; align-items: center;
+      padding: 10px 12px; cursor: pointer; border-radius: var(--radius-sm);
+      transition: background 0.12s ease; gap: 8px; user-select: none;
+    }
+    .scene-section-header:hover { background: var(--bg-surface); }
+
+    .scene-section-chevron {
+      font-size: 10px; color: var(--text-muted); flex-shrink: 0;
+      transition: transform 0.2s ease; width: 16px; text-align: center;
+    }
+    .scene-section:not(.collapsed) .scene-section-chevron {
+      transform: rotate(90deg);
+    }
+
+    .scene-section-name {
+      font-family: var(--font-sans); font-size: 13px; font-weight: 500;
+      color: var(--text-primary); flex: 1; min-width: 0;
+    }
+
+    .scene-section-status {
+      width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+    }
+    .scene-section-status.drafted {
+      background: var(--accent-gold);
+    }
+    .scene-section-status.empty {
+      background: var(--bg-surface); border: 1px solid var(--border-medium);
+    }
+
+    .scene-section-preview {
+      padding: 0 12px 12px 28px;
+      font-family: var(--font-sans); font-size: 13px; color: var(--text-secondary);
+      line-height: 1.5;
+    }
+    .scene-section.collapsed .scene-section-preview {
+      display: none;
+    }
+
+    .scene-section-meta {
+      font-size: 12px; color: var(--text-muted); font-style: italic;
+    }
+
+    .btn-continue-compact {
+      flex-shrink: 0; padding: 7px 16px; border: none; border-radius: var(--radius-sm);
+      background: var(--accent-gold); color: var(--bg-primary);
+      font-family: var(--font-sans); font-size: 13px; font-weight: 600;
+      cursor: pointer; transition: background 0.15s ease, box-shadow 0.2s ease;
+      letter-spacing: 0.01em; white-space: nowrap;
+    }
+    .btn-continue-compact:hover { background: var(--accent-gold-hover); box-shadow: 0 0 16px var(--accent-gold-glow); }
+    .btn-continue-compact:disabled { opacity: 0.3; cursor: default; box-shadow: none; }
+    .btn-continue-compact:disabled:hover { background: var(--accent-gold); box-shadow: none; }
+
+    .streaming-cursor::after {
+      content: '\25CB'; color: var(--accent-gold);
+      animation: cursor-blink 1s step-end infinite; margin-left: 1px; font-size: 12px;
+    }
+    @keyframes cursor-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-shell">
+
+    <header class="app-header">
+      <button class="app-header-home" aria-label="Return to home">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+          <polyline points="9 22 9 12 15 12 15 22"></polyline>
+        </svg>
+      </button>
+      <span class="app-header-title">Calamity in the Witherwild</span>
+    </header>
+
+    <div class="app-layout">
+
+    <!-- ================================================================
+         CHAT SIDE (60%)
+         ================================================================ -->
+    <div class="chat-side">
+      <div class="message-area">
+        <div class="messages">
+
+          <!-- Sage: Opening Inscription -->
+          <div class="message message-sage">
+            <div class="sage-label">Sage</div>
+            <div class="message-text">
+              <p>Your scene arc is woven and the shape of the story is clear. Now we inscribe each scene into the Book — filling in the details that'll bring them to life at the table.</p>
+              <p>Scene 1 is already written and sealed. I've moved on to <strong>Scene 2: Wickling Hollow</strong> — here's my opening draft.</p>
+            </div>
+          </div>
+
+          <!-- Sage: Scene 2 draft -->
+          <div class="message message-sage">
+            <div class="sage-label">Sage</div>
+            <div class="message-text">
+              <p><strong>Scene 2 — Wickling Hollow</strong></p>
+              <p>The party arrives at a settlement carved into the living trunks of enormous withertrees. Bioluminescent moss lights the walkways, but the air is tense — the Wicklings haven't seen outsiders since the overgrowth began. Elder Thornveil greets the party with guarded hospitality, offering shelter but demanding to know their purpose.</p>
+              <p>The core tension here is negotiation: the Wicklings possess knowledge of the Reaping Eye's location, but they won't share it freely. The party needs to earn trust — or find another way.</p>
+            </div>
+          </div>
+
+          <!-- User: Expand developments -->
+          <div class="message message-user">
+            <div class="message-text">
+              I like the setup, but the Developments section feels thin. Can you expand the negotiation? I want there to be a moment where the party has to choose between helping the Wicklings with a local threat or pushing forward on the main quest.
+            </div>
+          </div>
+
+          <!-- Sage: Revised developments -->
+          <div class="message message-sage">
+            <div class="sage-label">Sage</div>
+            <div class="message-text">
+              <p>Good call — that's exactly the kind of pressure point that makes scenes memorable. Here's the revised developments:</p>
+              <p>Elder Thornveil reveals that a <strong>Blightcrawler nest</strong> has taken root beneath the Hollow's water source. The Wicklings are too few to clear it themselves. She offers a trade: help purge the nest, and she'll share what she knows about the Eye's resting place.</p>
+              <p>But there's a catch. A Havenite scout — <strong>Corporal Dace</strong> — is also in the Hollow, wounded and under Wickling guard. He claims to know a shortcut to the Eye, no Wickling help needed. The party can side with the Wicklings and fight the nest, trust Dace and leave immediately, or try to negotiate a compromise that satisfies both.</p>
+              <p>I've updated the Developments section in the panel. Take a look — the rest of the scene structure is shaping up nicely.</p>
+            </div>
+          </div>
+
+          <!-- User: Approval -->
+          <div class="message message-user">
+            <div class="message-text">
+              That's perfect. The three-way choice is exactly what I wanted. Let's keep the rest of Scene 2 as-is and move on to Scene 3 when you're ready.
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="input-area">
+        <div class="input-container">
+          <textarea class="chat-input" placeholder="Refine the inscription..." rows="3"></textarea>
+          <button class="submit-btn" aria-label="Send message">
+            <svg viewBox="0 0 24 24" fill="currentColor" stroke="none">
+              <polygon points="12,2 16,12 12,22 8,12"></polygon>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================================================================
+         PANEL SIDE (40%) — Scene Navigator + Content Preview
+         ================================================================ -->
+    <div class="panel-side">
+
+      <div class="panel-header">
+        <div class="app-header-phase" onclick="togglePhaseDropdown()" role="button" tabindex="0" aria-expanded="false" aria-haspopup="true">
+          <span class="phase-name">Inscription</span>
+          <span class="phase-progress">What unfolds in each scene?</span>
+          <span class="phase-chevron" id="phase-chevron">&#9662;</span>
+
+          <div class="phase-dropdown" id="phase-dropdown" role="menu">
+            <div class="phase-dropdown-item completed" role="menuitem" tabindex="0">
+              <div class="phase-item-text"><span>Invocation</span><span class="phase-item-desc">What shape will your adventure take?</span></div>
+            </div>
+            <div class="phase-dropdown-item completed" role="menuitem" tabindex="0">
+              <div class="phase-item-text"><span>Attunement</span><span class="phase-item-desc">How should it feel?</span></div>
+            </div>
+            <div class="phase-dropdown-item completed" role="menuitem" tabindex="0">
+              <div class="phase-item-text"><span>Binding</span><span class="phase-item-desc">Which frame holds the story?</span></div>
+            </div>
+            <div class="phase-dropdown-item completed" role="menuitem" tabindex="0">
+              <div class="phase-item-text"><span>Weaving</span><span class="phase-item-desc">How does the plot unfold?</span></div>
+            </div>
+            <div class="phase-dropdown-item current" role="menuitem" tabindex="0">
+              <div class="phase-item-text"><span>Inscription</span><span class="phase-item-desc">What unfolds in each scene?</span></div>
+            </div>
+            <div class="phase-dropdown-item future" role="menuitem" tabindex="-1">
+              <div class="phase-item-text"><span>Conjuring</span><span class="phase-item-desc">Who will the party meet?</span></div>
+              <span class="phase-item-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></span>
+            </div>
+            <div class="phase-dropdown-item future" role="menuitem" tabindex="-1">
+              <div class="phase-item-text"><span>Summoning</span><span class="phase-item-desc">What stands in their way?</span></div>
+              <span class="phase-item-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></span>
+            </div>
+            <div class="phase-dropdown-item future" role="menuitem" tabindex="-1">
+              <div class="phase-item-text"><span>Enchanting</span><span class="phase-item-desc">What treasures await?</span></div>
+              <span class="phase-item-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></span>
+            </div>
+            <div class="phase-dropdown-item future" role="menuitem" tabindex="-1">
+              <div class="phase-item-text"><span>Scrying</span><span class="phase-item-desc">What might happen at the table?</span></div>
+              <span class="phase-item-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></span>
+            </div>
+            <div class="phase-dropdown-item future" role="menuitem" tabindex="-1">
+              <div class="phase-item-text"><span>Sealing</span><span class="phase-item-desc">Is the spell complete?</span></div>
+              <span class="phase-item-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Scene Tabs -->
+      <div class="scene-selector">
+        <button class="scene-selector-tab complete" onclick="selectSceneTab(this, 0)" data-scene="0">Scene 1</button>
+        <button class="scene-selector-tab active" onclick="selectSceneTab(this, 1)" data-scene="1">Scene 2</button>
+        <button class="scene-selector-tab pending" onclick="selectSceneTab(this, 2)" data-scene="2">Scene 3</button>
+        <button class="scene-selector-tab pending" onclick="selectSceneTab(this, 3)" data-scene="3">Scene 4</button>
+      </div>
+
+      <!-- Scene Content — collapsible sections for active scene (Scene 2) -->
+      <div class="scene-content" id="scene-content">
+
+        <!-- Overview — expanded -->
+        <div class="scene-section" data-section="overview">
+          <div class="scene-section-header" onclick="toggleSection(this)">
+            <span class="scene-section-chevron">&#9654;</span>
+            <span class="scene-section-name">Overview</span>
+            <span class="scene-section-status drafted"></span>
+          </div>
+          <div class="scene-section-preview">
+            The party arrives at Wickling Hollow, a settlement carved into living withertrees. Elder Thornveil offers guarded hospitality but demands to know their purpose. Trust must be earned before any knowledge is shared.
+          </div>
+        </div>
+
+        <!-- Setup — collapsed, showing metadata -->
+        <div class="scene-section collapsed" data-section="setup">
+          <div class="scene-section-header" onclick="toggleSection(this)">
+            <span class="scene-section-chevron">&#9654;</span>
+            <span class="scene-section-name">Setup</span>
+            <span class="scene-section-status drafted"></span>
+          </div>
+          <div class="scene-section-preview">
+            <span class="scene-section-meta">Location: Wickling Hollow — Mood: Tense, wary</span>
+          </div>
+        </div>
+
+        <!-- Developments — expanded -->
+        <div class="scene-section" data-section="developments">
+          <div class="scene-section-header" onclick="toggleSection(this)">
+            <span class="scene-section-chevron">&#9654;</span>
+            <span class="scene-section-name">Developments</span>
+            <span class="scene-section-status drafted"></span>
+          </div>
+          <div class="scene-section-preview">
+            Elder Thornveil reveals a Blightcrawler nest beneath the Hollow's water source. She offers a trade: purge the nest, and she'll share what she knows about the Reaping Eye. Corporal Dace, a wounded Havenite scout, offers an alternative shortcut. The party must choose: help the Wicklings, trust Dace, or find a compromise.
+          </div>
+        </div>
+
+        <!-- NPCs Present — collapsed -->
+        <div class="scene-section collapsed" data-section="npcs">
+          <div class="scene-section-header" onclick="toggleSection(this)">
+            <span class="scene-section-chevron">&#9654;</span>
+            <span class="scene-section-name">NPCs Present</span>
+            <span class="scene-section-status drafted"></span>
+          </div>
+          <div class="scene-section-preview">
+            <span class="scene-section-meta">Elder Thornveil, Corporal Dace, Wickling sentries</span>
+          </div>
+        </div>
+
+        <!-- Adversaries — collapsed -->
+        <div class="scene-section collapsed" data-section="adversaries">
+          <div class="scene-section-header" onclick="toggleSection(this)">
+            <span class="scene-section-chevron">&#9654;</span>
+            <span class="scene-section-name">Adversaries</span>
+            <span class="scene-section-status empty"></span>
+          </div>
+          <div class="scene-section-preview">
+            <span class="scene-section-meta">Blightcrawler brood (if party chooses the nest)</span>
+          </div>
+        </div>
+
+        <!-- Items & Discoveries — collapsed -->
+        <div class="scene-section collapsed" data-section="items">
+          <div class="scene-section-header" onclick="toggleSection(this)">
+            <span class="scene-section-chevron">&#9654;</span>
+            <span class="scene-section-name">Items &amp; Discoveries</span>
+            <span class="scene-section-status empty"></span>
+          </div>
+          <div class="scene-section-preview">
+            <span class="scene-section-meta">Pending — will populate after developments are finalized</span>
+          </div>
+        </div>
+
+        <!-- Transitions — collapsed -->
+        <div class="scene-section collapsed" data-section="transitions">
+          <div class="scene-section-header" onclick="toggleSection(this)">
+            <span class="scene-section-chevron">&#9654;</span>
+            <span class="scene-section-name">Transitions</span>
+            <span class="scene-section-status empty"></span>
+          </div>
+          <div class="scene-section-preview">
+            <span class="scene-section-meta">Pending — connects to Scene 3</span>
+          </div>
+        </div>
+
+        <!-- GM Notes — collapsed -->
+        <div class="scene-section collapsed" data-section="gm-notes">
+          <div class="scene-section-header" onclick="toggleSection(this)">
+            <span class="scene-section-chevron">&#9654;</span>
+            <span class="scene-section-name">GM Notes</span>
+            <span class="scene-section-status empty"></span>
+          </div>
+          <div class="scene-section-preview">
+            <span class="scene-section-meta">Pending — pacing and improvisation guidance</span>
+          </div>
+        </div>
+
+        <!-- Continue button -->
+        <button class="btn-continue-compact" style="margin: 16px auto 12px; display: block;">Write Scene to File</button>
+
+      </div>
+
+    </div>
+
+    </div><!-- /app-layout -->
+  </div><!-- /app-shell -->
+
+  <script>
+    /* === Scene tab selection === */
+    function selectSceneTab(tab, index) {
+      // Only allow clicking complete or active tabs for now (pending tabs show preview)
+      document.querySelectorAll('.scene-selector-tab').forEach(t => {
+        if (t.classList.contains('complete')) return; // keep complete state
+        t.classList.remove('active');
+        if (!t.classList.contains('complete')) t.classList.add('pending');
+      });
+      if (!tab.classList.contains('complete')) {
+        tab.classList.remove('pending');
+        tab.classList.add('active');
+      }
+    }
+
+    /* === Section collapse/expand === */
+    function toggleSection(header) {
+      const section = header.closest('.scene-section');
+      section.classList.toggle('collapsed');
+    }
+
+    /* === Phase dropdown === */
+    function togglePhaseDropdown() {
+      const dropdown = document.getElementById('phase-dropdown');
+      const chevron = document.getElementById('phase-chevron');
+      const trigger = document.querySelector('.app-header-phase');
+      const isOpen = dropdown.classList.contains('open');
+      if (isOpen) {
+        dropdown.classList.remove('open'); chevron.classList.remove('open');
+        trigger.setAttribute('aria-expanded', 'false');
+      } else {
+        dropdown.classList.add('open'); chevron.classList.add('open');
+        trigger.setAttribute('aria-expanded', 'true');
+      }
+    }
+
+    document.addEventListener('click', function(e) {
+      const trigger = document.querySelector('.app-header-phase');
+      const dropdown = document.getElementById('phase-dropdown');
+      if (!trigger.contains(e.target)) {
+        dropdown.classList.remove('open');
+        document.getElementById('phase-chevron').classList.remove('open');
+        trigger.setAttribute('aria-expanded', 'false');
+      }
+    });
+
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        const dropdown = document.getElementById('phase-dropdown');
+        if (dropdown.classList.contains('open')) {
+          dropdown.classList.remove('open');
+          document.getElementById('phase-chevron').classList.remove('open');
+          document.querySelector('.app-header-phase').setAttribute('aria-expanded', 'false');
+        }
+      }
+    });
+
+    const textarea = document.querySelector('.chat-input');
+    textarea.addEventListener('input', function() {
+      this.style.height = 'auto';
+      this.style.height = Math.min(this.scrollHeight, 180) + 'px';
+    });
+
+    document.querySelector('.message-area').scrollTop = document.querySelector('.message-area').scrollHeight;
+  </script>
+
+</body>
+</html>

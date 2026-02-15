@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dagger-App — Binding (Immersive Mockup)</title>
+
+  <!--
+    ==========================================================================
+    STAGE 3: BINDING — Which frame holds the story?
+    ==========================================================================
+    Panel pattern: FRAME GALLERY → SETTINGS PANEL (two-step selection)
+    The user selects a thematic framework (frame) that anchors the story,
+    then chooses a setting within that frame. Frames come from
+    daggerheart_frames in Supabase. Settings are AI-generated per frame.
+
+    Step 1: Frame Gallery — scrollable frame cards with name, desc, themes.
+    Step 2: Settings Panel — cross-fades in when a frame is clicked.
+
+    Three frame card states:
+      Default  — subtle border, no highlight (name + desc + theme pills)
+      Exploring — white/light border (clicked, viewing settings)
+      Selected — gold treatment, desc + pills hidden, replaced by setting
+                 name (em dash prefix, serif 14px bold, gold) + 1-line
+                 setting description (13px, secondary color)
+
+    Interaction: No confirm button on settings panel. User selects a setting
+    card and clicks "Back to Frames" — select + back = confirmed. If no
+    setting is selected, back reverts the frame to default. Re-entering a
+    confirmed frame shows the settings panel with the previous selection
+    pre-highlighted.
+
+    DESIGN RATIONALE: Frame selection is a single high-stakes choice, not
+    a multi-component tuning exercise like Attunement. The panel needs to
+    communicate enough about each frame for an informed decision — but not
+    so much that it becomes a wiki. Description + theme pills is the sweet
+    spot. The settings sub-panel reuses the Attunement cross-fade pattern
+    to keep interactions consistent across stages.
+    ==========================================================================
+  -->
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Source+Serif+4:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+
+  <style>
+    /* =======================================================================
+       DESIGN TOKENS — Shared across all mockups
+       ======================================================================= */
+    :root {
+      --bg-primary: #1c1b1f;
+      --bg-secondary: #252428;
+      --bg-surface: #2e2d32;
+      --bg-surface-hover: #353439;
+      --text-primary: #e8e4de;
+      --text-secondary: #9d9a93;
+      --text-muted: #6b6862;
+      --accent-gold: #d7a964;
+      --accent-gold-hover: #e5bc7a;
+      --accent-gold-dim: rgba(215, 169, 100, 0.12);
+      --accent-gold-border: rgba(215, 169, 100, 0.25);
+      --accent-gold-glow: rgba(215, 169, 100, 0.15);
+      --border-subtle: rgba(255, 255, 255, 0.06);
+      --border-medium: rgba(255, 255, 255, 0.10);
+      --border-hover: rgba(255, 255, 255, 0.14);
+      --user-msg-bg: rgba(255, 255, 255, 0.07);
+      --font-serif: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+      --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+      --message-gap: 28px;
+      --section-padding: 24px;
+      --panel-padding: 20px;
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-xl: 20px;
+    }
+
+    /* === RESET & BASE === */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      height: 100%; overflow: hidden;
+      background: var(--bg-primary); color: var(--text-primary);
+      font-family: var(--font-sans); font-size: 15px; line-height: 1.6;
+      -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* === LAYOUT === */
+    .app-shell { display: flex; flex-direction: column; height: 100vh; width: 100%; }
+    .app-header {
+      flex-shrink: 0; display: flex; align-items: center;
+      padding: 0 16px; height: 56px;
+      background: var(--bg-secondary); border-bottom: 1px solid var(--border-subtle);
+    }
+    .app-header-home {
+      display: flex; align-items: center; justify-content: center;
+      width: 32px; height: 32px; border-radius: var(--radius-sm);
+      background: none; border: none; color: var(--text-muted);
+      cursor: pointer; transition: color 0.15s ease, background 0.15s ease; flex-shrink: 0;
+    }
+    .app-header-home:hover { color: var(--text-secondary); background: var(--bg-surface); }
+    .app-header-title {
+      font-family: var(--font-serif); font-size: 16px; font-weight: 500;
+      color: var(--accent-gold); white-space: nowrap; overflow: hidden;
+      text-overflow: ellipsis; min-width: 0; flex: 1; text-align: center;
+    }
+    .app-layout { display: grid; grid-template-columns: 13fr 7fr; flex: 1; min-height: 0; width: 100%; }
+
+    /* === CHAT SIDE === */
+    .chat-side { display: flex; flex-direction: column; min-height: 0; border-right: 1px solid var(--border-subtle); }
+    .message-area {
+      flex: 1; overflow-y: auto; padding: 36px var(--section-padding) 8px;
+      scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.08) transparent;
+    }
+    .message-area::-webkit-scrollbar { width: 6px; }
+    .message-area::-webkit-scrollbar-track { background: transparent; }
+    .message-area::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 3px; }
+    .messages { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: var(--message-gap); }
+    .message { max-width: 88%; animation: message-appear 0.4s ease-out both; }
+    @keyframes message-appear {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .message-sage { align-self: flex-start; }
+    .message-sage .message-text { font-family: var(--font-serif); font-size: 16px; }
+    .message-user {
+      align-self: flex-end; background: var(--user-msg-bg);
+      border: 1px solid var(--border-subtle); padding: 12px 16px; border-radius: var(--radius-md);
+    }
+    .sage-label {
+      font-family: var(--font-serif); font-size: 12px; font-weight: 500;
+      color: var(--text-muted); letter-spacing: 0.03em; margin-bottom: 6px;
+    }
+    .message-text { color: var(--text-primary); line-height: 1.65; }
+    .message-text p + p { margin-top: 12px; }
+    .message:nth-child(1) { animation-delay: 0s; }
+    .message:nth-child(2) { animation-delay: 0.06s; }
+    .message:nth-child(3) { animation-delay: 0.12s; }
+    .message:nth-child(4) { animation-delay: 0.18s; }
+    .message:nth-child(5) { animation-delay: 0.24s; }
+    .message:nth-child(6) { animation-delay: 0.30s; }
+    .message:nth-child(7) { animation-delay: 0.36s; }
+    .message:nth-child(8) { animation-delay: 0.42s; }
+    .thinking-indicator { display: flex; align-items: center; gap: 5px; padding: 4px 0; align-self: flex-start; }
+    .thinking-indicator .sage-label { margin-bottom: 0; margin-right: 4px; }
+    .thinking-dot {
+      width: 5px; height: 5px; border-radius: 50%;
+      background: var(--accent-gold); opacity: 0.3;
+      animation: thinking-pulse 1.4s ease-in-out infinite;
+    }
+    .thinking-dot:nth-child(2) { animation-delay: 0.2s; }
+    .thinking-dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes thinking-pulse {
+      0%, 80%, 100% { opacity: 0.2; transform: scale(0.85); }
+      40% { opacity: 0.9; transform: scale(1); }
+    }
+
+    /* === INPUT === */
+    .input-area { flex-shrink: 0; padding: 12px var(--section-padding) var(--section-padding); }
+    .input-container { position: relative; max-width: 720px; margin: 0 auto; }
+    .chat-input {
+      width: 100%; min-height: 88px; max-height: 180px;
+      padding: 14px 52px 14px 18px; background: var(--bg-secondary);
+      border: 1px solid var(--border-subtle); border-radius: var(--radius-lg);
+      color: var(--text-primary); font-family: var(--font-sans);
+      font-size: 15px; line-height: 1.55; resize: none; outline: none;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    .chat-input::placeholder { color: var(--text-muted); font-style: italic; }
+    .chat-input:focus { border-color: var(--accent-gold-border); box-shadow: 0 0 0 3px var(--accent-gold-glow); }
+    .submit-btn {
+      position: absolute; bottom: 12px; right: 12px; width: 36px; height: 36px;
+      border-radius: 50%; border: none; background: var(--accent-gold);
+      color: var(--bg-primary); cursor: pointer; display: flex; align-items: center;
+      justify-content: center; transition: background 0.15s ease, transform 0.15s ease; opacity: 0.7;
+    }
+    .submit-btn:hover { background: var(--accent-gold-hover); opacity: 1; transform: scale(1.05); }
+    .submit-btn svg { width: 20px; height: 20px; }
+
+    /* === PANEL SIDE === */
+    .panel-side {
+      display: flex; flex-direction: column; min-height: 0; background: var(--bg-secondary);
+    }
+    .panel-header {
+      flex-shrink: 0; padding: 12px var(--panel-padding) 4px;
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    }
+
+    /* Phase dropdown trigger + dropdown */
+    .app-header-phase {
+      position: relative; display: flex; align-items: center; gap: 8px;
+      cursor: pointer; padding: 4px 10px 4px 4px; border-radius: var(--radius-sm);
+      border: none; background: none; transition: background 0.15s ease; flex-shrink: 0;
+    }
+    .app-header-phase:hover { background: var(--bg-surface); }
+    .phase-name { font-family: var(--font-sans); font-size: 13px; font-weight: 500; color: var(--accent-gold); }
+    .phase-progress { font-family: var(--font-sans); font-size: 12px; color: var(--text-muted); }
+    .phase-chevron { color: var(--text-muted); font-size: 10px; transition: transform 0.2s ease; margin-left: -2px; }
+    .phase-chevron.open { transform: rotate(180deg); }
+    .phase-dropdown {
+      position: absolute; top: calc(100% + 6px); left: 50%; transform: translateX(-50%);
+      min-width: 260px; background: var(--bg-surface); border: 1px solid var(--border-medium);
+      border-radius: var(--radius-md); box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+      padding: 6px; z-index: 100; opacity: 0; pointer-events: none; transition: opacity 0.15s ease;
+    }
+    .phase-dropdown.open { opacity: 1; pointer-events: auto; }
+    .phase-dropdown-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 8px 12px; border-radius: var(--radius-sm); font-family: var(--font-sans);
+      font-size: 13px; color: var(--text-secondary); cursor: pointer;
+      transition: background 0.12s ease; border: none; background: none; width: 100%; text-align: left;
+    }
+    .phase-dropdown-item:hover { background: var(--bg-surface-hover); }
+    .phase-dropdown-item.current { color: var(--accent-gold); font-weight: 600; background: var(--accent-gold-dim); }
+    .phase-dropdown-item.completed { color: var(--text-secondary); }
+    .phase-dropdown-item.future { color: var(--text-muted); cursor: default; opacity: 0.6; }
+    .phase-dropdown-item.future:hover { background: none; }
+    .phase-item-icon { display: flex; align-items: center; flex-shrink: 0; margin-left: auto; padding-left: 12px; }
+    .phase-item-icon svg { width: 12px; height: 12px; }
+    .phase-item-text { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+    .phase-item-desc { font-size: 11px; font-weight: 400; color: var(--text-muted); }
+    .phase-dropdown-item.current .phase-item-desc { color: var(--accent-gold); opacity: 0.7; }
+
+    /* === FRAME GALLERY (Binding-specific) ===
+       Three states:
+         Default   — subtle border, clickable
+         Exploring — white/light border, settings panel is showing
+         Selected  — gold treatment, frame + setting confirmed
+    */
+    .frame-list {
+      flex: 1; overflow-y: auto; padding: 8px var(--panel-padding);
+      scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.06) transparent;
+      transition: opacity 0.15s ease;
+    }
+    .frame-list::-webkit-scrollbar { width: 5px; }
+    .frame-list::-webkit-scrollbar-track { background: transparent; }
+    .frame-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.06); border-radius: 3px; }
+    .frame-list.hidden { opacity: 0; pointer-events: none; position: absolute; }
+
+    .frame-card {
+      padding: 16px;
+      border: 1px solid var(--border-medium);
+      border-left: 3px solid transparent;
+      border-radius: var(--radius-sm);
+      margin-bottom: 10px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .frame-card:hover {
+      background: var(--bg-surface);
+      border-color: var(--border-hover);
+      border-left-color: var(--border-hover);
+    }
+    /* Exploring state — white/light border, no gold, no background fill */
+    .frame-card.exploring {
+      border-color: var(--border-hover);
+      border-left-color: var(--border-hover);
+    }
+    /* Selected state — full gold treatment (frame + setting confirmed) */
+    .frame-card.selected {
+      background: var(--accent-gold-dim);
+      border-color: var(--accent-gold-border);
+      border-left-color: var(--accent-gold);
+    }
+    .frame-card-name {
+      font-family: var(--font-serif);
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 6px;
+    }
+    .frame-card.selected .frame-card-name {
+      color: var(--accent-gold-hover);
+    }
+    .frame-card-desc {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+      margin-bottom: 10px;
+    }
+    .frame-themes {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .frame-theme-pill {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text-muted);
+      border: 1px solid var(--border-medium);
+      border-radius: 12px;
+      padding: 2px 10px;
+      white-space: nowrap;
+    }
+    .frame-card.selected .frame-theme-pill {
+      color: var(--accent-gold);
+      border-color: var(--accent-gold-border);
+    }
+
+    /* === SETTINGS PANEL (Binding sub-view) ===
+       Shown when a frame is clicked. Cross-fades in/out like Attunement's
+       choice panels. Contains AI-generated setting suggestions for the
+       selected frame.
+    */
+    .settings-panel {
+      flex: 1; display: flex; flex-direction: column; min-height: 0;
+      padding: 0 var(--panel-padding);
+      opacity: 0; pointer-events: none; position: absolute;
+      transition: opacity 0.15s ease;
+    }
+    .settings-panel.visible {
+      opacity: 1; pointer-events: auto; position: relative;
+    }
+    .settings-header {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 0 4px;
+    }
+    /* settings-back-btn styles moved below (with text variant) */
+    .settings-frame-name {
+      font-family: var(--font-serif);
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    .settings-subtitle {
+      font-family: var(--font-serif);
+      font-size: 13px;
+      font-style: italic;
+      color: var(--text-muted);
+      padding: 4px 0 12px;
+    }
+    .settings-list {
+      flex: 1; overflow-y: auto;
+      scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.06) transparent;
+    }
+    .settings-list::-webkit-scrollbar { width: 5px; }
+    .settings-list::-webkit-scrollbar-track { background: transparent; }
+    .settings-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.06); border-radius: 3px; }
+
+    .setting-card {
+      padding: 16px;
+      border: 1px solid var(--border-medium);
+      border-left: 3px solid transparent;
+      border-radius: var(--radius-sm);
+      margin-bottom: 10px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .setting-card:hover {
+      background: var(--bg-surface);
+      border-color: var(--border-hover);
+      border-left-color: var(--border-hover);
+    }
+    .setting-card.selected {
+      background: var(--accent-gold-dim);
+      border-color: var(--accent-gold-border);
+      border-left-color: var(--accent-gold);
+    }
+    .setting-card-name {
+      font-family: var(--font-serif);
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 6px;
+    }
+    .setting-card.selected .setting-card-name {
+      color: var(--accent-gold-hover);
+    }
+    .setting-card-desc {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    .btn-continue-compact {
+      flex-shrink: 0; padding: 7px 16px; border: none; border-radius: var(--radius-sm);
+      background: var(--accent-gold); color: var(--bg-primary);
+      font-family: var(--font-sans); font-size: 13px; font-weight: 600;
+      cursor: pointer; transition: background 0.15s ease, box-shadow 0.2s ease;
+      letter-spacing: 0.01em; white-space: nowrap;
+    }
+    .btn-continue-compact:hover { background: var(--accent-gold-hover); box-shadow: 0 0 16px var(--accent-gold-glow); }
+    .btn-continue-compact:disabled { opacity: 0.3; cursor: default; box-shadow: none; }
+    .btn-continue-compact:disabled:hover { background: var(--accent-gold); box-shadow: none; }
+
+    /* === FRAME CARD SETTING (selected state) ===
+       When a frame is confirmed with a setting, the frame description and
+       theme pills are hidden. The setting name + short description replace them.
+       Container is hidden by default, shown only on .frame-card.selected.
+    */
+    .frame-card-setting {
+      display: none;
+    }
+    .frame-card.selected .frame-card-setting {
+      display: block;
+    }
+    .frame-card.selected .frame-card-desc,
+    .frame-card.selected .frame-themes {
+      display: none;
+    }
+    .frame-card-setting-name {
+      font-family: var(--font-serif);
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--accent-gold-hover);
+      margin-bottom: 4px;
+    }
+    .frame-card-setting-desc {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    /* === SETTINGS BACK BUTTON (with text) ===
+       Matches Attunement's back-btn pattern: icon + text, muted, gold on hover.
+    */
+    .settings-back-btn {
+      display: flex; align-items: center; gap: 6px;
+      background: none; border: none;
+      color: var(--text-muted); font-family: var(--font-sans);
+      font-size: 13px; cursor: pointer; padding: 4px 0;
+      transition: color 0.15s ease;
+    }
+    .settings-back-btn:hover { color: var(--accent-gold); }
+
+    .streaming-cursor::after {
+      content: '\25CB'; color: var(--accent-gold);
+      animation: cursor-blink 1s step-end infinite; margin-left: 1px; font-size: 12px;
+    }
+    @keyframes cursor-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-shell">
+
+    <header class="app-header">
+      <button class="app-header-home" aria-label="Return to home">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+          <polyline points="9 22 9 12 15 12 15 22"></polyline>
+        </svg>
+      </button>
+      <span class="app-header-title">Calamity in the Witherwild</span>
+    </header>
+
+    <div class="app-layout">
+
+    <!-- ================================================================
+         CHAT SIDE (65%)
+         ================================================================ -->
+    <div class="chat-side">
+      <div class="message-area">
+        <div class="messages">
+
+          <!-- Sage: Opening — mentions both frame and setting -->
+          <div class="message message-sage">
+            <div class="sage-label">Sage</div>
+            <div class="message-text">
+              <p>Your components are tuned and humming. Now we bind the spell to a foundation — a <strong>frame</strong> that anchors your adventure's world, factions, and core conflict, and a <strong>setting</strong> that grounds the story in a specific place.</p>
+              <p>I've pulled the frames from the archive. Take a look at the panel — each one is a world waiting to be explored. Once you choose a frame, I'll suggest settings within it.</p>
+            </div>
+          </div>
+
+          <!-- User: Interest in Witherwild -->
+          <div class="message message-user">
+            <div class="message-text">
+              The Witherwild sounds interesting. Tell me more about it.
+            </div>
+          </div>
+
+          <!-- Sage: Witherwild details -->
+          <div class="message message-sage">
+            <div class="sage-label">Sage</div>
+            <div class="message-text">
+              <p>The Witherwild is a story of consequences. The nation of Haven invaded the forest realm of Fanewick and stole the Reaping Eye from Nikta, the Great Owl — and in doing so, triggered an endless spring. What sounds idyllic became catastrophic: unchecked growth devouring everything in its path.</p>
+              <p>You've got three factions pulling in different directions: the <strong>Wicklings</strong>, hardy forest folk following ancient rules; the <strong>Havenites</strong>, desperate survivors of plague who drove themselves to invasion; and <strong>the Witherwild itself</strong> — nature run amok, neither good nor evil, just relentless.</p>
+              <p>With your balanced tone and discovery-led pillars, this frame gives you moral complexity without grimdark — every faction thinks they're right. Your players will have to decide who to help, and what they're willing to sacrifice.</p>
+            </div>
+          </div>
+
+          <!-- User: Wants to explore settings -->
+          <div class="message message-user">
+            <div class="message-text">
+              That's exactly the kind of tension I want. What settings do you have in mind for the Witherwild?
+            </div>
+          </div>
+
+          <!-- Sage: Presents settings -->
+          <div class="message message-sage">
+            <div class="sage-label">Sage</div>
+            <div class="message-text">
+              <p>Three settings that fit your components well — each one places the party at a different intersection of the Witherwild's conflict:</p>
+              <p><strong>The Village of Thornhollow</strong> — right on the forest's edge, where the overgrowth creeps closer each day. Wicklings and Havenite refugees rub shoulders uneasily. Good for a story that starts small and personal.</p>
+              <p><strong>The Overgrown Ruins of Fanewick</strong> — deep in the wild's heart, half-consumed by growth. Part temple, part trap. A setting that drops the party straight into mystery and danger.</p>
+              <p><strong>The Haven Bordercamp</strong> — a fortified strip of cleared land where Havenite soldiers cling to survival. The plague behind, the wild ahead. Tense, military, and morally gray.</p>
+              <p>Take a look at the cards in the panel. Any of these calling to you?</p>
+            </div>
+          </div>
+
+          <!-- User: Picks Thornhollow -->
+          <div class="message message-user">
+            <div class="message-text">
+              Thornhollow. I like the idea of starting small and personal, then having the Witherwild close in.
+            </div>
+          </div>
+
+          <!-- Sage: Confirms setting -->
+          <div class="message message-sage">
+            <div class="sage-label">Sage</div>
+            <div class="message-text">
+              <p>The Village of Thornhollow it is. Your adventure is now bound to the Witherwild — rooted in a small settlement where factions collide and the forest presses in from every side.</p>
+              <p>When you're ready, we'll move on to <strong>Weaving</strong> — where we draft the scene-by-scene arc of your story.</p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="input-area">
+        <div class="input-container">
+          <textarea class="chat-input" placeholder="What path shall we take?" rows="3"></textarea>
+          <button class="submit-btn" aria-label="Send message">
+            <svg viewBox="0 0 24 24" fill="currentColor" stroke="none">
+              <polygon points="12,2 16,12 12,22 8,12"></polygon>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================================================================
+         PANEL SIDE (35%) — Frame Gallery + Settings Panel
+         ================================================================ -->
+    <div class="panel-side">
+
+      <div class="panel-header">
+        <div class="app-header-phase" onclick="togglePhaseDropdown()" role="button" tabindex="0" aria-expanded="false" aria-haspopup="true">
+          <span class="phase-name">Binding</span>
+          <span class="phase-progress">Which frame holds the story?</span>
+          <span class="phase-chevron" id="phase-chevron">&#x25BE;</span>
+
+          <div class="phase-dropdown" id="phase-dropdown" role="menu">
+            <div class="phase-dropdown-item completed" role="menuitem" tabindex="0">
+              <div class="phase-item-text"><span>Invocation</span><span class="phase-item-desc">What shape will your adventure take?</span></div>
+            </div>
+            <div class="phase-dropdown-item completed" role="menuitem" tabindex="0">
+              <div class="phase-item-text"><span>Attunement</span><span class="phase-item-desc">How should it feel?</span></div>
+            </div>
+            <div class="phase-dropdown-item current" role="menuitem" tabindex="0">
+              <div class="phase-item-text"><span>Binding</span><span class="phase-item-desc">Which frame holds the story?</span></div>
+            </div>
+            <div class="phase-dropdown-item future" role="menuitem" tabindex="-1">
+              <div class="phase-item-text"><span>Weaving</span><span class="phase-item-desc">How does the plot unfold?</span></div>
+              <span class="phase-item-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></span>
+            </div>
+            <div class="phase-dropdown-item future" role="menuitem" tabindex="-1">
+              <div class="phase-item-text"><span>Inscription</span><span class="phase-item-desc">What unfolds in each scene?</span></div>
+              <span class="phase-item-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></span>
+            </div>
+            <div class="phase-dropdown-item future" role="menuitem" tabindex="-1">
+              <div class="phase-item-text"><span>Conjuring</span><span class="phase-item-desc">Who will the party meet?</span></div>
+              <span class="phase-item-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></span>
+            </div>
+            <div class="phase-dropdown-item future" role="menuitem" tabindex="-1">
+              <div class="phase-item-text"><span>Summoning</span><span class="phase-item-desc">What stands in their way?</span></div>
+              <span class="phase-item-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></span>
+            </div>
+            <div class="phase-dropdown-item future" role="menuitem" tabindex="-1">
+              <div class="phase-item-text"><span>Enchanting</span><span class="phase-item-desc">What treasures await?</span></div>
+              <span class="phase-item-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></span>
+            </div>
+            <div class="phase-dropdown-item future" role="menuitem" tabindex="-1">
+              <div class="phase-item-text"><span>Scrying</span><span class="phase-item-desc">What might happen at the table?</span></div>
+              <span class="phase-item-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></span>
+            </div>
+            <div class="phase-dropdown-item future" role="menuitem" tabindex="-1">
+              <div class="phase-item-text"><span>Sealing</span><span class="phase-item-desc">Is the spell complete?</span></div>
+              <span class="phase-item-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Frame Gallery — scrollable (default view) -->
+      <div class="frame-list" id="frame-gallery">
+
+        <!-- The Witherwild — SELECTED (frame + setting confirmed) -->
+        <div class="frame-card selected" data-frame="witherwild" onclick="clickFrame(this)">
+          <div class="frame-card-name">The Witherwild</div>
+          <div class="frame-card-setting">
+            <div class="frame-card-setting-name">&mdash; The Village of Thornhollow</div>
+            <div class="frame-card-setting-desc">A Wickling settlement on the forest's edge, where overgrowth creeps closer each day and refugees from Haven arrive in desperate waves.</div>
+          </div>
+          <div class="frame-card-desc">When an invading nation attacks an ancient forest deity, a virulent overgrowth spreads throughout the land.</div>
+          <div class="frame-themes">
+            <span class="frame-theme-pill">Cultural Clash</span>
+            <span class="frame-theme-pill">Grief</span>
+            <span class="frame-theme-pill">Survival</span>
+            <span class="frame-theme-pill">People vs. Nature</span>
+            <span class="frame-theme-pill">Transformation</span>
+          </div>
+        </div>
+
+        <!-- The Shattered Bastion — unselected -->
+        <div class="frame-card" data-frame="bastion" onclick="clickFrame(this)">
+          <div class="frame-card-name">The Shattered Bastion</div>
+          <div class="frame-card-setting"></div>
+          <div class="frame-card-desc">A legendary fortress-city torn apart by a civil war between its founding orders, each wielding a fragment of divine authority.</div>
+          <div class="frame-themes">
+            <span class="frame-theme-pill">Power & Duty</span>
+            <span class="frame-theme-pill">Fractured Loyalty</span>
+            <span class="frame-theme-pill">Sacred Violence</span>
+          </div>
+        </div>
+
+        <!-- The Drowned Court — unselected -->
+        <div class="frame-card" data-frame="drowned" onclick="clickFrame(this)">
+          <div class="frame-card-name">The Drowned Court</div>
+          <div class="frame-card-setting"></div>
+          <div class="frame-card-desc">A sunken kingdom resurfaces after centuries beneath the waves, bringing with it old debts, undead courtiers, and a throne no one alive can rightfully claim.</div>
+          <div class="frame-themes">
+            <span class="frame-theme-pill">Legacy</span>
+            <span class="frame-theme-pill">Undeath</span>
+            <span class="frame-theme-pill">Sovereignty</span>
+            <span class="frame-theme-pill">The Deep</span>
+          </div>
+        </div>
+
+        <!-- Continue button — enabled because Witherwild is selected with setting -->
+        <button class="btn-continue-compact" id="btn-continue" style="margin: 16px auto 12px; display: block;">Continue to Weaving</button>
+
+      </div>
+
+      <!-- Settings Panel — hidden by default, shown when a frame is clicked -->
+      <div class="settings-panel" id="settings-panel">
+        <div class="settings-header" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+          <button class="settings-back-btn" onclick="backToGallery()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+            Back to Frames
+          </button>
+          <span class="settings-frame-name" id="settings-frame-name">The Witherwild</span>
+        </div>
+        <div class="settings-subtitle">Where does your adventure take root?</div>
+
+        <div class="settings-list">
+          <!-- Setting 1: Thornhollow -->
+          <div class="setting-card" onclick="selectSetting(this)">
+            <div class="setting-card-name">The Village of Thornhollow</div>
+            <div class="setting-card-desc">A Wickling settlement on the forest's edge, where overgrowth creeps closer each day and refugees from Haven arrive in desperate waves.</div>
+          </div>
+
+          <!-- Setting 2: Fanewick Ruins -->
+          <div class="setting-card" onclick="selectSetting(this)">
+            <div class="setting-card-name">The Overgrown Ruins of Fanewick</div>
+            <div class="setting-card-desc">Deep in the Witherwild's heart, the ancient seat of the Great Owl lies half-consumed by growth — part temple, part trap.</div>
+          </div>
+
+          <!-- Setting 3: Haven Bordercamp -->
+          <div class="setting-card" onclick="selectSetting(this)">
+            <div class="setting-card-name">The Haven Bordercamp</div>
+            <div class="setting-card-desc">A fortified encampment where Havenite soldiers cling to a strip of cleared land, caught between the plague behind them and the wild ahead.</div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+
+    </div><!-- /app-layout -->
+  </div><!-- /app-shell -->
+
+  <script>
+    // Track state
+    let exploringFrame = null;
+    let selectedFrame = null;
+    let selectedSetting = null;
+
+    // Track which setting belongs to which frame (for re-entry)
+    const settingsForFrame = {};
+
+    // Initialize: Witherwild is pre-selected with setting (mockup snapshot)
+    selectedFrame = document.querySelector('.frame-card[data-frame="witherwild"]');
+    settingsForFrame['witherwild'] = 0; // Index of Thornhollow (first setting card)
+
+    function clickFrame(card) {
+      const gallery = document.getElementById('frame-gallery');
+      const panel = document.getElementById('settings-panel');
+      const frameName = card.dataset.frame;
+
+      // Clear any previous exploring state
+      document.querySelectorAll('.frame-card.exploring').forEach(c => c.classList.remove('exploring'));
+
+      // If clicking a new (non-selected) frame, add exploring state
+      if (!card.classList.contains('selected')) {
+        card.classList.add('exploring');
+      }
+
+      exploringFrame = card;
+
+      // Update settings panel header with frame name
+      const displayName = card.querySelector('.frame-card-name').textContent;
+      document.getElementById('settings-frame-name').textContent = displayName;
+
+      // Reset setting selection in panel
+      document.querySelectorAll('.setting-card').forEach(c => c.classList.remove('selected'));
+      selectedSetting = null;
+
+      // Re-entry: if this frame already has a confirmed setting, pre-highlight it
+      if (frameName in settingsForFrame) {
+        const settingIndex = settingsForFrame[frameName];
+        const settingCards = document.querySelectorAll('.setting-card');
+        if (settingCards[settingIndex]) {
+          settingCards[settingIndex].classList.add('selected');
+          selectedSetting = settingCards[settingIndex];
+        }
+      }
+
+      // Cross-fade: gallery out, settings in
+      gallery.classList.add('hidden');
+      panel.classList.add('visible');
+    }
+
+    function backToGallery() {
+      const gallery = document.getElementById('frame-gallery');
+      const panel = document.getElementById('settings-panel');
+
+      if (exploringFrame && selectedSetting) {
+        // A setting was selected — treat as confirmation
+        const frameName = exploringFrame.dataset.frame;
+        const settingName = selectedSetting.querySelector('.setting-card-name').textContent;
+        const settingIndex = Array.from(document.querySelectorAll('.setting-card')).indexOf(selectedSetting);
+
+        const settingDesc = selectedSetting.querySelector('.setting-card-desc').textContent;
+
+        // Clear any previous frame selection and its setting content
+        document.querySelectorAll('.frame-card').forEach(c => {
+          c.classList.remove('selected');
+          c.classList.remove('exploring');
+          c.querySelector('.frame-card-setting').innerHTML = '';
+        });
+
+        // Mark this frame as selected (confirmed with setting)
+        exploringFrame.classList.add('selected');
+        exploringFrame.querySelector('.frame-card-setting').innerHTML =
+          `<div class="frame-card-setting-name">\u2014 ${settingName}</div>` +
+          `<div class="frame-card-setting-desc">${settingDesc}</div>`;
+        selectedFrame = exploringFrame;
+        settingsForFrame[frameName] = settingIndex;
+
+        // Enable continue button
+        document.getElementById('btn-continue').disabled = false;
+      } else if (exploringFrame) {
+        // No setting selected — revert frame to default
+        exploringFrame.classList.remove('exploring');
+      }
+
+      exploringFrame = null;
+
+      // Cross-fade: settings out, gallery in
+      panel.classList.remove('visible');
+      gallery.classList.remove('hidden');
+    }
+
+    function selectSetting(card) {
+      document.querySelectorAll('.setting-card').forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+      selectedSetting = card;
+    }
+
+    function togglePhaseDropdown() {
+      const dropdown = document.getElementById('phase-dropdown');
+      const chevron = document.getElementById('phase-chevron');
+      const trigger = document.querySelector('.app-header-phase');
+      const isOpen = dropdown.classList.contains('open');
+      if (isOpen) {
+        dropdown.classList.remove('open'); chevron.classList.remove('open');
+        trigger.setAttribute('aria-expanded', 'false');
+      } else {
+        dropdown.classList.add('open'); chevron.classList.add('open');
+        trigger.setAttribute('aria-expanded', 'true');
+      }
+    }
+
+    document.addEventListener('click', function(e) {
+      const trigger = document.querySelector('.app-header-phase');
+      const dropdown = document.getElementById('phase-dropdown');
+      if (!trigger.contains(e.target)) {
+        dropdown.classList.remove('open');
+        document.getElementById('phase-chevron').classList.remove('open');
+        trigger.setAttribute('aria-expanded', 'false');
+      }
+    });
+
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        const dropdown = document.getElementById('phase-dropdown');
+        if (dropdown.classList.contains('open')) {
+          dropdown.classList.remove('open');
+          document.getElementById('phase-chevron').classList.remove('open');
+          document.querySelector('.app-header-phase').setAttribute('aria-expanded', 'false');
+        }
+      }
+    });
+
+    const textarea = document.querySelector('.chat-input');
+    textarea.addEventListener('input', function() {
+      this.style.height = 'auto';
+      this.style.height = Math.min(this.scrollHeight, 180) + 'px';
+    });
+
+    document.querySelector('.message-area').scrollTop = document.querySelector('.message-area').scrollHeight;
+  </script>
+
+</body>
+</html>
