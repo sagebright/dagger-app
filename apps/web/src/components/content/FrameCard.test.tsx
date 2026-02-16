@@ -1,7 +1,8 @@
 /**
  * FrameCard Component Tests
  *
- * Tests for frame display card with selection support
+ * Tests for compact frame card with three visual states:
+ * default, exploring, active
  */
 
 import { render, screen } from '@testing-library/react';
@@ -42,83 +43,23 @@ describe('FrameCard', () => {
   describe('rendering', () => {
     it('renders frame name', () => {
       render(
-        <FrameCard
-          frame={mockDbFrame}
-          isSelected={false}
-          onSelect={mockOnSelect}
-        />
+        <FrameCard frame={mockDbFrame} onSelect={mockOnSelect} />
       );
 
       expect(screen.getByText('The Dark Forest')).toBeInTheDocument();
     });
 
-    it('renders frame description', () => {
+    it('renders frame description as pitch', () => {
       render(
-        <FrameCard
-          frame={mockDbFrame}
-          isSelected={false}
-          onSelect={mockOnSelect}
-        />
+        <FrameCard frame={mockDbFrame} onSelect={mockOnSelect} />
       );
 
       expect(screen.getByText(/mysterious forest/i)).toBeInTheDocument();
     });
 
-    it('renders themes as tags', () => {
-      render(
-        <FrameCard
-          frame={mockDbFrame}
-          isSelected={false}
-          onSelect={mockOnSelect}
-        />
-      );
-
-      expect(screen.getByText('mystery')).toBeInTheDocument();
-      expect(screen.getByText('horror')).toBeInTheDocument();
-      expect(screen.getByText('nature')).toBeInTheDocument();
-    });
-
-    it('truncates themes beyond 3 when not expanded', () => {
-      render(
-        <FrameCard
-          frame={mockDbFrame}
-          isSelected={false}
-          onSelect={mockOnSelect}
-          expanded={false}
-        />
-      );
-
-      // Should show first 3 themes plus a "+1 more" indicator
-      expect(screen.getByText('mystery')).toBeInTheDocument();
-      expect(screen.getByText('horror')).toBeInTheDocument();
-      expect(screen.getByText('nature')).toBeInTheDocument();
-      expect(screen.getByText('+1 more')).toBeInTheDocument();
-    });
-
-    it('shows all themes when expanded', () => {
-      render(
-        <FrameCard
-          frame={mockDbFrame}
-          isSelected={false}
-          onSelect={mockOnSelect}
-          expanded={true}
-        />
-      );
-
-      expect(screen.getByText('mystery')).toBeInTheDocument();
-      expect(screen.getByText('horror')).toBeInTheDocument();
-      expect(screen.getByText('nature')).toBeInTheDocument();
-      expect(screen.getByText('survival')).toBeInTheDocument();
-      expect(screen.queryByText('+1 more')).not.toBeInTheDocument();
-    });
-
     it('renders as button', () => {
       render(
-        <FrameCard
-          frame={mockDbFrame}
-          isSelected={false}
-          onSelect={mockOnSelect}
-        />
+        <FrameCard frame={mockDbFrame} onSelect={mockOnSelect} />
       );
 
       expect(screen.getByRole('button')).toBeInTheDocument();
@@ -128,7 +69,6 @@ describe('FrameCard', () => {
       const { container } = render(
         <FrameCard
           frame={mockDbFrame}
-          isSelected={false}
           onSelect={mockOnSelect}
           className="custom-class"
         />
@@ -141,11 +81,7 @@ describe('FrameCard', () => {
   describe('custom frames', () => {
     it('displays Custom badge for custom frames', () => {
       render(
-        <FrameCard
-          frame={mockCustomFrame}
-          isSelected={false}
-          onSelect={mockOnSelect}
-        />
+        <FrameCard frame={mockCustomFrame} onSelect={mockOnSelect} />
       );
 
       expect(screen.getByText('Custom')).toBeInTheDocument();
@@ -153,85 +89,45 @@ describe('FrameCard', () => {
 
     it('does not display Custom badge for DB frames', () => {
       render(
-        <FrameCard
-          frame={mockDbFrame}
-          isSelected={false}
-          onSelect={mockOnSelect}
-        />
+        <FrameCard frame={mockDbFrame} onSelect={mockOnSelect} />
       );
 
       expect(screen.queryByText('Custom')).not.toBeInTheDocument();
     });
-
-    it('renders custom frame adversaries', () => {
-      render(
-        <FrameCard
-          frame={mockCustomFrame}
-          isSelected={false}
-          onSelect={mockOnSelect}
-          expanded={true}
-        />
-      );
-
-      expect(screen.getByText('undead')).toBeInTheDocument();
-      expect(screen.getByText('constructs')).toBeInTheDocument();
-    });
   });
 
-  describe('expanded view', () => {
-    it('shows lore when expanded', () => {
+  describe('card states', () => {
+    it('has aria-pressed=true when active', () => {
       render(
-        <FrameCard
-          frame={mockDbFrame}
-          isSelected={false}
-          onSelect={mockOnSelect}
-          expanded={true}
-        />
+        <FrameCard frame={mockDbFrame} state="active" onSelect={mockOnSelect} />
       );
 
-      expect(screen.getByText(/Ancient evil lurks/i)).toBeInTheDocument();
+      expect(screen.getByRole('button')).toHaveAttribute('aria-pressed', 'true');
     });
 
-    it('shows typical adversaries when expanded', () => {
+    it('has aria-pressed=false when default', () => {
       render(
-        <FrameCard
-          frame={mockDbFrame}
-          isSelected={false}
-          onSelect={mockOnSelect}
-          expanded={true}
-        />
+        <FrameCard frame={mockDbFrame} state="default" onSelect={mockOnSelect} />
       );
 
-      expect(screen.getByText('beasts')).toBeInTheDocument();
-      expect(screen.getByText('undead')).toBeInTheDocument();
-      expect(screen.getByText('fey')).toBeInTheDocument();
+      expect(screen.getByRole('button')).toHaveAttribute('aria-pressed', 'false');
     });
 
-    it('shows source book when expanded', () => {
+    it('has aria-pressed=false when exploring', () => {
       render(
-        <FrameCard
-          frame={mockDbFrame}
-          isSelected={false}
-          onSelect={mockOnSelect}
-          expanded={true}
-        />
+        <FrameCard frame={mockDbFrame} state="exploring" onSelect={mockOnSelect} />
       );
 
-      expect(screen.getByText(/Core Rulebook/i)).toBeInTheDocument();
+      expect(screen.getByRole('button')).toHaveAttribute('aria-pressed', 'false');
     });
 
-    it('hides expanded details when not expanded', () => {
+    it('applies gold text to frame name when active', () => {
       render(
-        <FrameCard
-          frame={mockDbFrame}
-          isSelected={false}
-          onSelect={mockOnSelect}
-          expanded={false}
-        />
+        <FrameCard frame={mockDbFrame} state="active" onSelect={mockOnSelect} />
       );
 
-      // Lore should not be visible
-      expect(screen.queryByText(/Ancient evil lurks/i)).not.toBeInTheDocument();
+      const name = screen.getByText('The Dark Forest');
+      expect(name).toHaveClass('text-gold-600');
     });
   });
 
@@ -239,40 +135,12 @@ describe('FrameCard', () => {
     it('calls onSelect when clicked', async () => {
       const user = userEvent.setup();
       render(
-        <FrameCard
-          frame={mockDbFrame}
-          isSelected={false}
-          onSelect={mockOnSelect}
-        />
+        <FrameCard frame={mockDbFrame} onSelect={mockOnSelect} />
       );
 
       await user.click(screen.getByRole('button'));
 
       expect(mockOnSelect).toHaveBeenCalledWith(mockDbFrame);
-    });
-
-    it('has aria-pressed=true when selected', () => {
-      render(
-        <FrameCard
-          frame={mockDbFrame}
-          isSelected={true}
-          onSelect={mockOnSelect}
-        />
-      );
-
-      expect(screen.getByRole('button')).toHaveAttribute('aria-pressed', 'true');
-    });
-
-    it('has aria-pressed=false when not selected', () => {
-      render(
-        <FrameCard
-          frame={mockDbFrame}
-          isSelected={false}
-          onSelect={mockOnSelect}
-        />
-      );
-
-      expect(screen.getByRole('button')).toHaveAttribute('aria-pressed', 'false');
     });
   });
 
@@ -280,11 +148,7 @@ describe('FrameCard', () => {
     it('selects with Enter key', async () => {
       const user = userEvent.setup();
       render(
-        <FrameCard
-          frame={mockDbFrame}
-          isSelected={false}
-          onSelect={mockOnSelect}
-        />
+        <FrameCard frame={mockDbFrame} onSelect={mockOnSelect} />
       );
 
       const button = screen.getByRole('button');
@@ -297,11 +161,7 @@ describe('FrameCard', () => {
     it('selects with Space key', async () => {
       const user = userEvent.setup();
       render(
-        <FrameCard
-          frame={mockDbFrame}
-          isSelected={false}
-          onSelect={mockOnSelect}
-        />
+        <FrameCard frame={mockDbFrame} onSelect={mockOnSelect} />
       );
 
       const button = screen.getByRole('button');
@@ -315,11 +175,7 @@ describe('FrameCard', () => {
   describe('accessibility', () => {
     it('has accessible label', () => {
       render(
-        <FrameCard
-          frame={mockDbFrame}
-          isSelected={false}
-          onSelect={mockOnSelect}
-        />
+        <FrameCard frame={mockDbFrame} onSelect={mockOnSelect} />
       );
 
       const button = screen.getByRole('button');
@@ -328,11 +184,7 @@ describe('FrameCard', () => {
 
     it('has focus ring classes for keyboard navigation', () => {
       render(
-        <FrameCard
-          frame={mockDbFrame}
-          isSelected={false}
-          onSelect={mockOnSelect}
-        />
+        <FrameCard frame={mockDbFrame} onSelect={mockOnSelect} />
       );
 
       const button = screen.getByRole('button');
@@ -342,103 +194,15 @@ describe('FrameCard', () => {
     });
   });
 
-  describe('animations', () => {
-    it('has hover lift animation classes (motion-safe)', () => {
-      render(
-        <FrameCard
-          frame={mockDbFrame}
-          isSelected={false}
-          onSelect={mockOnSelect}
-        />
-      );
-
-      const button = screen.getByRole('button');
-      expect(button).toHaveClass('motion-safe:hover:-translate-y-1');
-    });
-
-    it('has hover glow animation classes (motion-safe)', () => {
-      render(
-        <FrameCard
-          frame={mockDbFrame}
-          isSelected={false}
-          onSelect={mockOnSelect}
-        />
-      );
-
-      const button = screen.getByRole('button');
-      expect(button).toHaveClass('motion-safe:hover:shadow-gold-glow-subtle');
-    });
-
-    it('has selection glow animation when selected (motion-safe)', () => {
-      render(
-        <FrameCard
-          frame={mockDbFrame}
-          isSelected={true}
-          onSelect={mockOnSelect}
-        />
-      );
-
-      const button = screen.getByRole('button');
-      expect(button).toHaveClass('motion-safe:animate-selection-glow');
-    });
-
-    it('does not have selection glow animation when not selected', () => {
-      render(
-        <FrameCard
-          frame={mockDbFrame}
-          isSelected={false}
-          onSelect={mockOnSelect}
-        />
-      );
-
-      const button = screen.getByRole('button');
-      expect(button).not.toHaveClass('motion-safe:animate-selection-glow');
-    });
-
+  describe('transitions', () => {
     it('has smooth transition classes', () => {
       render(
-        <FrameCard
-          frame={mockDbFrame}
-          isSelected={false}
-          onSelect={mockOnSelect}
-        />
+        <FrameCard frame={mockDbFrame} onSelect={mockOnSelect} />
       );
 
       const button = screen.getByRole('button');
       expect(button).toHaveClass('transition-all');
-      expect(button).toHaveClass('duration-200');
-    });
-  });
-
-  describe('theme badge styling', () => {
-    it('applies compact badge styling to theme badges', () => {
-      render(
-        <FrameCard
-          frame={mockDbFrame}
-          isSelected={false}
-          onSelect={mockOnSelect}
-        />
-      );
-
-      const themeBadge = screen.getByText('mystery');
-      // Compact badge styling: rounded-lg border-2 px-3 py-1
-      expect(themeBadge).toHaveClass('rounded-lg');
-      expect(themeBadge).toHaveClass('border-2');
-      expect(themeBadge).toHaveClass('px-3');
-      expect(themeBadge).toHaveClass('py-1');
-    });
-
-    it('applies correct text styling to theme badges', () => {
-      render(
-        <FrameCard
-          frame={mockDbFrame}
-          isSelected={false}
-          onSelect={mockOnSelect}
-        />
-      );
-
-      const themeBadge = screen.getByText('mystery');
-      expect(themeBadge).toHaveClass('text-xs');
+      expect(button).toHaveClass('duration-150');
     });
   });
 });

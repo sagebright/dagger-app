@@ -10,7 +10,7 @@ States: **DONE** (reviewed and iterated), **ITERATION** (mockup exists, under re
 |---|-------|-------|--------|
 | 1 | Invocation | DONE | `documentation/mockups/invocation-immersive.html` |
 | 2 | Attunement | DONE | `documentation/mockups/attunement-immersive.html` |
-| 3 | Binding | ITERATION | `documentation/mockups/binding-immersive.html` — dropped settings, added fixed "Select Frame" button |
+| 3 | Binding | ITERATION | `documentation/mockups/binding-immersive.html` — unified button styling (Select Frame matches Continue to Weaving: sans-serif, 13px, compact padding), fixed footer placement for both gallery and detail views, buttons bottom-aligned with chat bar (32px footer padding) |
 | 4 | Weaving | MOCKUP | `documentation/mockups/weaving-immersive.html` |
 | 5 | Inscription | MOCKUP | `documentation/mockups/inscription-immersive.html` |
 | 6 | Conjuring | MOCKUP | `documentation/mockups/conjuring-immersive.html` |
@@ -156,20 +156,24 @@ Frame Gallery → Frame Detail Panel (Attunement-style cross-fade transition)
 - Scrollable content area with collapsible detail sections
 - Fixed "Select Frame" button at the bottom — always visible, never scrolls away
 
-**Frame Detail Sections** (collapsible accordion):
-- Expanded by default (selection-relevant):
+**Frame Detail Sections** (collapsible accordion, in order):
+- Expanded by default (titles shown in gold):
   - **Overview** — world background, factions, core conflict
-  - **Themes** — thematic pillars (pill row)
+  - **Inciting Incident** — campaign launch event (critical decision-making info)
+- Collapsed by default:
   - **Tone & Feel** — atmospheric qualities (pill row)
   - **Touchstones** — pop culture references (pill row)
+  - **Themes** — thematic pillars (pill row)
   - **Distinctions** — what makes this frame unique
-- Collapsed by default (deep-dive / campaign-prep):
   - **Heritage & Classes Guidance** — ancestry and class fit
   - **Player & GM Principles** — conduct guidance
   - **Custom Mechanics** — unique rules for this frame
-  - **Inciting Incident** — campaign launch event
   - **Session Zero Questions** — preparation topics
   - **Complexity Rating** — how much the frame deviates from core rules
+
+**Styling rules:**
+- Expanded section titles are gold. Multiple sections can be expanded (and gold) simultaneously.
+- Hovering on label pills turns them gold.
 
 **Interaction model:**
 - Two exit paths from the detail panel:

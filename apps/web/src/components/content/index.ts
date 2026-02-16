@@ -10,8 +10,10 @@
  */
 
 // Frame components
-export { FrameCard, type FrameCardProps } from './FrameCard';
+export { FrameCard, type FrameCardProps, type FrameCardState } from './FrameCard';
 export { FramePanel, type FramePanelProps } from './FramePanel';
+export { FrameDetailPanel, type FrameDetailPanelProps } from './FrameDetailPanel';
+export { DetailSection, type DetailSectionProps } from './DetailSection';
 export { FrameEditor, type FrameEditorProps } from './FrameEditor';
 
 // Outline components

@@ -1,17 +1,21 @@
 /**
  * FramePanel Component
  *
- * Main panel for frame selection phase.
- * Shows existing frames from Supabase with option to create custom.
- * Includes search/filter, frame cards, and selected frame details.
- * Shows name suggestion banner after frame confirmation if adventure is unnamed.
- * Fantasy-themed styling.
+ * Main panel for the Binding stage — frame selection.
+ * Two views that cross-fade:
+ *   1. Frame Gallery — scrollable cards showing name + pitch
+ *   2. Frame Detail Panel — full frame details with collapsible sections
+ *
+ * Three card states: default, exploring (viewing detail), active (confirmed).
+ * "Back to Frames" returns to gallery without selecting.
+ * "Select Frame" marks frame active and returns to gallery.
  */
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import type { DaggerheartFrame, SelectedFrame } from '@dagger-app/shared-types';
 import { isCustomFrame } from '@dagger-app/shared-types';
 import { FrameCard } from './FrameCard';
+import { FrameDetailPanel } from './FrameDetailPanel';
 import { NameSuggestionBanner } from '../adventure';
 import {
   useContentStore,
@@ -21,19 +25,13 @@ import {
 import { useAdventureStore } from '../../stores/adventureStore';
 
 export interface FramePanelProps {
-  /** Callback when user wants to create custom frame (opens chat) */
   onCreateCustom: () => void;
-  /** Callback when user confirms frame and proceeds to outline */
   onContinueToOutline: () => void;
-  /** Additional CSS classes */
   className?: string;
 }
 
-/** Generates a suggested adventure name from frame name and themes */
 function generateNameSuggestion(frameName: string, themes?: string[]): string {
-  // Simple name generation based on frame and themes
   if (themes && themes.length > 0) {
-    // Pick a random theme to incorporate
     const theme = themes[0];
     const themeWord = theme.charAt(0).toUpperCase() + theme.slice(1);
     return `The ${themeWord} of ${frameName}`;
@@ -43,21 +41,21 @@ function generateNameSuggestion(frameName: string, themes?: string[]): string {
 
 export function FramePanel({
   onCreateCustom,
-  onContinueToOutline: _onContinueToOutline, // Kept for API compatibility; PhaseNavigation handles navigation
+  onContinueToOutline: _onContinueToOutline,
   className = '',
 }: FramePanelProps) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [expandedFrameId, setExpandedFrameId] = useState<string | null>(null);
+  const [viewingFrame, setViewingFrame] = useState<(DaggerheartFrame | SelectedFrame) | null>(null);
   const [showNameSuggestion, setShowNameSuggestion] = useState(false);
   const [nameSuggestionDismissed, setNameSuggestionDismissed] = useState(false);
   const [isLoadingNameSuggestion, setIsLoadingNameSuggestion] = useState(false);
   const [currentSuggestion, setCurrentSuggestion] = useState<string | null>(null);
 
-  // Adventure store state
+  // Adventure store
   const adventureName = useAdventureStore((state) => state.adventureName);
   const setAdventureName = useAdventureStore((state) => state.setAdventureName);
 
-  // Store state
+  // Content store state
   const availableFrames = useContentStore((state) => state.availableFrames);
   const selectedFrame = useContentStore((state) => state.selectedFrame);
   const framesLoading = useContentStore((state) => state.framesLoading);
@@ -65,7 +63,7 @@ export function FramePanel({
   const hasSelectedFrame = useContentStore(selectHasSelectedFrame);
   const isFrameConfirmed = useContentStore(selectIsFrameConfirmed);
 
-  // Store actions
+  // Content store actions
   const selectFrame = useContentStore((state) => state.selectFrame);
   const confirmFrame = useContentStore((state) => state.confirmFrame);
   const clearFrame = useContentStore((state) => state.clearFrame);
@@ -73,18 +71,13 @@ export function FramePanel({
   const setFramesLoading = useContentStore((state) => state.setFramesLoading);
   const setFramesError = useContentStore((state) => state.setFramesError);
 
-  // Fetch official frames and custom frames from backend on mount
+  // Fetch frames on mount
   useEffect(() => {
     const fetchFrames = async () => {
-      // Skip if already loading or frames are loaded
-      if (framesLoading || availableFrames.length > 0) {
-        return;
-      }
-
+      if (framesLoading || availableFrames.length > 0) return;
       setFramesLoading(true);
 
       try {
-        // Fetch official frames and custom frames in parallel
         const [framesResponse, customFramesResponse] = await Promise.all([
           fetch('/api/content/frames'),
           fetch('/api/custom-frames'),
@@ -97,8 +90,6 @@ export function FramePanel({
 
         const framesData = await framesResponse.json();
         const officialFrames = framesData.frames || [];
-
-        // Merge custom frames if available (convert to compatible format)
         let allFrames = [...officialFrames];
 
         if (customFramesResponse.ok) {
@@ -137,7 +128,7 @@ export function FramePanel({
     fetchFrames();
   }, [availableFrames.length, framesLoading, setAvailableFrames, setFramesLoading, setFramesError]);
 
-  // Show name suggestion after frame confirmation if adventure is unnamed
+  // Name suggestion after confirmation
   useEffect(() => {
     const isUnnamed = !adventureName || adventureName.trim() === '';
     if (isFrameConfirmed && isUnnamed && !nameSuggestionDismissed) {
@@ -147,21 +138,17 @@ export function FramePanel({
     }
   }, [isFrameConfirmed, adventureName, nameSuggestionDismissed]);
 
-  // Generate initial suggested name based on selected frame
   const initialSuggestedName = useMemo(() => {
     if (!selectedFrame) return '';
     return generateNameSuggestion(selectedFrame.name, selectedFrame.themes ?? undefined);
   }, [selectedFrame]);
 
-  // Use currentSuggestion if set (from API), otherwise use the initial generated name
   const suggestedName = currentSuggestion ?? initialSuggestedName;
 
-  // Reset currentSuggestion when frame changes
   useEffect(() => {
     setCurrentSuggestion(null);
   }, [selectedFrame?.id]);
 
-  // Name suggestion handlers
   const handleAcceptName = useCallback((name: string) => {
     setAdventureName(name);
     setShowNameSuggestion(false);
@@ -172,10 +159,8 @@ export function FramePanel({
     setNameSuggestionDismissed(true);
   }, []);
 
-  // Handle requesting a new name suggestion from the API
   const handleSuggestAnotherName = useCallback(async () => {
     if (!selectedFrame || isLoadingNameSuggestion) return;
-
     setIsLoadingNameSuggestion(true);
 
     try {
@@ -189,15 +174,10 @@ export function FramePanel({
         }),
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch name suggestion');
-      }
+      if (!response.ok) throw new Error('Failed to fetch name suggestion');
 
       const data = await response.json();
-      if (data.suggestion) {
-        // Update the current suggestion to show in the banner
-        setCurrentSuggestion(data.suggestion);
-      }
+      if (data.suggestion) setCurrentSuggestion(data.suggestion);
     } catch (error) {
       console.error('Error fetching name suggestion:', error);
     } finally {
@@ -205,10 +185,9 @@ export function FramePanel({
     }
   }, [selectedFrame, suggestedName, isLoadingNameSuggestion]);
 
-  // Filter frames by search query
+  // Filter frames
   const filteredFrames = useMemo(() => {
     if (!searchQuery.trim()) return availableFrames;
-
     const query = searchQuery.toLowerCase();
     return availableFrames.filter(
       (frame) =>
@@ -218,19 +197,35 @@ export function FramePanel({
     );
   }, [availableFrames, searchQuery]);
 
-  const handleSelectFrame = (frame: DaggerheartFrame | SelectedFrame) => {
-    selectFrame(frame);
-    // Expand the selected frame to show details
-    setExpandedFrameId(frame.id);
+  // Click a frame card → open detail panel
+  const handleClickFrame = (frame: DaggerheartFrame | SelectedFrame) => {
+    setViewingFrame(frame);
   };
 
-  const handleConfirm = () => {
-    confirmFrame();
+  // "Back to Frames" from detail panel → return to gallery, no selection change
+  const handleBackToGallery = () => {
+    setViewingFrame(null);
+  };
+
+  // "Select Frame" from detail panel → mark as selected + confirmed, return to gallery
+  const handleSelectFrameFromDetail = () => {
+    if (viewingFrame) {
+      selectFrame(viewingFrame);
+      confirmFrame();
+    }
+    setViewingFrame(null);
   };
 
   const handleChange = () => {
     clearFrame();
-    setExpandedFrameId(null);
+    setViewingFrame(null);
+  };
+
+  // Determine card state for each frame
+  const getCardState = (frame: DaggerheartFrame | SelectedFrame) => {
+    if (isFrameConfirmed && selectedFrame?.id === frame.id) return 'active' as const;
+    if (viewingFrame?.id === frame.id) return 'exploring' as const;
+    return 'default' as const;
   };
 
   // Loading state
@@ -263,6 +258,20 @@ export function FramePanel({
     );
   }
 
+  // Detail Panel view (cross-fade from gallery)
+  if (viewingFrame) {
+    return (
+      <div className={`flex flex-col h-full ${className}`}>
+        <FrameDetailPanel
+          frame={viewingFrame}
+          onBack={handleBackToGallery}
+          onSelectFrame={handleSelectFrameFromDetail}
+        />
+      </div>
+    );
+  }
+
+  // Gallery view (default)
   return (
     <div className={`flex flex-col h-full ${className}`}>
       {/* Header */}
@@ -278,7 +287,6 @@ export function FramePanel({
       {/* Search and Create Custom */}
       <div className="p-4 border-b border-ink-200 dark:border-shadow-600">
         <div className="flex gap-3">
-          {/* Search input */}
           <div className="flex-1 relative">
             <input
               type="text"
@@ -313,7 +321,6 @@ export function FramePanel({
             </svg>
           </div>
 
-          {/* Create Custom button */}
           <button
             type="button"
             onClick={onCreateCustom}
@@ -341,21 +348,20 @@ export function FramePanel({
             </p>
           </div>
         ) : (
-          <div className="grid gap-3">
+          <div className="grid gap-2.5">
             {filteredFrames.map((frame) => (
               <FrameCard
                 key={frame.id}
                 frame={frame}
-                isSelected={selectedFrame?.id === frame.id}
-                onSelect={handleSelectFrame}
-                expanded={expandedFrameId === frame.id}
+                state={getCardState(frame)}
+                onSelect={handleClickFrame}
               />
             ))}
           </div>
         )}
       </div>
 
-      {/* Name suggestion banner (shown after frame confirmation for unnamed adventures) */}
+      {/* Name suggestion banner */}
       {showNameSuggestion && suggestedName && (
         <div className="p-4 border-t border-ink-200 dark:border-shadow-600">
           <NameSuggestionBanner
@@ -394,12 +400,7 @@ export function FramePanel({
 
           {isFrameConfirmed ? (
             <div className="flex items-center gap-2 py-2 text-sm text-gold-700 dark:text-gold-400">
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -412,7 +413,7 @@ export function FramePanel({
           ) : (
             <button
               type="button"
-              onClick={handleConfirm}
+              onClick={() => confirmFrame()}
               className="
                 w-full py-3 px-4 rounded-fantasy border-2
                 bg-parchment-100 border-gold-400 text-gold-700

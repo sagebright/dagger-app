@@ -17,10 +17,9 @@
 
     Step 1: Frame Gallery — scrollable frame cards with name + pitch only.
     Step 2: Detail Panel — cross-fades in when a frame is clicked.
-      Collapsible detail sections (overview, themes, tone/feel, touchstones,
-      distinctions expanded by default; heritage/classes, principles, mechanics,
-      inciting incident, session-zero questions, complexity rating collapsed
-      by default).
+      Collapsible detail sections (overview and inciting incident expanded
+      by default; all others collapsed). Expanded section titles are gold.
+      Hovering on label pills turns them gold.
       Fixed "Select Frame" button at the bottom — always visible, never
       scrolls away.
 
@@ -226,14 +225,24 @@
          Active    — gold treatment, frame confirmed
     */
     .frame-list {
-      flex: 1; overflow-y: auto; padding: 8px var(--panel-padding);
-      scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.06) transparent;
+      flex: 1; display: flex; flex-direction: column; min-height: 0;
       transition: opacity 0.15s ease;
     }
-    .frame-list::-webkit-scrollbar { width: 5px; }
-    .frame-list::-webkit-scrollbar-track { background: transparent; }
-    .frame-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.06); border-radius: 3px; }
-    .frame-list.hidden { opacity: 0; pointer-events: none; position: absolute; }
+    .frame-list.hidden { display: none; }
+
+    .frame-scroll {
+      flex: 1; overflow-y: auto; padding: 8px var(--panel-padding);
+      scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.06) transparent;
+    }
+    .frame-scroll::-webkit-scrollbar { width: 5px; }
+    .frame-scroll::-webkit-scrollbar-track { background: transparent; }
+    .frame-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.06); border-radius: 3px; }
+
+    .gallery-footer {
+      flex-shrink: 0;
+      padding: 12px var(--panel-padding) 32px;
+      border-top: 1px solid var(--border-subtle);
+    }
 
     .frame-card {
       padding: 16px;
@@ -282,13 +291,12 @@
        fixed "Select Frame" button at the bottom.
     */
     .detail-panel {
-      flex: 1; display: flex; flex-direction: column; min-height: 0;
+      display: none;
+      flex-direction: column; min-height: 0;
       padding: 0 var(--panel-padding);
-      opacity: 0; pointer-events: none; position: absolute;
-      transition: opacity 0.15s ease;
     }
     .detail-panel.visible {
-      opacity: 1; pointer-events: auto; position: relative;
+      display: flex; flex: 1;
     }
 
     .detail-panel-header {
@@ -325,19 +333,19 @@
     /* Fixed footer — always visible at bottom of detail panel */
     .detail-panel-footer {
       flex-shrink: 0;
-      padding: 12px 0;
+      padding: 12px 0 32px;
       border-top: 1px solid var(--border-subtle);
     }
     .btn-select-frame {
       display: block;
       width: 100%;
-      padding: 10px 16px;
+      padding: 7px 16px;
       border: none;
       border-radius: var(--radius-sm);
       background: var(--accent-gold);
       color: var(--bg-primary);
-      font-family: var(--font-serif);
-      font-size: 14px;
+      font-family: var(--font-sans);
+      font-size: 13px;
       font-weight: 600;
       cursor: pointer;
       transition: background 0.15s ease, box-shadow 0.2s ease;
@@ -388,6 +396,9 @@
       color: var(--text-secondary);
       transition: color 0.15s ease;
     }
+    .detail-section.expanded .detail-section-label {
+      color: var(--accent-gold);
+    }
     .detail-section-body {
       display: none;
       padding: 0 0 12px 22px;
@@ -413,10 +424,16 @@
       border-radius: 12px;
       padding: 2px 10px;
       white-space: nowrap;
+      transition: color 0.15s ease, border-color 0.15s ease;
+      cursor: default;
+    }
+    .detail-pill:hover {
+      color: var(--accent-gold);
+      border-color: var(--accent-gold-border);
     }
 
     .btn-continue-compact {
-      flex-shrink: 0; padding: 7px 16px; border: none; border-radius: var(--radius-sm);
+      flex-shrink: 0; width: 100%; padding: 7px 16px; border: none; border-radius: var(--radius-sm);
       background: var(--accent-gold); color: var(--bg-primary);
       font-family: var(--font-sans); font-size: 13px; font-weight: 600;
       cursor: pointer; transition: background 0.15s ease, box-shadow 0.2s ease;
@@ -583,27 +600,32 @@
 
       <!-- Frame Gallery — scrollable (default view) -->
       <div class="frame-list" id="frame-gallery">
+        <div class="frame-scroll">
 
-        <!-- The Witherwild — ACTIVE (frame confirmed) -->
-        <div class="frame-card active" data-frame="witherwild" onclick="clickFrame(this)">
-          <div class="frame-card-name">The Witherwild</div>
-          <div class="frame-card-pitch">A stolen relic triggers endless spring — three factions clash as nature devours everything in its path.</div>
+          <!-- The Witherwild — ACTIVE (frame confirmed) -->
+          <div class="frame-card active" data-frame="witherwild" onclick="clickFrame(this)">
+            <div class="frame-card-name">The Witherwild</div>
+            <div class="frame-card-pitch">A stolen relic triggers endless spring — three factions clash as nature devours everything in its path.</div>
+          </div>
+
+          <!-- The Shattered Bastion — unselected -->
+          <div class="frame-card" data-frame="bastion" onclick="clickFrame(this)">
+            <div class="frame-card-name">The Shattered Bastion</div>
+            <div class="frame-card-pitch">A fortress-city tears itself apart as its founding orders wage war over fragments of divine authority.</div>
+          </div>
+
+          <!-- The Drowned Court — unselected -->
+          <div class="frame-card" data-frame="drowned" onclick="clickFrame(this)">
+            <div class="frame-card-name">The Drowned Court</div>
+            <div class="frame-card-pitch">A sunken kingdom resurfaces after centuries, bringing old debts, undead courtiers, and a vacant throne.</div>
+          </div>
+
         </div>
 
-        <!-- The Shattered Bastion — unselected -->
-        <div class="frame-card" data-frame="bastion" onclick="clickFrame(this)">
-          <div class="frame-card-name">The Shattered Bastion</div>
-          <div class="frame-card-pitch">A fortress-city tears itself apart as its founding orders wage war over fragments of divine authority.</div>
+        <!-- Fixed footer — always visible at bottom of gallery -->
+        <div class="gallery-footer">
+          <button class="btn-continue-compact" id="btn-continue">Continue to Weaving</button>
         </div>
-
-        <!-- The Drowned Court — unselected -->
-        <div class="frame-card" data-frame="drowned" onclick="clickFrame(this)">
-          <div class="frame-card-name">The Drowned Court</div>
-          <div class="frame-card-pitch">A sunken kingdom resurfaces after centuries, bringing old debts, undead courtiers, and a vacant throne.</div>
-        </div>
-
-        <!-- Continue button — enabled because Witherwild is active -->
-        <button class="btn-continue-compact" id="btn-continue" style="margin: 16px auto 12px; display: block;">Continue to Weaving</button>
 
       </div>
 
@@ -636,7 +658,7 @@
         <!-- Scrollable content: detail sections -->
         <div class="detail-content">
 
-          <!-- ===== EXPANDED BY DEFAULT (selection-relevant) ===== -->
+          <!-- ===== EXPANDED BY DEFAULT ===== -->
 
           <div class="detail-section expanded" data-section="overview">
             <div class="detail-section-header" onclick="toggleSection(this)">
@@ -648,7 +670,47 @@
             </div>
           </div>
 
-          <div class="detail-section expanded" data-section="themes">
+          <div class="detail-section expanded" data-section="inciting-incident">
+            <div class="detail-section-header" onclick="toggleSection(this)">
+              <span class="detail-section-chevron">&#x25B8;</span>
+              <span class="detail-section-label">Inciting Incident</span>
+            </div>
+            <div class="detail-section-body">
+              A Wickling elder sends a desperate plea — the overgrowth has breached the village walls, and something ancient stirs in the deep forest. The party is the last group willing to answer.
+            </div>
+          </div>
+
+          <!-- ===== COLLAPSED BY DEFAULT ===== -->
+
+          <div class="detail-section" data-section="tone-feel">
+            <div class="detail-section-header" onclick="toggleSection(this)">
+              <span class="detail-section-chevron">&#x25B8;</span>
+              <span class="detail-section-label">Tone &amp; Feel</span>
+            </div>
+            <div class="detail-section-body">
+              <div class="detail-pills">
+                <span class="detail-pill">Morally Complex</span>
+                <span class="detail-pill">Urgent</span>
+                <span class="detail-pill">Bittersweet</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="detail-section" data-section="touchstones">
+            <div class="detail-section-header" onclick="toggleSection(this)">
+              <span class="detail-section-chevron">&#x25B8;</span>
+              <span class="detail-section-label">Touchstones</span>
+            </div>
+            <div class="detail-section-body">
+              <div class="detail-pills">
+                <span class="detail-pill">Princess Mononoke</span>
+                <span class="detail-pill">The Last of Us</span>
+                <span class="detail-pill">Annihilation</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="detail-section" data-section="themes">
             <div class="detail-section-header" onclick="toggleSection(this)">
               <span class="detail-section-chevron">&#x25B8;</span>
               <span class="detail-section-label">Themes</span>
@@ -664,35 +726,7 @@
             </div>
           </div>
 
-          <div class="detail-section expanded" data-section="tone-feel">
-            <div class="detail-section-header" onclick="toggleSection(this)">
-              <span class="detail-section-chevron">&#x25B8;</span>
-              <span class="detail-section-label">Tone &amp; Feel</span>
-            </div>
-            <div class="detail-section-body">
-              <div class="detail-pills">
-                <span class="detail-pill">Morally Complex</span>
-                <span class="detail-pill">Urgent</span>
-                <span class="detail-pill">Bittersweet</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="detail-section expanded" data-section="touchstones">
-            <div class="detail-section-header" onclick="toggleSection(this)">
-              <span class="detail-section-chevron">&#x25B8;</span>
-              <span class="detail-section-label">Touchstones</span>
-            </div>
-            <div class="detail-section-body">
-              <div class="detail-pills">
-                <span class="detail-pill">Princess Mononoke</span>
-                <span class="detail-pill">The Last of Us</span>
-                <span class="detail-pill">Annihilation</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="detail-section expanded" data-section="distinctions">
+          <div class="detail-section" data-section="distinctions">
             <div class="detail-section-header" onclick="toggleSection(this)">
               <span class="detail-section-chevron">&#x25B8;</span>
               <span class="detail-section-label">Distinctions</span>
@@ -701,8 +735,6 @@
               Three factions with legitimate grievances — no clear villain. The Witherwild itself is neither good nor evil, just relentless. The conflict was caused by desperation, not malice. Every faction thinks they're right; your players will have to decide who to help.
             </div>
           </div>
-
-          <!-- ===== COLLAPSED BY DEFAULT (deep-dive / campaign-prep) ===== -->
 
           <div class="detail-section" data-section="heritage-classes">
             <div class="detail-section-header" onclick="toggleSection(this)">
@@ -732,16 +764,6 @@
             </div>
             <div class="detail-section-body">
               <strong>Overgrowth Clock:</strong> A 6-segment clock that advances when the party delays or the wild senses conflict. At full, a Witherwild surge overtakes the current location, transforming the environment and forcing immediate action.
-            </div>
-          </div>
-
-          <div class="detail-section" data-section="inciting-incident">
-            <div class="detail-section-header" onclick="toggleSection(this)">
-              <span class="detail-section-chevron">&#x25B8;</span>
-              <span class="detail-section-label">Inciting Incident</span>
-            </div>
-            <div class="detail-section-body">
-              A Wickling elder sends a desperate plea — the overgrowth has breached the village walls, and something ancient stirs in the deep forest. The party is the last group willing to answer.
             </div>
           </div>
 
