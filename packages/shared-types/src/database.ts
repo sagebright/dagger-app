@@ -526,6 +526,78 @@ export type Database = {
         };
         Relationships: [];
       };
+      daggerheart_locations: {
+        Row: {
+          id: string;
+          name: string;
+          tier: number;
+          themes: string[];
+          concept: string;
+          description: string;
+          distinctions: Json;
+          gm_principles: Json;
+          landmarks: Json;
+          settlements: Json;
+          factions: Json;
+          moments_of_hope: string[];
+          moments_of_fear: string[];
+          rumors: string[];
+          loot: Json;
+          adversaries: Json;
+          environments: Json;
+          searchable_text: string | null;
+          embedding: string | null;
+          source_book: string | null;
+          created_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          tier: number;
+          themes?: string[];
+          concept: string;
+          description: string;
+          distinctions?: Json;
+          gm_principles?: Json;
+          landmarks?: Json;
+          settlements?: Json;
+          factions?: Json;
+          moments_of_hope?: string[];
+          moments_of_fear?: string[];
+          rumors?: string[];
+          loot?: Json;
+          adversaries?: Json;
+          environments?: Json;
+          searchable_text?: string | null;
+          embedding?: string | null;
+          source_book?: string | null;
+          created_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          tier?: number;
+          themes?: string[];
+          concept?: string;
+          description?: string;
+          distinctions?: Json;
+          gm_principles?: Json;
+          landmarks?: Json;
+          settlements?: Json;
+          factions?: Json;
+          moments_of_hope?: string[];
+          moments_of_fear?: string[];
+          rumors?: string[];
+          loot?: Json;
+          adversaries?: Json;
+          environments?: Json;
+          searchable_text?: string | null;
+          embedding?: string | null;
+          source_book?: string | null;
+          created_at?: string | null;
+        };
+        Relationships: [];
+      };
       daggerheart_adventures: {
         Row: {
           id: string;
@@ -685,6 +757,7 @@ export type DaggerheartSubclass = Database['public']['Tables']['daggerheart_subc
 export type DaggerheartDomain = Database['public']['Tables']['daggerheart_domains']['Row'];
 export type DaggerheartAbility = Database['public']['Tables']['daggerheart_abilities']['Row'];
 export type DaggerheartCommunity = Database['public']['Tables']['daggerheart_communities']['Row'];
+export type DaggerheartLocation = Database['public']['Tables']['daggerheart_locations']['Row'];
 export type DaggerheartAdventure = Database['public']['Tables']['daggerheart_adventures']['Row'];
 export type DaggerheartCustomFrame = Database['public']['Tables']['daggerheart_custom_frames']['Row'];
 
@@ -705,6 +778,7 @@ export const DAGGERHEART_TABLES = [
   'daggerheart_domains',
   'daggerheart_abilities',
   'daggerheart_communities',
+  'daggerheart_locations',
   'daggerheart_adventures',
   'daggerheart_custom_frames',
 ] as const;

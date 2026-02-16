@@ -20,6 +20,7 @@ import type {
   DaggerheartDomain,
   DaggerheartAbility,
   DaggerheartCommunity,
+  DaggerheartLocation,
 } from '@dagger-app/shared-types';
 
 /**
@@ -340,6 +341,44 @@ export async function getCommunities(): Promise<QueryResult<DaggerheartCommunity
 
   return {
     data: (data as DaggerheartCommunity[] | null) ?? null,
+    error: error?.message ?? null,
+  };
+}
+
+/**
+ * Fetch locations with optional tier filter
+ */
+export async function getLocations(options?: {
+  tier?: number;
+}): Promise<QueryResult<DaggerheartLocation[]>> {
+  const supabase = getSupabase();
+  let query = supabase.from('daggerheart_locations').select('*');
+
+  if (options?.tier !== undefined) {
+    query = query.eq('tier', options.tier);
+  }
+
+  const { data, error } = await query.order('name');
+
+  return {
+    data: (data as DaggerheartLocation[] | null) ?? null,
+    error: error?.message ?? null,
+  };
+}
+
+/**
+ * Fetch a single location by name
+ */
+export async function getLocationByName(name: string): Promise<QueryResult<DaggerheartLocation>> {
+  const supabase = getSupabase();
+  const { data, error } = await supabase
+    .from('daggerheart_locations')
+    .select('*')
+    .eq('name', name)
+    .single();
+
+  return {
+    data: (data as DaggerheartLocation | null) ?? null,
     error: error?.message ?? null,
   };
 }
