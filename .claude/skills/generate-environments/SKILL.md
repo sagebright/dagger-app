@@ -1,6 +1,6 @@
 ---
 name: generate-environments
-description: Generate Daggerheart environments using Homebrew Kit creation order, Improvised Statistics, Sullivan Torch narrative voice, and structural validation. Auto-activates when user mentions creating, generating, or designing environments.
+description: Generate Daggerheart environments using Homebrew Kit creation order, Improvised Statistics, and structural validation. Auto-activates when user mentions creating, generating, or designing environments.
 activation:
   - user mentions creating or generating environments
   - user mentions designing an environment stat block
@@ -10,7 +10,7 @@ activation:
 
 # Generate Daggerheart Environments
 
-Create mechanically sound, narratively rich environments for the `daggerheart_environments` table. Follows the Daggerheart Homebrew Kit v1.0 creation order with Sullivan Torch narrative voice.
+Create mechanically sound, narratively rich environments for the `daggerheart_environments` table. Follows the Daggerheart Homebrew Kit v1.0 creation order with structural validation.
 
 ## Creation Order
 
@@ -85,7 +85,7 @@ List 3-6 adversary names (text[] array) appropriate for the tier and type. These
 
 ### Step 6: Description
 
-Write a 2-4 sentence description. This is the environment's "read-aloud" text -- evocative, sensory, and atmospheric. Apply Sullivan Torch voice (see below).
+Write a 2-4 sentence description. This is the environment's "read-aloud" text -- evocative, sensory, and atmospheric.
 
 ## Improvised Statistics by Tier
 
@@ -99,6 +99,27 @@ Reference table from Daggerheart Homebrew Kit v1.0 pp.3-4, 15, 18-20.
 | 4 | 18-23 | d12-d20 | 9/19/27 | 14-30 | 5-8 |
 
 **Note:** Environment difficulty values for features that require rolls should reference the difficulty column (not thresholds, which are for adversaries). Use damage dice when a feature deals damage.
+
+## Batch Generation
+
+Generate multiple environments per invocation. Default batch size is **5**. The user may request fewer (e.g., "generate 2 environments").
+
+### Count
+
+Ask the user how many environments to generate during the initial conversation. If unspecified, default to 5.
+
+### Diversity Strategy
+
+Auto-diversify **type** within the batch while keeping the user's chosen **tier** constant. Spread across environment types to fill coverage gaps:
+
+- If generating 4-5: aim for all 4 types (Exploration, Social, Traversal, Event), with extras doubling up on the type with fewest existing entries
+- If generating fewer: prioritize types with zero coverage at the chosen tier
+- If the user specified a type, generate all entries of that type but vary impulses, features, and thematic identity
+- Query the Coverage Gaps section (below) to inform type selection
+
+### Per-Entry Creation
+
+Run the full 6-step creation order independently for each entry. Each environment gets its own name, type, impulses, features, throughline, adversaries, and description. Ensure no duplicate names within the batch or against existing DB entries.
 
 ## Structural Invariants
 
@@ -114,42 +135,6 @@ These rules must hold for every generated environment:
 8. **Tier + Difficulty alignment:** Difficulty must fall within the Improvised Statistics range for the tier
 9. **PC-targeting:** Features target PCs, not NPCs or abstract entities
 10. **Throughline coherence:** Throughline reflects the dramatic tension created by the features
-
-## Sullivan Torch Integration
-
-Pull the Sullivan Torch narrative profile at runtime to inject voice into generated prose.
-
-### SQL Query
-
-```sql
-SELECT personality, character, signature
-FROM sage_profiles
-WHERE slug = 'sullivan-torch';
-```
-
-### Profile Structure
-
-- `personality` (jsonb): Humor, Pacing, Warmth, Guidance, Vitality, Authority, Curiosity, Formality, Elaboration, Adaptiveness, Tension Style -- each with label and score
-- `character` (jsonb): Description, Expertise, Voice Snippet, Meta-Instructions, Narrative Texture, Priorities & Values, Use Case
-- `signature` (jsonb): key_phrases, anti_patterns, verbal_texture, conceptual_anchors, conversational_moves, rhetorical_structure
-
-### Voice Application
-
-Apply Sullivan Torch voice to these fields:
-- **description**: Sensory, expansive, inviting -- makes the GM want to read it aloud
-- **impulses**: Active, threatening, but with narrative flair
-- **feature gm_questions**: Evocative, player-focused, open-ended -- the kind of question that makes a GM pause and think
-- **feature names**: Vivid, specific, occasionally playful (e.g., "It'd Be a Shame If Something Happened to Your Store")
-- **throughline**: Frames the dramatic question with warmth and stakes
-
-### Key Voice Principles (from Meta-Instructions)
-
-- Start from specific, vivid examples -- build toward principles
-- Use humor as a bridge to depth
-- Frame storytelling as an act of service
-- Never gatekeep; celebrate the questioner's instincts
-- Reference broadly (improv, mythology, psychology)
-- Enthusiastic and generous, never condescending
 
 ## Validation Checklist
 
@@ -173,23 +158,30 @@ Before presenting the environment for review, verify all 13 items:
 
 ## Human Review Protocol
 
-After generation and validation, present the environment for human review.
+After generation and validation, present all environments for batch review.
 
 ### Present
 
-1. **Stat block** as formatted JSON (name, tier, type, difficulty, impulses, features, potential_adversaries, description, throughline)
-2. **Throughline** highlighted separately for narrative review
-3. **Validation checklist** results (all 13 items, pass/fail)
+1. **Summary table** of all entries:
+
+| # | Name | Type | Tier | Difficulty | Features | Validation |
+|---|------|------|------|-----------|----------|------------|
+| 1 | ... | ... | ... | ... | 3-6 | Pass/Fail |
+
+2. **Full stat block** for each entry as formatted JSON (name, tier, type, difficulty, impulses, features, potential_adversaries, description, throughline)
+3. **Throughline** highlighted separately for each entry
+4. **Validation checklist** results per entry (all 13 items, pass/fail)
 
 ### Options
 
-- **Approve** -- proceed to insert workflow
-- **Request revision** -- specify which fields to revise; re-run validation after changes
-- **Reject** -- discard and optionally restart with different parameters
+- **Approve All** -- insert all entries
+- **Approve Selected** -- specify entry numbers to insert (e.g., "approve 1, 3, 5")
+- **Revise** -- specify entry number and which fields to change; re-validate after
+- **Reject** -- specify entries to discard
 
 ## Insert Workflow
 
-After human approval, insert the environment into the database.
+After human approval, insert each approved environment into the database. Repeat steps 1-3 for each approved entry.
 
 ### Step 1: Compute searchable_text
 
@@ -234,6 +226,14 @@ INSERT INTO daggerheart_environments (
   'Generated'                     -- source_book
 );
 ```
+
+### Step 4: Report Results
+
+After all approved entries are inserted, present a summary:
+
+| # | Name | Status |
+|---|------|--------|
+| 1 | ... | Inserted / Skipped / Failed |
 
 ## Coverage Gaps (Current)
 

@@ -1,6 +1,6 @@
 ---
 name: generate-frames
-description: Generate Daggerheart campaign frames using Homebrew Kit creation order (pp 23-26), Sullivan Torch narrative voice, and structural validation. Auto-activates when user mentions creating, generating, or designing campaign frames.
+description: Generate Daggerheart campaign frames using Homebrew Kit creation order (pp 23-26) and structural validation. Auto-activates when user mentions creating, generating, or designing campaign frames.
 activation:
   - user mentions creating or generating campaign frames
   - user mentions designing a campaign frame
@@ -10,7 +10,7 @@ activation:
 
 # Generate Daggerheart Campaign Frames
 
-Create narratively rich, structurally validated campaign frames for the `daggerheart_custom_frames` table. Follows the Daggerheart Homebrew Kit v1.0 (pp 23-26) creation order with Sullivan Torch narrative voice. Inserts with `user_id = NULL` for system-generated content.
+Create narratively rich, structurally validated campaign frames for the `daggerheart_custom_frames` table. Follows the Daggerheart Homebrew Kit v1.0 (pp 23-26) creation order with structural validation. Inserts with `user_id = NULL` for system-generated content.
 
 ## Creation Order
 
@@ -49,7 +49,7 @@ Assign a complexity rating from 1-4 that signals how many moving parts the campa
 
 Write a 1-paragraph pitch that sells the campaign to players. This is the "back of the book" -- inviting, atmospheric, and free of spoilers or GM secrets.
 
-**Constraints:** 1 paragraph (3-6 sentences). Player-facing only. Apply Sullivan Torch voice -- inviting, enthusiastic, makes the reader want to play.
+**Constraints:** 1 paragraph (3-6 sentences). Player-facing only. Inviting, enthusiastic -- make the reader want to play.
 
 **Example:**
 "Somewhere beneath the Bleached Expanse, the old aqueducts still hum. The people of Dusthollow say it's just the wind, but you've heard the singing -- a low, resonant hymn that makes your teeth ache and your compass spin. The Cartographers' Guild is paying handsomely for anyone willing to map what's down there. They neglected to mention that the last three teams never came back."
@@ -80,7 +80,7 @@ List 2-6 cultural reference points (films, books, games, TV shows, myths) that h
 
 ### Step 8: Overview
 
-Write 1-3 paragraphs that describe the campaign setting and situation. This is the player-facing briefing -- no GM secrets, no plot twists revealed. Apply Sullivan Torch voice -- expansive, vivid, makes the world feel lived-in.
+Write 1-3 paragraphs that describe the campaign setting and situation. This is the player-facing briefing -- no GM secrets, no plot twists revealed. Expansive, vivid -- make the world feel lived-in.
 
 **Constraints:** 1-3 paragraphs. Player-facing only. Establishes the world, the current situation, and why the PCs are involved.
 
@@ -137,7 +137,7 @@ Write 3 or more distinctions -- the unique features that make this campaign sett
 ]
 ```
 
-**Constraints:** Minimum 3 entries. Apply Sullivan Torch voice -- specific, vivid, occasionally playful. Each distinction should be mechanically or narratively actionable, not just flavor.
+**Constraints:** Minimum 3 entries. Specific, vivid, occasionally playful. Each distinction should be mechanically or narratively actionable, not just flavor.
 
 **Examples:**
 - `{ "name": "The Tide Remembers", "description": "Every spell cast near the coast echoes back 1d4 hours later as a distorted reflection. GMs can spend a Fear to trigger an echo at a dramatically inconvenient moment." }`
@@ -145,7 +145,7 @@ Write 3 or more distinctions -- the unique features that make this campaign sett
 
 ### Step 13: Inciting Incident
 
-Write the event or situation that pulls the PCs into the campaign. This is the moment the adventure begins -- the hook, the call to action. Apply Sullivan Torch voice.
+Write the event or situation that pulls the PCs into the campaign. This is the moment the adventure begins -- the hook, the call to action.
 
 **Constraints:** 1-2 paragraphs. Player-facing. Should create immediate tension and a clear first question the PCs need to answer.
 
@@ -179,6 +179,27 @@ Write 5-8 questions designed for Session Zero -- the pre-campaign conversation w
 - "Which faction has your character already had dealings with, and did it end well?"
 - "What is one thing your character refuses to do, no matter the stakes?"
 
+## Batch Generation
+
+Generate multiple campaign frames per invocation. Default batch size is **5**. The user may request fewer (e.g., "generate 2 frames").
+
+### Count
+
+Ask the user how many frames to generate during the initial conversation. If unspecified, default to 5.
+
+### Diversity Strategy
+
+Auto-diversify **complexity_rating** and thematic focus across the batch:
+
+- Spread complexity ratings across the batch (e.g., one each of ratings 1-4, plus one extra)
+- Vary tone_feel and themes to create distinct campaign identities -- no two frames should feel like reskins of each other
+- If the user specified a complexity rating or theme, keep that constant but vary other dimensions (touchstones, distinctions, inciting incidents)
+- Each frame should answer a different dramatic question
+
+### Per-Entry Creation
+
+Run the full 15-step creation order independently for each entry. Each frame gets its own title, concept, pitch, themes, overview, principles, distinctions, and all other fields. Ensure no duplicate titles within the batch or against existing DB entries.
+
 ## Structural Invariants
 
 These rules must hold for every generated campaign frame:
@@ -194,41 +215,6 @@ These rules must hold for every generated campaign frame:
 9. **Principles count:** 3-5 player principles, 3-5 GM principles
 10. **Distinctions minimum:** 3 or more entries, each with name and description
 11. **source_book value:** Always set to `'Generated'`
-
-## Sullivan Torch Integration
-
-Pull the Sullivan Torch narrative profile at runtime to inject voice into generated prose.
-
-### SQL Query
-
-```sql
-SELECT personality, character, signature
-FROM sage_profiles
-WHERE slug = 'sullivan-torch';
-```
-
-### Profile Structure
-
-- `personality` (jsonb): Humor, Pacing, Warmth, Guidance, Vitality, Authority, Curiosity, Formality, Elaboration, Adaptiveness, Tension Style -- each with label and score
-- `character` (jsonb): Description, Expertise, Voice Snippet, Meta-Instructions, Narrative Texture, Priorities & Values, Use Case
-- `signature` (jsonb): key_phrases, anti_patterns, verbal_texture, conceptual_anchors, conversational_moves, rhetorical_structure
-
-### Voice Application
-
-Apply Sullivan Torch voice to these fields:
-- **pitch**: Inviting, enthusiastic, makes the reader want to play -- the "back of the book" energy
-- **overview**: Expansive, vivid, sensory -- makes the world feel real and lived-in
-- **distinctions**: Specific, occasionally playful, mechanically grounded -- each one a reason to choose this campaign
-- **inciting_incident**: Atmospheric, tension-building, immediate -- drops the reader into the moment
-
-### Key Voice Principles (from Meta-Instructions)
-
-- Start from specific, vivid examples -- build toward principles
-- Use humor as a bridge to depth
-- Frame storytelling as an act of service
-- Never gatekeep; celebrate the questioner's instincts
-- Reference broadly (improv, mythology, psychology)
-- Enthusiastic and generous, never condescending
 
 ## Validation Checklist
 
@@ -246,27 +232,33 @@ Before presenting the frame for review, verify all 11 items:
 | 8 | Overview scope | 1-3 paragraphs, player-facing |
 | 9 | Principles count | 3-5 player principles AND 3-5 GM principles |
 | 10 | Distinctions minimum | 3+ entries with name and description |
-| 11 | Sullivan Torch voice | Applied to pitch, overview, distinctions, inciting_incident |
+| 11 | source_book | Set to `'Generated'` |
 
 ## Human Review Protocol
 
-After generation and validation, present the campaign frame for human review.
+After generation and validation, present all campaign frames for batch review.
 
 ### Present
 
-1. **Frame summary** as formatted JSON (title, concept, complexity_rating, pitch, tone_feel, themes, touchstones, overview, heritage_classes, player_principles, gm_principles, distinctions, inciting_incident, custom_mechanics, session_zero_questions)
-2. **Validation checklist** results (all 11 items, pass/fail)
-3. **Sullivan Torch voice notes** -- highlight which fields received voice treatment
+1. **Summary table** of all entries:
+
+| # | Title | Complexity | Themes (first 2) | Validation |
+|---|-------|-----------|-------------------|------------|
+| 1 | ... | 2 | faith, empire | Pass/Fail |
+
+2. **Full frame summary** for each entry as formatted JSON (title, concept, complexity_rating, pitch, tone_feel, themes, touchstones, overview, heritage_classes, player_principles, gm_principles, distinctions, inciting_incident, custom_mechanics, session_zero_questions)
+3. **Validation checklist** results per entry (all 11 items, pass/fail)
 
 ### Options
 
-- **Approve** -- proceed to insert workflow
-- **Request revision** -- specify which fields to revise; re-run validation after changes
-- **Reject** -- discard and optionally restart with different parameters
+- **Approve All** -- insert all entries
+- **Approve Selected** -- specify entry numbers to insert (e.g., "approve 1, 3, 5")
+- **Revise** -- specify entry number and which fields to change; re-validate after
+- **Reject** -- specify entries to discard
 
 ## Insert Workflow
 
-After human approval, insert the campaign frame into the database.
+After human approval, insert each approved campaign frame into the database. Repeat steps 1-4 for each approved entry.
 
 ### Step 1: Check Name Uniqueness
 
@@ -327,6 +319,14 @@ INSERT INTO daggerheart_custom_frames (
   '[embedding vector]'::vector          -- embedding
 );
 ```
+
+### Step 5: Report Results
+
+After all approved entries are inserted, present a summary:
+
+| # | Title | Status |
+|---|-------|--------|
+| 1 | ... | Inserted / Skipped / Failed |
 
 ## Exemplar Query
 

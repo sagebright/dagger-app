@@ -1,6 +1,6 @@
 ---
 name: generate-adversaries
-description: Generate Daggerheart adversaries using Homebrew Kit creation order (pp 15-17), Improvised Statistics, asymmetric design principles, Sullivan Torch narrative voice, and structural validation. Auto-activates when user mentions creating, generating, or designing adversaries, enemies, or monsters.
+description: Generate Daggerheart adversaries using Homebrew Kit creation order (pp 15-17), Improvised Statistics, asymmetric design principles, and structural validation. Auto-activates when user mentions creating, generating, or designing adversaries, enemies, or monsters.
 activation:
   - user mentions creating or generating adversaries
   - user mentions designing an adversary or enemy stat block
@@ -12,7 +12,7 @@ activation:
 
 # Generate Daggerheart Adversaries
 
-Create mechanically sound, narratively rich adversaries for the `daggerheart_adversaries` table. Follows the Daggerheart Homebrew Kit v1.0 creation order (pp 15-17) with Sullivan Torch narrative voice. This is the most mechanically complex content type in Daggerheart -- adversaries have full stat blocks with HP, stress, thresholds, attack modifiers, damage dice, features, and experiences.
+Create mechanically sound, narratively rich adversaries for the `daggerheart_adversaries` table. Follows the Daggerheart Homebrew Kit v1.0 creation order (pp 15-17) with structural validation. This is the most mechanically complex content type in Daggerheart -- adversaries have full stat blocks with HP, stress, thresholds, attack modifiers, damage dice, features, and experiences.
 
 ## Creation Order
 
@@ -141,7 +141,7 @@ Set the adversary's attack profile.
 
 ### Step 8: Motives and Tactics
 
-Write 2-3 motives/tactics as a text array. These describe what drives the adversary in combat and how it behaves tactically. Use active verbs with narrative flair. Apply Sullivan Torch voice.
+Write 2-3 motives/tactics as a text array. These describe what drives the adversary in combat and how it behaves tactically. Use active verbs with narrative flair.
 
 **Pattern:** Each motive/tactic should answer "What does this creature want?" or "How does it fight?"
 
@@ -221,7 +221,7 @@ Generate features as a JSONB array. Each feature object:
 
 ### Step 11: Description
 
-Write a 2-4 sentence description. This is the adversary's "read-aloud" text -- what the GM narrates when the party first encounters the creature. Apply Sullivan Torch voice: make the adversary feel alive and dangerous, not like a stat block with flavor text.
+Write a 2-4 sentence description. This is the adversary's "read-aloud" text -- what the GM narrates when the party first encounters the creature. Make the adversary feel alive and dangerous, not like a stat block with flavor text.
 
 ## Improvised Statistics by Tier
 
@@ -289,6 +289,27 @@ Adversaries do not have:
 - Armor scores (they have HP and thresholds)
 - Spell slots or domain cards
 
+## Batch Generation
+
+Generate multiple adversaries per invocation. Default batch size is **5**. The user may request fewer (e.g., "generate 2 adversaries").
+
+### Count
+
+Ask the user how many adversaries to generate during the initial conversation. If unspecified, default to 5.
+
+### Diversity Strategy
+
+Auto-diversify **type** within the batch while keeping the user's chosen **tier** constant. Spread across adversary types to create a varied encounter roster:
+
+- If generating 5: aim for 5 distinct types (e.g., Standard, Bruiser, Skulk, Minion, Ranged)
+- If generating 3: aim for 3 distinct types
+- If the user specified a type, generate all entries of that type but vary weapon, features, and tactical identity
+- Query the Coverage Check (below) to prioritize types with fewer existing entries at the chosen tier
+
+### Per-Entry Creation
+
+Run the full 11-step creation order independently for each entry. Each adversary gets its own name, type, stats, features, experiences, and description. Ensure no duplicate names within the batch or against existing DB entries.
+
 ## Structural Invariants
 
 These 13 rules must hold for every generated adversary:
@@ -329,47 +350,19 @@ Before presenting the adversary for review, verify all 13 items:
 | 12 | No fear loops | Fear-costing features do not generate Fear |
 | 13 | Name + source_book | Name unique in DB; source_book = `'Generated'` |
 
-## Sullivan Torch Integration
-
-Pull the Sullivan Torch narrative profile at runtime to inject voice into generated prose.
-
-### SQL Query
-
-```sql
-SELECT personality, character, signature
-FROM sage_profiles
-WHERE slug = 'sullivan-torch';
-```
-
-### Profile Structure
-
-- `personality` (jsonb): Humor, Pacing, Warmth, Guidance, Vitality, Authority, Curiosity, Formality, Elaboration, Adaptiveness, Tension Style -- each with label and score
-- `character` (jsonb): Description, Expertise, Voice Snippet, Meta-Instructions, Narrative Texture, Priorities & Values, Use Case
-- `signature` (jsonb): key_phrases, anti_patterns, verbal_texture, conceptual_anchors, conversational_moves, rhetorical_structure
-
-### Voice Application
-
-Apply Sullivan Torch voice to these fields:
-
-- **description**: Make the adversary feel alive and dangerous -- sensory, cinematic, the kind of description that makes players lean forward ("The thing that drags itself from the collapsed mine shaft has too many joints in its arms, and the sound it makes is less a growl than a wet, deliberate clicking, like a lock being picked from the inside")
-- **motives_tactics**: Active verbs with narrative flair -- not clinical tactical notes, but evocative combat behavior that tells the GM how this creature fights with personality ("Stalks the weakest party member with unsettling patience, waiting for the moment their allies are distracted before striking from below")
-
-### Key Voice Principles (from Meta-Instructions)
-
-- Start from specific, vivid examples -- build toward principles
-- Use humor as a bridge to depth
-- Frame storytelling as an act of service
-- Never gatekeep; celebrate the questioner's instincts
-- Reference broadly (improv, mythology, psychology)
-- Enthusiastic and generous, never condescending
-
 ## Human Review Protocol
 
-After generation and validation, present the adversary for human review.
+After generation and validation, present all adversaries for batch review.
 
 ### Present
 
-1. **Stat block** as formatted display:
+1. **Summary table** of all entries:
+
+| # | Name | Type | Tier | Difficulty | HP | Validation |
+|---|------|------|------|-----------|-----|------------|
+| 1 | ... | ... | ... | ... | ... | Pass/Fail |
+
+2. **Full stat block** for each entry:
    - Name, tier, type, difficulty
    - HP, stress, thresholds
    - ATK, weapon, range, damage
@@ -377,17 +370,18 @@ After generation and validation, present the adversary for human review.
    - Experiences (formatted as "Skill: +N")
    - Features (ordered: Passive, Action, Reaction -- each with name, desc, type)
    - Description
-2. **Validation checklist** results (all 13 items, pass/fail)
+3. **Validation checklist** results per entry (all 13 items, pass/fail)
 
 ### Options
 
-- **Approve** -- proceed to insert workflow
-- **Request revision** -- specify which fields to revise; re-run validation after changes
-- **Reject** -- discard and optionally restart with different parameters
+- **Approve All** -- insert all entries
+- **Approve Selected** -- specify entry numbers to insert (e.g., "approve 1, 3, 5")
+- **Revise** -- specify entry number and which fields to change; re-validate after
+- **Reject** -- specify entries to discard
 
 ## Insert Workflow
 
-After human approval, insert the adversary into the database.
+After human approval, insert each approved adversary into the database. Repeat steps 1-3 for each approved entry.
 
 ### Step 1: Compute searchable_text
 
@@ -440,6 +434,14 @@ INSERT INTO daggerheart_adversaries (
   'Generated'                             -- source_book
 );
 ```
+
+### Step 4: Report Results
+
+After all approved entries are inserted, present a summary:
+
+| # | Name | Status |
+|---|------|--------|
+| 1 | ... | Inserted / Skipped / Failed |
 
 ## Name Uniqueness Check
 

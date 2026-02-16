@@ -1,6 +1,6 @@
 ---
 name: generate-npcs
-description: Generate Daggerheart narrative NPCs using Homebrew Kit creation order, Sullivan Torch narrative voice, and structural validation. Auto-activates when user mentions creating, generating, or designing NPCs or characters.
+description: Generate Daggerheart narrative NPCs using Homebrew Kit creation order and structural validation. Auto-activates when user mentions creating, generating, or designing NPCs or characters.
 activation:
   - user mentions creating or generating NPCs
   - user mentions designing a character or NPC
@@ -11,7 +11,7 @@ activation:
 
 # Generate Daggerheart NPCs
 
-Create narratively rich, story-driven NPCs for the `daggerheart_npcs` table. These are **reference NPCs** -- allies, quest-givers, bystanders, and narrative characters with optional lightweight mechanical features. Follows the Daggerheart Homebrew Kit creation philosophy with Sullivan Torch narrative voice.
+Create narratively rich, story-driven NPCs for the `daggerheart_npcs` table. These are **reference NPCs** -- allies, quest-givers, bystanders, and narrative characters with optional lightweight mechanical features. Follows the Daggerheart Homebrew Kit creation philosophy with structural validation.
 
 ## Reference NPCs vs Adventure NPCs
 
@@ -62,11 +62,11 @@ Write a 1-2 sentence description capturing who this person is and what makes the
 
 ### Step 4: Appearance
 
-Write 2-3 sentences describing physical appearance. Focus on details a GM can convey at the table: silhouette, distinguishing marks, clothing, posture, and sensory details (how they sound, smell, or move). Apply Sullivan Torch voice -- painterly, evocative, specific.
+Write 2-3 sentences describing physical appearance. Focus on details a GM can convey at the table: silhouette, distinguishing marks, clothing, posture, and sensory details (how they sound, smell, or move). Painterly, evocative, specific.
 
 ### Step 5: Personality
 
-Write 2-3 sentences describing how this character behaves and interacts. Focus on playable traits -- things a GM can perform at the table: speech patterns, emotional defaults, social habits, nervous tics. Apply Sullivan Torch voice -- make the personality something a GM can inhabit, not just describe.
+Write 2-3 sentences describing how this character behaves and interacts. Focus on playable traits -- things a GM can perform at the table: speech patterns, emotional defaults, social habits, nervous tics. Make the personality something a GM can inhabit, not just describe.
 
 ### Step 6: Motivations
 
@@ -78,7 +78,7 @@ Write 2-4 connections as a text array. Each connection links the NPC to other ch
 
 ### Step 8: Notable Traits
 
-Write 2-4 notable traits as a text array. These are distinctive quirks, habits, possessions, or abilities that make the NPC memorable and spark GM creativity. Apply Sullivan Torch voice -- each trait should be a gift to the GM, something they can riff on.
+Write 2-4 notable traits as a text array. These are distinctive quirks, habits, possessions, or abilities that make the NPC memorable and spark GM creativity. Each trait should be a gift to the GM, something they can riff on.
 
 ### Step 9: Features (Optional)
 
@@ -111,6 +111,27 @@ If features are warranted, generate 1-2 features (maximum 2) using this pattern:
 - The NPC's interesting qualities are already captured in personality/traits
 - Adding mechanics would make the NPC feel like an adversary stat block
 
+## Batch Generation
+
+Generate multiple NPCs per invocation. Default batch size is **5**. The user may request fewer (e.g., "generate 2 NPCs").
+
+### Count
+
+Ask the user how many NPCs to generate during the initial conversation. If unspecified, default to 5.
+
+### Diversity Strategy
+
+Auto-diversify **role** within the batch while keeping the user's chosen **tier** constant. Spread across roles to create a varied cast:
+
+- If generating 5: aim for all 5 roles (ally, neutral, quest-giver, antagonist, bystander)
+- If generating fewer: prioritize the most narratively useful roles (quest-giver, ally, antagonist)
+- If the user specified a role, generate all entries with that role but vary personality, motivations, and connections
+- Ensure each NPC has a distinct narrative identity -- no two NPCs in a batch should feel interchangeable
+
+### Per-Entry Creation
+
+Run the full 9-step creation order independently for each entry. Each NPC gets its own name, description, appearance, personality, motivations, connections, traits, and features. Ensure no duplicate names within the batch or against existing DB entries.
+
 ## Structural Invariants
 
 These rules must hold for every generated NPC:
@@ -126,41 +147,6 @@ These rules must hold for every generated NPC:
 9. **Notable traits count:** 2-4 items
 10. **Features limit:** 0-2 features; each feature must have name, trigger, and effect fields; choice is optional
 11. **Source book:** Must be set to `'Generated'`
-
-## Sullivan Torch Integration
-
-Pull the Sullivan Torch narrative profile at runtime to inject voice into generated prose.
-
-### SQL Query
-
-```sql
-SELECT personality, character, signature
-FROM sage_profiles
-WHERE slug = 'sullivan-torch';
-```
-
-### Profile Structure
-
-- `personality` (jsonb): Humor, Pacing, Warmth, Guidance, Vitality, Authority, Curiosity, Formality, Elaboration, Adaptiveness, Tension Style -- each with label and score
-- `character` (jsonb): Description, Expertise, Voice Snippet, Meta-Instructions, Narrative Texture, Priorities & Values, Use Case
-- `signature` (jsonb): key_phrases, anti_patterns, verbal_texture, conceptual_anchors, conversational_moves, rhetorical_structure
-
-### Voice Application
-
-Apply Sullivan Torch voice to these fields:
-
-- **appearance**: Painterly and sensory -- describe NPCs the way a novelist would, with details that make a GM want to perform the character ("Her hands are stained indigo from years of dyeing cloth, and she smells faintly of juniper")
-- **personality**: Playable and performable -- give the GM something they can inhabit at the table ("She speaks in half-finished sentences, trailing off when she remembers something painful, then snapping back with fierce warmth")
-- **notable_traits**: Spark creativity -- each trait should be a gift to the GM, something that generates scenes and moments ("Carries a leather satchel full of letters she's written to people who died before she could send them")
-
-### Key Voice Principles (from Meta-Instructions)
-
-- Start from specific, vivid examples -- build toward principles
-- Use humor as a bridge to depth
-- Frame storytelling as an act of service
-- Never gatekeep; celebrate the questioner's instincts
-- Reference broadly (improv, mythology, psychology)
-- Enthusiastic and generous, never condescending
 
 ## Validation Checklist
 
@@ -182,11 +168,17 @@ Before presenting the NPC for review, verify all 11 items:
 
 ## Human Review Protocol
 
-After generation and validation, present the NPC for human review.
+After generation and validation, present all NPCs for batch review.
 
 ### Present
 
-1. **Stat block** as formatted display:
+1. **Summary table** of all entries:
+
+| # | Name | Role | Tier | Features | Validation |
+|---|------|------|------|----------|------------|
+| 1 | ... | ... | ... | 0-2 | Pass/Fail |
+
+2. **Full stat block** for each entry:
    - Name, tier, role
    - Description
    - Appearance
@@ -195,17 +187,18 @@ After generation and validation, present the NPC for human review.
    - Connections (bulleted list)
    - Notable Traits (bulleted list)
    - Features (if any -- formatted with name, trigger, effect, choice)
-2. **Validation checklist** results (all 11 items, pass/fail)
+3. **Validation checklist** results per entry (all 11 items, pass/fail)
 
 ### Options
 
-- **Approve** -- proceed to insert workflow
-- **Request revision** -- specify which fields to revise; re-run validation after changes
-- **Reject** -- discard and optionally restart with different parameters
+- **Approve All** -- insert all entries
+- **Approve Selected** -- specify entry numbers to insert (e.g., "approve 1, 3, 5")
+- **Revise** -- specify entry number and which fields to change; re-validate after
+- **Reject** -- specify entries to discard
 
 ## Insert Workflow
 
-After human approval, insert the NPC into the database.
+After human approval, insert each approved NPC into the database. Repeat steps 1-3 for each approved entry.
 
 ### Step 1: Compute searchable_text
 
@@ -255,6 +248,14 @@ INSERT INTO daggerheart_npcs (
 ```
 
 **Note:** If the NPC has no features, use `'{}'::jsonb[]` for the features column (empty array, matching the table default).
+
+### Step 4: Report Results
+
+After all approved entries are inserted, present a summary:
+
+| # | Name | Status |
+|---|------|--------|
+| 1 | ... | Inserted / Skipped / Failed |
 
 ## Exemplar Query
 

@@ -1,6 +1,6 @@
 ---
 name: generate-items
-description: Generate Daggerheart items, weapons, armor, and consumables using Homebrew Kit creation order, Improvised Statistics, Sullivan Torch narrative voice, and structural validation. Unified skill with 4 branching paths. Auto-activates when user mentions creating, generating, or designing equipment.
+description: Generate Daggerheart items, weapons, armor, and consumables using Homebrew Kit creation order, Improvised Statistics, and structural validation. Unified skill with 4 branching paths. Auto-activates when user mentions creating, generating, or designing equipment.
 activation:
   - user mentions creating or generating items
   - user mentions creating or generating weapons
@@ -13,7 +13,7 @@ activation:
 
 # Generate Daggerheart Items
 
-Create mechanically sound, narratively rich equipment for Daggerheart. A unified skill with 4 branching paths targeting `daggerheart_items`, `daggerheart_weapons`, `daggerheart_armor`, and `daggerheart_consumables`. Follows the Daggerheart Homebrew Kit v1.0 (pp 20-24) creation order with Sullivan Torch narrative voice.
+Create mechanically sound, narratively rich equipment for Daggerheart. A unified skill with 4 branching paths targeting `daggerheart_items`, `daggerheart_weapons`, `daggerheart_armor`, and `daggerheart_consumables`. Follows the Daggerheart Homebrew Kit v1.0 (pp 20-24) creation order with structural validation.
 
 ## Step 0: Item Type Selection
 
@@ -64,7 +64,7 @@ Classify the item into one category.
 
 #### A3: Description
 
-Write a 2-4 sentence description covering what the item is, what it does, and any narrative flavor. Apply Sullivan Torch voice.
+Write a 2-4 sentence description covering what the item is, what it does, and any narrative flavor.
 
 **Guidance:** Generic items lean narrative -- describe how the item feels, what it looks like, and how a character might use it at the table. Avoid mechanical jargon unless the item has a specific game effect.
 
@@ -85,7 +85,6 @@ Write a 2-4 sentence description covering what the item is, what it does, and an
 | 3 | Item type valid | One of: Tool, Trinket, Quest Item, Wondrous |
 | 4 | Description length | 2-4 sentences |
 | 5 | source_book | Set to `'Generated'` |
-| 6 | Sullivan Torch voice | Applied to description |
 
 ### Path A searchable_text
 
@@ -225,7 +224,7 @@ Add 0-2 weapon features. Features modify the weapon's behavior. Positive feature
 
 #### B8: Name
 
-Choose a concise, evocative weapon name. Apply Sullivan Torch voice.
+Choose a concise, evocative weapon name.
 
 **Constraints:** 1-5 words. Must be unique across existing `daggerheart_weapons` names.
 
@@ -260,7 +259,6 @@ Choose a concise, evocative weapon name. Apply Sullivan Torch voice.
 | 9 | Feature count | 0-2 features |
 | 10 | Feature balance | Damage adjusted correctly per positive/negative feature count |
 | 11 | source_book | Set to `'Generated'` |
-| 12 | Sullivan Torch voice | Applied to name and feature text |
 
 ### Path B searchable_text
 
@@ -353,7 +351,7 @@ Add 0-1 armor features. Armor features are simpler than weapon features.
 
 #### C4: Name
 
-Choose a concise, evocative armor name. Apply Sullivan Torch voice.
+Choose a concise, evocative armor name.
 
 **Constraints:** 1-5 words. Must be unique across existing `daggerheart_armor` names.
 
@@ -361,7 +359,7 @@ Choose a concise, evocative armor name. Apply Sullivan Torch voice.
 
 #### C5: Description (Narrative Only)
 
-Write a 1-2 sentence narrative description for Sullivan Torch flavor. This is not stored in the table but presented during human review for voice verification.
+Write a 1-2 sentence narrative description. This is not stored in the table but presented during human review.
 
 ### Path C Structural Invariants
 
@@ -388,7 +386,6 @@ Write a 1-2 sentence narrative description for Sullivan Torch flavor. This is no
 | 7 | Feature count | 0-1 features |
 | 8 | High profile constraint | High profile requires negative feature |
 | 9 | source_book | Set to `'Generated'` |
-| 10 | Sullivan Torch voice | Applied to name and feature text |
 
 ### Path C searchable_text
 
@@ -447,7 +444,7 @@ Set the number of uses before the consumable is expended.
 
 #### D3: Description
 
-Write a 2-4 sentence description covering the consumable's effect, usage conditions, and flavor. Apply Sullivan Torch voice.
+Write a 2-4 sentence description covering the consumable's effect, usage conditions, and flavor.
 
 **Guidance:** Consumable descriptions should make the item feel precious and worth using. Describe the sensory experience of activation (drinking the potion, breaking the seal, throwing the bomb) as well as the mechanical effect.
 
@@ -468,7 +465,6 @@ Write a 2-4 sentence description covering the consumable's effect, usage conditi
 | 3 | Uses range | Integer 1-5 |
 | 4 | Description length | 2-4 sentences |
 | 5 | source_book | Set to `'Generated'` |
-| 6 | Sullivan Torch voice | Applied to description |
 
 ### Path D searchable_text
 
@@ -494,82 +490,61 @@ INSERT INTO daggerheart_consumables (
 
 ---
 
-## Sullivan Torch Integration
+## Batch Generation
 
-Pull the Sullivan Torch narrative profile at runtime to inject voice into generated prose.
+Generate multiple items per invocation. Default batch size is **5**. The user may request fewer (e.g., "generate 2 weapons").
 
-### SQL Query
+### Count
 
-```sql
-SELECT personality, character, signature
-FROM sage_profiles
-WHERE slug = 'sullivan-torch';
-```
+Ask the user how many items to generate during the initial conversation. If unspecified, default to 5.
 
-### Profile Structure
+### Diversity Strategy
 
-- `personality` (jsonb): Humor, Pacing, Warmth, Guidance, Vitality, Authority, Curiosity, Formality, Elaboration, Adaptiveness, Tension Style -- each with label and score
-- `character` (jsonb): Description, Expertise, Voice Snippet, Meta-Instructions, Narrative Texture, Priorities & Values, Use Case
-- `signature` (jsonb): key_phrases, anti_patterns, verbal_texture, conceptual_anchors, conversational_moves, rhetorical_structure
+Auto-diversify based on the selected path:
 
-### Voice Application by Path
+- **If path unspecified:** Spread across paths (e.g., 2 weapons, 1 armor, 1 consumable, 1 item)
+- **Path A (Items):** Vary item_type (Tool, Trinket, Quest Item, Wondrous)
+- **Path B (Weapons):** Vary weapon_category and trait combinations (e.g., Finesse Blade, Mighty Bludgeon, Arcane Staff, Swift Bow, Mighty Polearm)
+- **Path C (Armor):** Vary profile (Low, Mid, High) and feature selection
+- **Path D (Consumables):** Vary uses count and effect type (healing, offensive, utility, defensive, exploration)
+- If the user specified exact parameters, vary names and descriptions while staying within those parameters
 
-| Path | Fields | Voice Style |
-|------|--------|-------------|
-| A (Items) | description | Sensory and evocative -- makes the item feel real, tangible, worth picking up |
-| B (Weapons) | name, feature text | Visceral and specific -- the name should evoke the weapon's identity; features read like a smith's notes |
-| C (Armor) | name, feature text | Grounded and tactile -- the name suggests material and craft; features feel like wearing the armor |
-| D (Consumables) | description | Precious and sensory -- describe the moment of use; make the player reluctant to waste it |
+### Per-Entry Creation
 
-### Key Voice Principles (from Meta-Instructions)
-
-- Start from specific, vivid examples -- build toward principles
-- Use humor as a bridge to depth
-- Frame storytelling as an act of service
-- Never gatekeep; celebrate the questioner's instincts
-- Reference broadly (improv, mythology, psychology)
-- Enthusiastic and generous, never condescending
-
----
+Run the full path-specific creation order independently for each entry. Each item gets its own name, stats, features, and description. Ensure no duplicate names within the batch or against existing DB entries in the relevant table.
 
 ## Human Review Protocol
 
-After generation and validation, present the item for human review. The presentation format varies by path.
+After generation and validation, present all items for batch review. The presentation format varies by path.
 
-### Path A (Items) -- Present
+### Present
 
-1. **Stat block** as formatted text: name, item_type, description
-2. **Validation checklist** results (all 6 items, pass/fail)
+1. **Summary table** of all entries:
 
-### Path B (Weapons) -- Present
+| # | Name | Path | Key Stat | Validation |
+|---|------|------|----------|------------|
+| 1 | ... | Weapon | d8+2, Finesse, Melee | Pass/Fail |
+| 2 | ... | Armor | Mid profile, T2 | Pass/Fail |
 
-1. **Stat block** as formatted text: name, weapon_category, tier, trait, range, damage, burden, feature
-2. **Damage derivation** showing: base damage from scaling table, feature adjustments, final damage
-3. **Validation checklist** results (all 12 items, pass/fail)
-
-### Path C (Armor) -- Present
-
-1. **Stat block** as formatted text: name, tier, base_thresholds, base_score, feature
-2. **Profile selection** showing: which profile (Low/Mid/High) was chosen and why
-3. **Validation checklist** results (all 10 items, pass/fail)
-
-### Path D (Consumables) -- Present
-
-1. **Stat block** as formatted text: name, uses, description
-2. **Hoarding rule reminder** for GM reference
-3. **Validation checklist** results (all 6 items, pass/fail)
+2. **Full stat block** for each entry (format varies by path):
+   - **Path A:** name, item_type, description
+   - **Path B:** name, weapon_category, tier, trait, range, damage, burden, feature + damage derivation
+   - **Path C:** name, tier, base_thresholds, base_score, feature + profile selection
+   - **Path D:** name, uses, description + hoarding rule reminder
+3. **Validation checklist** results per entry
 
 ### Review Options (All Paths)
 
-- **Approve** -- proceed to insert workflow
-- **Request revision** -- specify which fields to revise; re-run validation after changes
-- **Reject** -- discard and optionally restart with different parameters
+- **Approve All** -- insert all entries
+- **Approve Selected** -- specify entry numbers to insert (e.g., "approve 1, 3, 5")
+- **Revise** -- specify entry number and which fields to change; re-validate after
+- **Reject** -- specify entries to discard
 
 ---
 
 ## Insert Workflow
 
-After human approval, insert the equipment into the database. The workflow is the same across all paths with path-specific SQL.
+After human approval, insert each approved item into the database. Repeat steps 1-3 for each approved entry. The workflow is the same across all paths with path-specific SQL.
 
 ### Step 1: Compute searchable_text
 
@@ -591,6 +566,14 @@ Call the `embed` Edge Function to generate the embedding vector:
 Use `execute_sql` (not `apply_migration` -- this is content data, not schema). Use the path-specific INSERT SQL from the relevant path section above.
 
 **Critical:** Always set `source_book = 'Generated'` for all paths.
+
+### Step 4: Report Results
+
+After all approved entries are inserted, present a summary:
+
+| # | Name | Path | Status |
+|---|------|------|--------|
+| 1 | ... | Weapon | Inserted / Skipped / Failed |
 
 ---
 
