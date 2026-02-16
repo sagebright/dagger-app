@@ -1,6 +1,6 @@
-# The Ten Stages of Spellweaving
+# The Seven Stages of Spellweaving
 
-Each adventure in the Book of Many Paths is woven through a 10-stage ritual. Human and AI are co-casters — the Sage guides, the user decides.
+Each adventure in the Book of Many Paths is woven through a 7-stage ritual. Human and AI are co-casters — the Sage guides, the user decides.
 
 ## Mockup Status
 
@@ -12,12 +12,22 @@ States: **DONE** (reviewed and iterated), **ITERATION** (mockup exists, under re
 | 2 | Attunement | DONE | `documentation/mockups/attunement-immersive.html` — unified card/button styling with Binding: confirmed rows use gold-dim background + gold border, fixed footer buttons, contextual "Select [Component]" confirm action |
 | 3 | Binding | DONE | `documentation/mockups/binding-immersive.html` — unified button styling, fixed footer placement, gallery cards show inciting incident (not pitch) for upfront decision-making info |
 | 4 | Weaving | MOCKUP | `documentation/mockups/weaving-immersive.html` |
-| 5 | Inscription | MOCKUP | `documentation/mockups/inscription-immersive.html` |
-| 6 | Conjuring | MOCKUP | `documentation/mockups/conjuring-immersive.html` |
-| 7 | Summoning | MOCKUP | `documentation/mockups/summoning-immersive.html` |
-| 8 | Enchanting | MOCKUP | `documentation/mockups/enchanting-immersive.html` |
-| 9 | Scrying | MOCKUP | `documentation/mockups/scrying-immersive.html` |
-| 10 | Sealing | MOCKUP | `documentation/mockups/sealing-immersive.html` |
+| 5 | Inscription | ITERATION | `documentation/mockups/inscription-immersive.html` — full rebuild: three-wave section model, gallery↔detail pattern, NPC/adversary/item entity cards, read-aloud blocks, 7-stage dropdown, three scene tab states |
+| 6 | Scrying | MOCKUP | `documentation/mockups/scrying-immersive.html` |
+| 7 | Sealing | MOCKUP | `documentation/mockups/sealing-immersive.html` |
+
+### Absorbed Stages
+
+Stages 6–8 of the original 10-stage design (Conjuring, Summoning, Enchanting) were absorbed into Inscription. Their panel content now appears as entity sections within each scene:
+
+- **Conjuring** → NPCs Present section (compact cards + NPC detail drill-in)
+- **Summoning** → Adversaries section (compact cards + adversary stat block drill-in)
+- **Enchanting** → Items section (Enchanting-style item cards with type labels)
+
+The original mockup files remain as reference for the card/styling patterns reused in Inscription:
+- `documentation/mockups/conjuring-immersive.html` — NPC card pattern reference
+- `documentation/mockups/summoning-immersive.html` — adversary card + type badge reference
+- `documentation/mockups/enchanting-immersive.html` — item card styling reference
 
 ## Documentation Guide
 
@@ -258,19 +268,197 @@ Sage drafts initial outline based on frame + components. User adjusts scene conc
 
 > *What unfolds in each scene?*
 
-Inscribing each scene into the Book — draft-feedback-revise cycle per scene, expanding briefs into full scene content.
+The most content-dense stage — inscribing each scene into the Book through a draft-feedback-revise cycle with the Sage. Inscription absorbs the work formerly done in Conjuring (NPCs), Summoning (adversaries), and Enchanting (items), managing all scene content through 8 sections organized in three progressive waves.
 
 ### Right Panel
 
-Scene selector tabs (Scene 1–Scene N, no "All" option) at top with status: complete (gold fill), active (gold fill), pending (muted). Below, the active scene's content as collapsible sections: Overview, Setup, Developments, NPCs Present, Adversaries, Items & Discoveries, Transitions, GM Notes. Each section has a chevron, name, and status dot (drafted/empty). "Write Scene to File" button below panel content.
+#### Scene Tabs
+
+Horizontal numbered tabs (Scene 1, Scene 2, ...) provide spatial orientation across the full arc. Sequential flow — users progress through scenes in order. Once a scene is confirmed, the user moves to the next scene and cannot return.
+
+Three tab states:
+
+| State | Visual | Meaning |
+|-------|--------|---------|
+| **Active** | Gold fill background, dark text (`--accent-gold` bg, `--bg-primary` text, `font-weight: 600`) | Currently being inscribed — this is where the action is |
+| **Confirmed** | Gold-dim wash background, secondary text (`--accent-gold-dim` bg, `--text-secondary` text) | Sealed, resting — done, not interactive |
+| **Inactive** | Surface background, secondary text (`--bg-surface` bg, `--text-secondary` text) | Not yet reachable — upcoming scenes |
+
+Visual hierarchy: Active (highest weight) > Confirmed (medium, warm) > Inactive (lowest, neutral).
+
+#### Section Accordion (default view)
+
+The panel shows a collapsible accordion with all 8 sections per scene. Each section header contains:
+- **Chevron** (expand/collapse toggle)
+- **Section name** (clickable on narrative sections — opens detail card)
+- **Speaking icon** (on Setup, Developments, Transitions — indicates read-aloud content behind click-through)
+
+No status dots — the flow is conversational, not checkbox-driven.
+
+When collapsed, sections show a **metadata preview line** (italic, muted) for orientation without expansion — e.g., "Location: Wickling Hollow — Mood: Tense, wary" or "Elder Thornveil, Corporal Dace, Wickling sentries".
+
+#### Sections Per Scene
+
+| # | Section | View Pattern | Detail Card? | Read-Aloud? | Wave |
+|---|---------|-------------|-------------|-------------|------|
+| 1 | Overview | Accordion-only | No | No | 1 |
+| 2 | Setup | Accordion + Detail card | Yes | Yes | 1 |
+| 3 | Developments | Accordion + Detail card | Yes | Yes | 1 |
+| 4 | NPCs Present | Accordion → Entity list → Drill-in | Yes (per NPC) | No | 2 |
+| 5 | Adversaries | Accordion → Entity list → Drill-in | Yes (per adversary) | No | 2 |
+| 6 | Items | Accordion → Item cards | No | No | 2 |
+| 7 | Transitions | Accordion + Detail card | Yes | Yes | 3 |
+| 8 | GM Notes | Accordion-only | No | No | 3 |
+
+#### Section Interaction Patterns
+
+Three distinct patterns depending on section type:
+
+**Narrative sections (Setup, Developments, Transitions):**
+- Accordion collapsed: metadata preview line
+- Accordion expanded: descriptive text (no read-aloud)
+- Click section name → **Detail card**: Full text + read-aloud blocks (cross-fades in, replacing accordion)
+
+**Accordion-only sections (Overview, GM Notes):**
+- Accordion collapsed: metadata preview line
+- Accordion expanded: full content inline (short enough to not need a detail card)
+- No click-through
+
+**Entity sections (NPCs Present, Adversaries):**
+- Accordion collapsed: metadata preview ("Elder Thornveil, Corporal Dace, Wickling sentries")
+- Accordion expanded: Compact entity cards (Conjuring NPC card pattern: initials avatar, name, role tag pill)
+- Click a specific entity → **Entity detail card**: Full treatment for that one entity. "Back to Scene" returns to accordion.
+
+**Items:**
+- Accordion collapsed: metadata preview
+- Accordion expanded: Enchanting-style item cards with type labels (weapon/armor/item/consumable). No click-through.
+
+#### Section Detail Card (narrative sections)
+
+Cross-fades in when section name is clicked, replacing the accordion. Shows:
+- "Back to Scene" link at top (matches Binding's "Back to Frames")
+- Section name as header + scene subtitle
+- Full content with proper typography
+- **Read-aloud text blocks** with distinct styling:
+  - Left gold border accent (3px `--accent-gold`)
+  - `--accent-gold-dim` background wash
+  - Serif italic font (`--font-serif`, `font-style: italic`)
+  - Small "READ ALOUD" label above the block (muted, 11px, uppercase)
+
+Read-aloud text appears **only in detail cards** — never in the accordion preview.
+
+#### Speaking Icon (Read-Aloud Indicator)
+
+Sections that contain read-aloud text show a small speaking/voice icon (sound wave SVG) next to the section name in the accordion. Signals "click through for read-aloud content" without cluttering the preview. Styled in `--text-muted`, turning gold on hover.
+
+Applies to: Setup, Developments, Transitions.
+
+#### NPC Detail Card
+
+Full NPC treatment (LLM-generated — no database table yet, see GH issue below):
+
+| Field | Description |
+|-------|-------------|
+| Name | NPC name with initials avatar (gold border in detail view) |
+| Role | Leader, Antagonist, Oracle, Scout, Minor, etc. (role tag pill) |
+| Description | Physical appearance, distinguishing features |
+| Backstory | Background, history, how they connect to events |
+| Voice & Mannerisms | Speech patterns, verbal tics, physical habits |
+| Motivation | What drives them, what they want |
+| Secret | Hidden knowledge, betrayal potential, leverage |
+
+#### Adversary Detail Card
+
+Full adversary stat block (from `daggerheart_adversaries` table):
+
+| Field | Description |
+|-------|-------------|
+| Name | Adversary name |
+| Type badge | Bruiser / Minion / Leader / Solo (color-coded pills) |
+| Difficulty + Tier | Numeric difficulty and tier level |
+| Description | Physical description, behavior |
+| Stat block | HP, Stress, ATK, Weapon, Range, DMG (grid layout) |
+| Motives & Tactics | Combat behavior and strategic approach |
+| Features | Special abilities (list with name + description) |
+| Thresholds | Minor / Major / Severe damage thresholds |
+
+Type badge colors: Bruiser `#e07c5a`, Minion `#8b9dc3`, Leader `#c98bdb`, Solo `#db6b6b`.
+
+#### Navigation Depth
+
+| Level | What | Example |
+|-------|------|---------|
+| 1 | Scene tabs | Scene 1, Scene 2, ... |
+| 2 | Section accordion | Overview, Setup, NPCs Present, ... |
+| 3a | Narrative detail card | Setup with full text + read-aloud |
+| 3b | Entity list (expanded accordion) | NPC name + role cards |
+| 4 | Entity detail card | Single NPC full treatment |
+
+Cross-fade transitions between levels, matching Binding's gallery↔detail pattern.
+
+#### Wave 3 Inactive State
+
+Transitions and GM Notes are dimmed when Waves 1-2 are incomplete:
+- Opacity ~0.4 on entire header row
+- No chevron rotation, chevron also dimmed
+- `cursor: default` (no pointer), no hover state
+- Metadata line: "Populates when sections above are complete" (muted italic)
+- When Wave 3 activates: fade from 0.4 → 1.0 opacity, chevron becomes interactive
+
+#### Fixed Footer
+
+Footer button fixed at bottom of panel (never scrolls away):
+- Per-scene: **"Confirm Scene"** — seals the current scene and advances to the next
+- Once all scenes are confirmed: **"Continue to Scrying"**
+- The "Confirm Scene" button is disabled until the Sage signals readiness
 
 ### Chat Flow
 
-Per-scene draft-feedback-revise cycle. Sage presents a scene draft, user requests expansions or changes to specific sections. Sage revises. Scene is written to file when all sections are reviewed.
+Per-scene draft-feedback-revise cycle. Sage presents a scene draft, user requests expansions or changes to specific sections. Sage revises. The conversation drives section content — no checkbox progression.
+
+The Sage determines when a scene is ready and signals it conversationally ("I think Scene 2 is complete — shall we confirm?"). The "Confirm Scene" footer button is disabled until the Sage triggers readiness. User clicks to seal. Both LLM and user are involved in the confirmation decision.
 
 ### Workflows
 
-(To be documented)
+#### Three-Wave Section Model
+
+**Wave 1: Primary Narrative (available immediately)**
+- Sections: Overview, Setup, Developments
+- User starts here, works through conversation with the Sage
+- These group together and are processed roughly in order
+
+**Wave 2: Entities (populate organically)**
+- Sections: NPCs Present, Adversaries, Items
+- Not a clean transition — these fill in as Wave 1 solidifies
+- User doesn't have to interact with these directly if they trust the Sage's work
+- But they *can* drill in to review and request changes
+
+**Wave 3: Synthesis (generated on completion of Waves 1-2)**
+- Sections: Transitions, GM Notes
+- Hard break — only populate when the first 6 sections are settled
+- If Wave 1/2 changes after Wave 3 is generated, Wave 3 resets to inactive
+
+#### Status Model
+
+- No status dots — the flow is conversational. The LLM determines when content is ready, not checkboxes.
+- No within-scene locking — sections remain fluid until the entire scene is confirmed.
+- Scene-level confirmation only — the confirm action seals all 8 sections at once and advances to the next scene.
+
+#### Shared Patterns
+
+- Section accordion expand/collapse: chevron click toggles
+- Detail card navigation: "Back to Scene" link (matches Binding's "Back to Frames")
+- Cross-fade transitions between accordion and detail card views
+- Fixed footer button pattern (matches Binding/Attunement)
+- Entity card styling reused from Conjuring (NPC), Summoning (adversary), Enchanting (items)
+- Read-aloud blocks are a new shared component — spec in reimagine-ui.md
+
+#### Future Dev: `daggerheart_npcs` Table
+
+NPCs are currently LLM-generated with no database backing. A GitHub issue should be created to add a `daggerheart_npcs` table with columns:
+- `id`, `created_at`, `source_book`, `embedding`, `searchable_text` (standard metadata)
+- `name`, `role`, `description`, `backstory`, `voice_mannerisms`, `motivation`, `secret`
+- `scene_id` (FK), `adventure_id` (FK)
 
 ### Mockup
 
@@ -278,79 +466,7 @@ Per-scene draft-feedback-revise cycle. Sage presents a scene draft, user request
 
 ---
 
-## 6. Conjuring
-
-> *Who will the party meet?*
-
-Calling characters into being from the woven story — compiling and enriching NPCs extracted from the scenes.
-
-### Right Panel
-
-Scene selector tabs (All, Scene 1–Scene 4) filter the roster by scene. Two groups: "Key NPCs" and "Minor NPCs". Each NPC card shows initials avatar (gold border when enriched), name, role tag pill, scene badges (muted pill style, "Scene 1" format), and enrichment status (gold check or muted dash). Enriched NPCs get gold left-border treatment. "Continue to Summoning" button is always enabled (enrichment is optional).
-
-### Chat Flow
-
-Sage compiles NPC list from inscribed scenes. User selects NPCs for enrichment — Sage adds backstory, voice, motivation, and secrets. User can enrich as many or few as desired before continuing.
-
-### Workflows
-
-(To be documented)
-
-### Mockup
-
-`documentation/mockups/conjuring-immersive.html`
-
----
-
-## 7. Summoning
-
-> *What stands in their way?*
-
-Summoning the threats and opposing forces — selecting adversary stat blocks from the `daggerheart_adversaries` Supabase table, matched to tier and scenes.
-
-### Right Panel
-
-Scene selector tabs (All, Scene 1–Scene 4) filter encounters by scene. Tier context pill at top (locked from Attunement). Flat adversary list with inline scene badges on each card (muted pill style, "Scene 1" format). Each adversary card shows name, type badge (color-coded: Bruiser, Skulk, Leader, Solo, Minion), difficulty, compact stat line (HP / Stress / ATK / DMG), and scene badge. Selected adversaries get gold left-border. Social scenes are omitted.
-
-### Chat Flow
-
-Sage recommends adversaries per scene with tactical reasoning. Presents 2-3 options per encounter slot. User picks, Sage confirms and suggests encounter compositions (solo, leader+minions, mixed horde).
-
-### Workflows
-
-(To be documented)
-
-### Mockup
-
-`documentation/mockups/summoning-immersive.html`
-
----
-
-## 8. Enchanting
-
-> *What treasures await?*
-
-Imbuing objects with power and purpose — choosing tier-appropriate items, weapons, armor, and consumables as rewards.
-
-### Right Panel
-
-Scene selector tabs (All, Scene 1–Scene 4) filter rewards by scene. Category tabs below: Weapons, Armor, Items, Consumables. Active tab shows gold text + gold bottom-border. Each item row shows name, key stat line, scene badge (muted pill style, "Scene 1" format), and gold left-border when assigned. Summary footer shows reward count across scenes. Data sourced from `daggerheart_weapons`, `daggerheart_armor`, `daggerheart_items`, `daggerheart_consumables` tables, filtered by tier.
-
-### Chat Flow
-
-Sage recommends tier-appropriate rewards matched to scenes with narrative reasoning. User approves or swaps items. Each reward tied to a specific scene and discovery context.
-
-### Workflows
-
-(To be documented)
-
-### Mockup
-
-`documentation/mockups/enchanting-immersive.html`
-
----
-
-## 9. Scrying
+## 6. Scrying
 
 > *What might happen at the table?*
 
@@ -374,7 +490,7 @@ Sage generates echoes per scene. User reviews, requests additions or changes to 
 
 ---
 
-## 10. Sealing
+## 7. Sealing
 
 > *Is the spell complete?*
 
@@ -382,7 +498,7 @@ The spell is sealed — the adventure is bound into the Book, ready for export.
 
 ### Right Panel
 
-Three sections: (1) Adventure summary card with title, frame, and stat boxes (scenes/NPCs/adversaries/rewards). (2) Completeness checklist — all 10 stages with gold check marks. (3) Export format selector — three cards (Markdown, PDF, JSON) with selected state using gold treatment. Prominent "Seal the Spell" CTA button at bottom (full-width, larger font, gold glow on hover).
+Three sections: (1) Adventure summary card with title, frame, and stat boxes (scenes/NPCs/adversaries/rewards). (2) Completeness checklist — all 7 stages with gold check marks. (3) Export format selector — three cards (Markdown, PDF, JSON) with selected state using gold treatment. Prominent "Seal the Spell" CTA button at bottom (full-width, larger font, gold glow on hover).
 
 ### Chat Flow
 

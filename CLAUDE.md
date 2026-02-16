@@ -244,18 +244,15 @@ The Supabase database contains 14 tables for Daggerheart content:
 
 ## Adventure Generation Phases
 
-**The Book of Many Paths** — the app is a magical artifact where human and AI are co-casters, weaving a grand spell (an adventure) through a 10-phase ritual:
+**The Book of Many Paths** — the app is a magical artifact where human and AI are co-casters, weaving a grand spell (an adventure) through a 7-phase ritual:
 
 1. **Invocation** (`invocation`) — Opening the Book, naming the spell (adventure) you intend to cast
 2. **Attunement** (`attunement`) — Tuning the spell's frequencies; harmonizing the 8 components that shape the adventure (CRITICAL: conversational feel)
 3. **Binding** (`binding`) — Binding the spell to a foundation; selecting the thematic framework that anchors the story
 4. **Weaving** (`weaving`) — Weaving threads of story into a pattern; drafting 3-6 scene briefs with feedback loop
-5. **Inscription** (`inscription`) — Inscribing each scene into the Book; draft-feedback-revise per scene
-6. **Conjuring** (`conjuring`) — Calling characters into being from the woven story; compiling and enriching NPCs
-7. **Summoning** (`summoning`) — Summoning the threats and opposing forces; selecting adversary stat blocks from Supabase
-8. **Enchanting** (`enchanting`) — Imbuing objects with power and purpose; choosing tier-appropriate items and rewards
-9. **Scrying** (`scrying`) — Peering into possibilities; GM creativity tools for what could happen at the table (5 categories)
-10. **Sealing** (`sealing`) — The spell is sealed; the adventure is bound into the Book, ready for export
+5. **Inscription** (`inscription`) — Inscribing each scene into the Book; draft-feedback-revise per scene with NPCs, adversaries, and items per scene (absorbs former Conjuring/Summoning/Enchanting stages)
+6. **Scrying** (`scrying`) — Peering into possibilities; GM creativity tools for what could happen at the table (5 categories)
+7. **Sealing** (`sealing`) — The spell is sealed; the adventure is bound into the Book, ready for export
 
 ## Technology Stack
 

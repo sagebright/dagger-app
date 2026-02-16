@@ -95,7 +95,7 @@ All achievable with CSS animations + existing RAF streaming. No external librari
 
 ### Scene Badge (Shared Component)
 
-A muted pill badge for scene association on content entries across stages 6–9. Deliberately NOT gold — scene badges are informational metadata, not interactive highlights.
+A muted pill badge for scene association on content entries. Deliberately NOT gold — scene badges are informational metadata, not interactive highlights.
 
 | Property | Value | Rationale |
 |----------|-------|-----------|
@@ -108,7 +108,55 @@ A muted pill badge for scene association on content entries across stages 6–9.
 | Label format | "Scene 1" (full word) | Immersive — no abbreviations |
 | Multi-scene | Side-by-side separate pills | Each in its own `.scene-badge` span |
 
-Used in: NPC cards (Conjuring), adversary cards (Summoning), loot items (Enchanting), echo entries (Scrying). Scene selector filter tabs use the same "Scene N" label format for consistency.
+Used in: NPC cards (Inscription entity drill-in), adversary cards (Inscription entity drill-in), echo entries (Scrying). Scene selector filter tabs use the same "Scene N" label format for consistency.
+
+### Read-Aloud Block (Shared Component)
+
+Distinct styling for GM read-aloud text in narrative sections (Setup, Developments, Transitions). Appears **only inside detail cards**, never in accordion previews. Communicates "this is the Sage's storytelling voice" — text the GM reads verbatim to players.
+
+| Property | Value | Rationale |
+|----------|-------|-----------|
+| Border-left | 3px solid `--accent-gold` | Gold accent signals "special content" |
+| Background | `--accent-gold-dim` | Faint gold wash separates from surrounding prose |
+| Border-radius | 0 8px 8px 0 | Rounded on right side only (left has the border accent) |
+| Font | 15px `--font-serif`, italic | Serif italic = the Sage's storytelling voice |
+| Color | `--text-primary` | Full contrast for readability — this is the important text |
+| Padding | 14px 16px | Generous internal space for reading comfort |
+| Label | "READ ALOUD" (above block) | 11px `--font-sans`, weight 500, `--text-muted`, uppercase, 0.04em spacing |
+| Margin | 16px 0 | Breathing room from surrounding prose |
+
+First used in: Inscription (Setup, Developments, Transitions detail cards). May appear in future stages if read-aloud patterns expand.
+
+### Speaking Icon (Shared Component)
+
+A small audio/voice icon shown next to section names that contain read-aloud content. Signals "click through for read-aloud text" without cluttering the accordion preview.
+
+| Property | Value | Rationale |
+|----------|-------|-----------|
+| Icon | Sound wave SVG (speaker + wave arcs) | Evokes audio/voice clearly |
+| Size | 16x16px | Small enough to not compete with section name |
+| Color | `--text-muted` | Quiet by default |
+| Hover color | `--accent-gold` | Gold on hover confirms interactivity |
+| Cursor | pointer | Clickable — opens detail card |
+| Placement | After section name, before any trailing elements | Right of the text, left of the edge |
+
+Used in: Inscription accordion headers (Setup, Developments, Transitions sections).
+
+### Section Detail Card (Shared Pattern)
+
+Reuses Binding's gallery↔detail cross-fade pattern for navigating from a list view into a focused content view. The detail card replaces the list view entirely — no split pane.
+
+**Structure:**
+- "Back to [parent]" text link at top (icon + text, muted, gold on hover)
+- Title as header (16px serif, weight 600)
+- Optional subtitle (13px, `--text-secondary`)
+- Scrollable content body (14px, `--text-secondary`, 1.65 line-height)
+
+**Transition:** Cross-fade between views — hide all panel views, show the target. Scroll resets to top on entry.
+
+**Back button styling:** Matches Binding's `.back-btn` pattern — flex row, 13px sans-serif, `--text-muted` default, `--accent-gold` on hover, left-chevron SVG icon.
+
+First used in: Binding (frame detail). Extended in: Inscription (narrative detail cards, NPC detail cards, adversary detail cards).
 
 ## Strategic Path
 

@@ -9,20 +9,40 @@
     ==========================================================================
     STAGE 5: INSCRIPTION — What unfolds in each scene?
     ==========================================================================
-    Panel pattern: SCENE NAVIGATOR + CONTENT PREVIEW
-    The user inscribes each scene into the Book — draft, feedback, revise per
-    scene. The panel shows numbered scene tabs and collapsible content sections
-    for the active scene.
+    Panel pattern: SECTION ACCORDION → DETAIL CARDS (narrative + entity)
+    The user inscribes each scene into the Book through a draft-feedback-revise
+    cycle with the Sage. The panel shows scene tabs and 8 collapsible sections
+    per scene, organized in three waves:
 
-    Scene tabs track progress: complete (gold fill), active (gold outline),
-    pending (muted). Content sections expand/collapse to let the user scan
-    scene structure at a glance without drowning in detail.
+      Wave 1 (Primary Narrative): Overview, Setup, Developments
+      Wave 2 (Entities): NPCs Present, Adversaries, Items
+      Wave 3 (Synthesis): Transitions, GM Notes
 
-    DESIGN RATIONALE: Inscription is the most content-dense phase. Each scene
-    has 8 facets (overview, setup, developments, NPCs, adversaries, items,
-    transitions, GM notes). Collapsible sections keep cognitive load
-    manageable — the user expands what they want to review and collapses
-    the rest. The scene tabs provide spatial orientation across the full arc.
+    Three scene tab states:
+      Active    — gold fill, highest visual weight (currently being inscribed)
+      Confirmed — gold-dim wash, settled (sealed, not interactive)
+      Inactive  — muted surface, upcoming (not yet reachable)
+
+    Two-level navigation reusing Binding's gallery↔detail pattern:
+      Section List (accordion) — scan 8 sections at a glance
+      Section Detail Card — full content with read-aloud blocks (narrative)
+                          or full entity treatment (NPC/adversary drill-in)
+
+    Three interaction patterns per section type:
+      Narrative (Setup, Developments, Transitions):
+        Accordion → descriptive text; Click name → detail card with read-aloud
+      Accordion-only (Overview, GM Notes):
+        Expand inline, no drill-in
+      Entity (NPCs Present, Adversaries):
+        Accordion → compact entity cards; Click entity → entity detail card
+      Items:
+        Accordion → Enchanting-style item cards; no drill-in
+
+    Inscription absorbs former stages Conjuring (NPCs), Summoning (adversaries),
+    and Enchanting (items) — reducing the ritual from 10 stages to 7.
+
+    MOCKUP SNAPSHOT: Scene 1 confirmed, Scene 2 active. Wave 1 populated,
+    Wave 2 partially populated, Wave 3 dimmed. Chat shows draft-feedback-revise.
     ==========================================================================
   -->
 
@@ -125,19 +145,6 @@
     .message:nth-child(4) { animation-delay: 0.18s; }
     .message:nth-child(5) { animation-delay: 0.24s; }
     .message:nth-child(6) { animation-delay: 0.30s; }
-    .thinking-indicator { display: flex; align-items: center; gap: 5px; padding: 4px 0; align-self: flex-start; }
-    .thinking-indicator .sage-label { margin-bottom: 0; margin-right: 4px; }
-    .thinking-dot {
-      width: 5px; height: 5px; border-radius: 50%;
-      background: var(--accent-gold); opacity: 0.3;
-      animation: thinking-pulse 1.4s ease-in-out infinite;
-    }
-    .thinking-dot:nth-child(2) { animation-delay: 0.2s; }
-    .thinking-dot:nth-child(3) { animation-delay: 0.4s; }
-    @keyframes thinking-pulse {
-      0%, 80%, 100% { opacity: 0.2; transform: scale(0.85); }
-      40% { opacity: 0.9; transform: scale(1); }
-    }
 
     /* === INPUT === */
     .input-area { flex-shrink: 0; padding: 12px var(--section-padding) var(--section-padding); }
@@ -205,11 +212,10 @@
     .phase-item-desc { font-size: 11px; font-weight: 400; color: var(--text-muted); }
     .phase-dropdown-item.current .phase-item-desc { color: var(--accent-gold); opacity: 0.7; }
 
-    /* === SCENE TABS (Inscription-specific) ===
-       DESIGN RATIONALE: Horizontal numbered tabs give spatial orientation
-       across the full scene arc. Gold fill = done, gold outline = in progress,
-       muted = pending. Compact sizing (48px min) keeps them scannable even
-       with 6 scenes.
+    /* === SCENE TABS ===
+       Three states: Active (gold fill), Confirmed (gold-dim wash), Inactive (muted).
+       Sequential flow — only the active tab is interactive. Confirmed tabs are
+       sealed (no going back). Inactive tabs are not yet reachable.
     */
     .scene-selector {
       display: flex; flex-direction: row; gap: 6px;
@@ -217,42 +223,45 @@
     }
     .scene-selector-tab {
       min-width: 48px; padding: 6px 12px; border-radius: var(--radius-sm);
-      font-family: var(--font-sans); font-size: 13px; cursor: pointer;
-      text-align: center; border: none; transition: background 0.15s ease, color 0.15s ease;
-    }
-    .scene-selector-tab.complete {
-      background: var(--accent-gold); color: var(--bg-primary); font-weight: 600;
-    }
-    .scene-selector-tab.complete:hover {
-      background: var(--accent-gold-hover);
+      font-family: var(--font-sans); font-size: 13px;
+      text-align: center; border: none;
+      transition: background 0.15s ease, color 0.15s ease;
     }
     .scene-selector-tab.active {
       background: var(--accent-gold); color: var(--bg-primary); font-weight: 600;
+      cursor: default;
     }
-    .scene-selector-tab.pending {
+    .scene-selector-tab.confirmed {
+      background: var(--accent-gold-dim); color: var(--text-secondary);
+      cursor: default;
+    }
+    .scene-selector-tab.inactive {
       background: var(--bg-surface); color: var(--text-secondary);
-    }
-    .scene-selector-tab.pending:hover {
-      background: var(--bg-surface-hover); color: var(--text-primary);
+      cursor: default;
     }
 
-    /* === SCENE CONTENT (Inscription-specific) ===
-       DESIGN RATIONALE: Collapsible sections keep cognitive load manageable.
-       Expanded sections show preview text; collapsed sections show a single
-       metadata line. The chevron rotation provides clear open/closed state.
+    /* === PANEL VIEWS ===
+       Multiple views share the same flex slot. Only one visible at a time.
+       Cross-fade transitions between views match Binding's gallery↔detail.
     */
-    .scene-content {
-      flex: 1; overflow-y: auto; padding: 0 var(--panel-padding);
+    .panel-view {
+      display: none; flex-direction: column; flex: 1; min-height: 0;
+      overflow-y: auto; padding: 0 var(--panel-padding);
       scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.06) transparent;
     }
-    .scene-content::-webkit-scrollbar { width: 5px; }
-    .scene-content::-webkit-scrollbar-track { background: transparent; }
-    .scene-content::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.06); border-radius: 3px; }
+    .panel-view::-webkit-scrollbar { width: 5px; }
+    .panel-view::-webkit-scrollbar-track { background: transparent; }
+    .panel-view::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.06); border-radius: 3px; }
+    .panel-view.active { display: flex; }
 
+    /* === SECTION ACCORDION ===
+       8 collapsible sections per scene. Chevron rotates on expand.
+       No status dots — the flow is conversational, not checkbox-driven.
+    */
     .scene-section { margin-bottom: 2px; }
     .scene-section-header {
       display: flex; flex-direction: row; align-items: center;
-      padding: 10px 12px; cursor: pointer; border-radius: var(--radius-sm);
+      padding: 10px 12px; border-radius: var(--radius-sm);
       transition: background 0.12s ease; gap: 8px; user-select: none;
     }
     .scene-section-header:hover { background: var(--bg-surface); }
@@ -260,6 +269,7 @@
     .scene-section-chevron {
       font-size: 10px; color: var(--text-muted); flex-shrink: 0;
       transition: transform 0.2s ease; width: 16px; text-align: center;
+      cursor: pointer; padding: 4px 0;
     }
     .scene-section:not(.collapsed) .scene-section-chevron {
       transform: rotate(90deg);
@@ -269,32 +279,258 @@
       font-family: var(--font-sans); font-size: 13px; font-weight: 500;
       color: var(--text-primary); flex: 1; min-width: 0;
     }
+    /* Narrative section names are clickable — open detail card */
+    .scene-section.has-detail .scene-section-name {
+      cursor: pointer; transition: color 0.15s ease;
+    }
+    .scene-section.has-detail .scene-section-name:hover {
+      color: var(--accent-gold);
+    }
 
-    .scene-section-status {
-      width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+    /* Speaking icon — indicates read-aloud content behind click-through */
+    .speaking-icon {
+      flex-shrink: 0; width: 16px; height: 16px;
+      color: var(--text-muted); transition: color 0.15s ease;
+      cursor: pointer;
     }
-    .scene-section-status.drafted {
-      background: var(--accent-gold);
-    }
-    .scene-section-status.empty {
-      background: var(--bg-surface); border: 1px solid var(--border-medium);
+    .scene-section.has-detail:hover .speaking-icon,
+    .speaking-icon:hover {
+      color: var(--accent-gold);
     }
 
     .scene-section-preview {
-      padding: 0 12px 12px 28px;
+      padding: 0 12px 12px 36px;
       font-family: var(--font-sans); font-size: 13px; color: var(--text-secondary);
       line-height: 1.5;
     }
     .scene-section.collapsed .scene-section-preview {
       display: none;
     }
-
     .scene-section-meta {
       font-size: 12px; color: var(--text-muted); font-style: italic;
     }
 
+    /* Wave 3 inactive — dimmed, non-interactive */
+    .scene-section.wave3-inactive {
+      opacity: 0.4;
+    }
+    .scene-section.wave3-inactive .scene-section-header {
+      cursor: default; pointer-events: none;
+    }
+    .scene-section.wave3-inactive .scene-section-header:hover {
+      background: none;
+    }
+    .scene-section.wave3-inactive .scene-section-chevron {
+      cursor: default;
+    }
+
+    /* === BACK BUTTON === */
+    .back-btn {
+      display: flex; align-items: center; gap: 6px;
+      background: none; border: none;
+      color: var(--text-muted); font-family: var(--font-sans);
+      font-size: 13px; cursor: pointer; padding: 4px 0;
+      transition: color 0.15s ease;
+    }
+    .back-btn:hover { color: var(--accent-gold); }
+
+    /* === DETAIL CARD (shared for narrative + entity) ===
+       Replaces accordion view. "Back to Scene" at top, content below.
+    */
+    .detail-card-header {
+      flex-shrink: 0; padding: 8px 0 4px;
+    }
+    .detail-card-title {
+      font-family: var(--font-serif); font-size: 16px; font-weight: 600;
+      color: var(--text-primary); margin-top: 8px;
+    }
+    .detail-card-subtitle {
+      font-size: 13px; color: var(--text-secondary); margin-top: 2px;
+    }
+    .detail-card-body {
+      flex: 1; padding: 12px 0 20px;
+      font-size: 14px; color: var(--text-secondary); line-height: 1.65;
+    }
+    .detail-card-body p + p { margin-top: 12px; }
+
+    /* === READ-ALOUD BLOCKS ===
+       Gold left border, gold-dim background, serif italic, "Read Aloud" label.
+       Only appears in detail cards, never in accordion previews.
+    */
+    .read-aloud {
+      margin: 16px 0;
+      padding: 14px 16px 14px 16px;
+      border-left: 3px solid var(--accent-gold);
+      background: var(--accent-gold-dim);
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    }
+    .read-aloud-label {
+      font-family: var(--font-sans); font-size: 11px; font-weight: 500;
+      color: var(--text-muted); letter-spacing: 0.04em;
+      text-transform: uppercase; margin-bottom: 8px;
+    }
+    .read-aloud-text {
+      font-family: var(--font-serif); font-size: 15px; font-style: italic;
+      color: var(--text-primary); line-height: 1.7;
+    }
+
+    /* === NPC COMPACT CARDS (reused from Conjuring) ===
+       Initials avatar, name, role tag pill. Clickable → NPC detail card.
+    */
+    .entity-list { padding: 4px 0 8px 24px; }
+    .entity-card {
+      display: flex; flex-direction: row; align-items: center;
+      padding: 10px 12px; gap: 10px;
+      border-radius: var(--radius-sm); cursor: pointer;
+      transition: background 0.15s ease;
+    }
+    .entity-card:hover { background: var(--bg-surface); }
+    .entity-avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: var(--bg-surface); flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-serif); font-size: 13px; font-weight: 500;
+      color: var(--text-secondary); border: 1.5px solid var(--border-medium);
+    }
+    .entity-info { display: flex; flex-direction: column; flex: 1; min-width: 0; gap: 2px; }
+    .entity-name {
+      font-size: 13px; font-weight: 600; color: var(--text-primary); line-height: 1.3;
+    }
+    .entity-role-tag {
+      display: inline-block; font-size: 11px; font-weight: 500;
+      color: var(--text-muted); border: 1px solid var(--border-medium);
+      border-radius: 12px; padding: 1px 8px; white-space: nowrap; width: fit-content;
+    }
+
+    /* === NPC DETAIL CARD ===
+       Full NPC treatment with collapsible sub-sections.
+    */
+    .npc-detail-header {
+      display: flex; align-items: center; gap: 12px; margin: 12px 0 4px;
+    }
+    .npc-detail-avatar {
+      width: 48px; height: 48px; border-radius: 50%;
+      background: var(--bg-surface); flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-serif); font-size: 16px; font-weight: 500;
+      color: var(--accent-gold); border: 1.5px solid var(--accent-gold-border);
+    }
+    .npc-detail-identity { display: flex; flex-direction: column; gap: 4px; }
+    .npc-detail-name {
+      font-family: var(--font-serif); font-size: 18px; font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .npc-field { margin-bottom: 16px; }
+    .npc-field-label {
+      font-family: var(--font-sans); font-size: 11px; font-weight: 600;
+      color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em;
+      margin-bottom: 4px;
+    }
+    .npc-field-value {
+      font-size: 14px; color: var(--text-secondary); line-height: 1.6;
+    }
+
+    /* === ADVERSARY COMPACT CARDS ===
+       Name + type badge + difficulty. Clickable → adversary detail card.
+    */
+    .adversary-type-badge {
+      display: inline-block; font-size: 11px; font-weight: 500;
+      border-radius: 12px; padding: 1px 8px; white-space: nowrap;
+    }
+    .adversary-type-badge.type-bruiser {
+      color: #e07c5a; border: 1px solid rgba(224, 124, 90, 0.35);
+      background: rgba(224, 124, 90, 0.08);
+    }
+    .adversary-type-badge.type-minion {
+      color: #8b9dc3; border: 1px solid rgba(139, 157, 195, 0.35);
+      background: rgba(139, 157, 195, 0.08);
+    }
+    .adversary-type-badge.type-leader {
+      color: #c98bdb; border: 1px solid rgba(201, 139, 219, 0.35);
+      background: rgba(201, 139, 219, 0.08);
+    }
+    .adversary-type-badge.type-solo {
+      color: #db6b6b; border: 1px solid rgba(219, 107, 107, 0.35);
+      background: rgba(219, 107, 107, 0.08);
+    }
+    .adversary-compact-meta {
+      font-size: 12px; color: var(--text-muted); margin-top: 2px;
+    }
+
+    /* === ADVERSARY DETAIL CARD — Stat block === */
+    .stat-block {
+      display: grid; grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px; padding: 12px;
+      background: var(--bg-surface); border-radius: var(--radius-sm);
+      border: 1px solid var(--border-subtle); margin: 12px 0;
+    }
+    .stat-item {
+      display: flex; flex-direction: column; gap: 2px;
+    }
+    .stat-label {
+      font-size: 10px; font-weight: 600; color: var(--text-muted);
+      text-transform: uppercase; letter-spacing: 0.06em;
+    }
+    .stat-value {
+      font-size: 14px; font-weight: 600; color: var(--text-primary);
+    }
+    .stat-block-wide {
+      grid-column: span 3;
+    }
+
+    .adversary-section { margin-bottom: 16px; }
+    .adversary-section-label {
+      font-size: 11px; font-weight: 600; color: var(--text-muted);
+      text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px;
+    }
+    .adversary-section-text {
+      font-size: 13px; color: var(--text-secondary); line-height: 1.6;
+    }
+    .adversary-feature {
+      padding: 8px 0; border-bottom: 1px solid var(--border-subtle);
+    }
+    .adversary-feature:last-child { border-bottom: none; }
+    .adversary-feature-name {
+      font-size: 13px; font-weight: 600; color: var(--text-primary);
+    }
+    .adversary-feature-desc {
+      font-size: 13px; color: var(--text-secondary); margin-top: 2px;
+    }
+    .threshold-row {
+      display: flex; gap: 16px; font-size: 13px; color: var(--text-secondary);
+    }
+    .threshold-item { display: flex; gap: 4px; }
+    .threshold-label { font-weight: 600; color: var(--text-muted); }
+
+    /* === ITEM CARDS (Enchanting pattern) === */
+    .item-card {
+      padding: 10px 12px; border-left: 3px solid transparent;
+      border-radius: var(--radius-sm); margin-bottom: 4px;
+      transition: background 0.12s ease;
+    }
+    .item-card:hover { background: var(--bg-surface); }
+    .item-card.assigned { border-left-color: var(--accent-gold); }
+    .item-card-header { display: flex; align-items: center; gap: 8px; }
+    .item-card-name { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+    .item-type-label {
+      font-size: 10px; font-weight: 500; color: var(--text-muted);
+      border: 1px solid var(--border-medium); border-radius: 10px;
+      padding: 1px 7px; text-transform: uppercase; letter-spacing: 0.04em;
+    }
+    .item-card-stat {
+      font-size: 12px; color: var(--text-secondary); margin-top: 2px; padding-left: 0;
+    }
+
+    /* === FIXED FOOTER === */
+    .panel-footer {
+      flex-shrink: 0;
+      padding: 12px var(--panel-padding) 32px;
+      border-top: 1px solid var(--border-subtle);
+    }
     .btn-continue-compact {
-      flex-shrink: 0; padding: 7px 16px; border: none; border-radius: var(--radius-sm);
+      display: block; width: 100%;
+      padding: 7px 16px; border: none; border-radius: var(--radius-sm);
       background: var(--accent-gold); color: var(--bg-primary);
       font-family: var(--font-sans); font-size: 13px; font-weight: 600;
       cursor: pointer; transition: background 0.15s ease, box-shadow 0.2s ease;
@@ -331,7 +567,7 @@
     <div class="app-layout">
 
     <!-- ================================================================
-         CHAT SIDE (60%)
+         CHAT SIDE (65%)
          ================================================================ -->
     <div class="chat-side">
       <div class="message-area">
@@ -370,14 +606,14 @@
               <p>Good call — that's exactly the kind of pressure point that makes scenes memorable. Here's the revised developments:</p>
               <p>Elder Thornveil reveals that a <strong>Blightcrawler nest</strong> has taken root beneath the Hollow's water source. The Wicklings are too few to clear it themselves. She offers a trade: help purge the nest, and she'll share what she knows about the Eye's resting place.</p>
               <p>But there's a catch. A Havenite scout — <strong>Corporal Dace</strong> — is also in the Hollow, wounded and under Wickling guard. He claims to know a shortcut to the Eye, no Wickling help needed. The party can side with the Wicklings and fight the nest, trust Dace and leave immediately, or try to negotiate a compromise that satisfies both.</p>
-              <p>I've updated the Developments section in the panel. Take a look — the rest of the scene structure is shaping up nicely.</p>
+              <p>I've updated the panel with the revised sections. Take a look — the NPCs and adversaries are shaping up too.</p>
             </div>
           </div>
 
           <!-- User: Approval -->
           <div class="message message-user">
             <div class="message-text">
-              That's perfect. The three-way choice is exactly what I wanted. Let's keep the rest of Scene 2 as-is and move on to Scene 3 when you're ready.
+              That's perfect. The three-way choice is exactly what I wanted. Let's keep refining — I want to check on the NPCs next.
             </div>
           </div>
 
@@ -397,7 +633,7 @@
     </div>
 
     <!-- ================================================================
-         PANEL SIDE (40%) — Scene Navigator + Content Preview
+         PANEL SIDE (35%) — Section Accordion + Detail Cards
          ================================================================ -->
     <div class="panel-side">
 
@@ -407,6 +643,7 @@
           <span class="phase-progress">What unfolds in each scene?</span>
           <span class="phase-chevron" id="phase-chevron">&#9662;</span>
 
+          <!-- 7-stage dropdown (Conjuring/Summoning/Enchanting removed) -->
           <div class="phase-dropdown" id="phase-dropdown" role="menu">
             <div class="phase-dropdown-item completed" role="menuitem" tabindex="0">
               <div class="phase-item-text"><span>Invocation</span><span class="phase-item-desc">What shape will your adventure take?</span></div>
@@ -424,18 +661,6 @@
               <div class="phase-item-text"><span>Inscription</span><span class="phase-item-desc">What unfolds in each scene?</span></div>
             </div>
             <div class="phase-dropdown-item future" role="menuitem" tabindex="-1">
-              <div class="phase-item-text"><span>Conjuring</span><span class="phase-item-desc">Who will the party meet?</span></div>
-              <span class="phase-item-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></span>
-            </div>
-            <div class="phase-dropdown-item future" role="menuitem" tabindex="-1">
-              <div class="phase-item-text"><span>Summoning</span><span class="phase-item-desc">What stands in their way?</span></div>
-              <span class="phase-item-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></span>
-            </div>
-            <div class="phase-dropdown-item future" role="menuitem" tabindex="-1">
-              <div class="phase-item-text"><span>Enchanting</span><span class="phase-item-desc">What treasures await?</span></div>
-              <span class="phase-item-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></span>
-            </div>
-            <div class="phase-dropdown-item future" role="menuitem" tabindex="-1">
               <div class="phase-item-text"><span>Scrying</span><span class="phase-item-desc">What might happen at the table?</span></div>
               <span class="phase-item-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></span>
             </div>
@@ -447,116 +672,413 @@
         </div>
       </div>
 
-      <!-- Scene Tabs -->
+      <!-- Scene Tabs — Scene 1 confirmed, Scene 2 active, 3-4 inactive -->
       <div class="scene-selector">
-        <button class="scene-selector-tab complete" onclick="selectSceneTab(this, 0)" data-scene="0">Scene 1</button>
-        <button class="scene-selector-tab active" onclick="selectSceneTab(this, 1)" data-scene="1">Scene 2</button>
-        <button class="scene-selector-tab pending" onclick="selectSceneTab(this, 2)" data-scene="2">Scene 3</button>
-        <button class="scene-selector-tab pending" onclick="selectSceneTab(this, 3)" data-scene="3">Scene 4</button>
+        <button class="scene-selector-tab confirmed">Scene 1</button>
+        <button class="scene-selector-tab active">Scene 2</button>
+        <button class="scene-selector-tab inactive">Scene 3</button>
+        <button class="scene-selector-tab inactive">Scene 4</button>
       </div>
 
-      <!-- Scene Content — collapsible sections for active scene (Scene 2) -->
-      <div class="scene-content" id="scene-content">
+      <!-- ============================================================
+           VIEW: Section Accordion (default)
+           ============================================================ -->
+      <div class="panel-view active" id="accordion-view">
 
-        <!-- Overview — expanded -->
+        <!-- WAVE 1: Primary Narrative -->
+
+        <!-- Overview — expanded, accordion-only -->
         <div class="scene-section" data-section="overview">
           <div class="scene-section-header" onclick="toggleSection(this)">
             <span class="scene-section-chevron">&#9654;</span>
             <span class="scene-section-name">Overview</span>
-            <span class="scene-section-status drafted"></span>
           </div>
           <div class="scene-section-preview">
-            The party arrives at Wickling Hollow, a settlement carved into living withertrees. Elder Thornveil offers guarded hospitality but demands to know their purpose. Trust must be earned before any knowledge is shared.
+            The party arrives at Wickling Hollow, a settlement carved into living withertrees. Elder Thornveil offers guarded hospitality but demands to know their purpose. Trust must be earned before any knowledge of the Reaping Eye is shared.
           </div>
         </div>
 
-        <!-- Setup — collapsed, showing metadata -->
-        <div class="scene-section collapsed" data-section="setup">
-          <div class="scene-section-header" onclick="toggleSection(this)">
-            <span class="scene-section-chevron">&#9654;</span>
-            <span class="scene-section-name">Setup</span>
-            <span class="scene-section-status drafted"></span>
+        <!-- Setup — collapsed, has detail card + read-aloud -->
+        <div class="scene-section collapsed has-detail" data-section="setup">
+          <div class="scene-section-header">
+            <span class="scene-section-chevron" onclick="toggleSection(this.closest('.scene-section-header'))">&#9654;</span>
+            <span class="scene-section-name" onclick="showView('setup-detail')">Setup</span>
+            <!-- Speaking icon — read-aloud content available -->
+            <svg class="speaking-icon" onclick="showView('setup-detail')" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+              <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+              <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+            </svg>
           </div>
           <div class="scene-section-preview">
             <span class="scene-section-meta">Location: Wickling Hollow — Mood: Tense, wary</span>
           </div>
         </div>
 
-        <!-- Developments — expanded -->
-        <div class="scene-section" data-section="developments">
-          <div class="scene-section-header" onclick="toggleSection(this)">
-            <span class="scene-section-chevron">&#9654;</span>
-            <span class="scene-section-name">Developments</span>
-            <span class="scene-section-status drafted"></span>
+        <!-- Developments — expanded, has detail card + read-aloud -->
+        <div class="scene-section has-detail" data-section="developments">
+          <div class="scene-section-header">
+            <span class="scene-section-chevron" onclick="toggleSection(this.closest('.scene-section-header'))">&#9654;</span>
+            <span class="scene-section-name" onclick="showView('developments-detail')">Developments</span>
+            <svg class="speaking-icon" onclick="showView('developments-detail')" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+              <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+              <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+            </svg>
           </div>
           <div class="scene-section-preview">
             Elder Thornveil reveals a Blightcrawler nest beneath the Hollow's water source. She offers a trade: purge the nest, and she'll share what she knows about the Reaping Eye. Corporal Dace, a wounded Havenite scout, offers an alternative shortcut. The party must choose: help the Wicklings, trust Dace, or find a compromise.
           </div>
         </div>
 
-        <!-- NPCs Present — collapsed -->
+        <!-- WAVE 2: Entities -->
+
+        <!-- NPCs Present — collapsed, entity cards -->
         <div class="scene-section collapsed" data-section="npcs">
           <div class="scene-section-header" onclick="toggleSection(this)">
             <span class="scene-section-chevron">&#9654;</span>
             <span class="scene-section-name">NPCs Present</span>
-            <span class="scene-section-status drafted"></span>
           </div>
           <div class="scene-section-preview">
             <span class="scene-section-meta">Elder Thornveil, Corporal Dace, Wickling sentries</span>
+
+            <!-- Entity list — visible when expanded -->
+            <div class="entity-list" style="margin-top: 10px;">
+              <div class="entity-card" onclick="event.stopPropagation(); showView('npc-thornveil-detail')">
+                <div class="entity-avatar">ET</div>
+                <div class="entity-info">
+                  <div class="entity-name">Elder Thornveil</div>
+                  <span class="entity-role-tag">Leader</span>
+                </div>
+              </div>
+              <div class="entity-card" onclick="event.stopPropagation(); showView('npc-dace-detail')">
+                <div class="entity-avatar">CD</div>
+                <div class="entity-info">
+                  <div class="entity-name">Corporal Dace</div>
+                  <span class="entity-role-tag">Scout</span>
+                </div>
+              </div>
+              <div class="entity-card" style="opacity: 0.6; cursor: default;">
+                <div class="entity-avatar">WS</div>
+                <div class="entity-info">
+                  <div class="entity-name">Wickling Sentries</div>
+                  <span class="entity-role-tag">Minor</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
-        <!-- Adversaries — collapsed -->
+        <!-- Adversaries — collapsed, entity cards -->
         <div class="scene-section collapsed" data-section="adversaries">
           <div class="scene-section-header" onclick="toggleSection(this)">
             <span class="scene-section-chevron">&#9654;</span>
             <span class="scene-section-name">Adversaries</span>
-            <span class="scene-section-status empty"></span>
           </div>
           <div class="scene-section-preview">
-            <span class="scene-section-meta">Blightcrawler brood (if party chooses the nest)</span>
+            <span class="scene-section-meta">Blightcrawler Alpha, Blightcrawler brood</span>
+
+            <div class="entity-list" style="margin-top: 10px;">
+              <div class="entity-card" onclick="event.stopPropagation(); showView('adversary-alpha-detail')">
+                <div class="entity-avatar" style="border-radius: var(--radius-sm); font-size: 16px;">&#x2620;</div>
+                <div class="entity-info">
+                  <div class="entity-name">Blightcrawler Alpha</div>
+                  <div style="display: flex; gap: 6px; align-items: center; margin-top: 2px;">
+                    <span class="adversary-type-badge type-bruiser">Bruiser</span>
+                    <span class="adversary-compact-meta">Difficulty 12</span>
+                  </div>
+                </div>
+              </div>
+              <div class="entity-card" onclick="event.stopPropagation();">
+                <div class="entity-avatar" style="border-radius: var(--radius-sm); font-size: 16px;">&#x2620;</div>
+                <div class="entity-info">
+                  <div class="entity-name">Blightcrawler Brood</div>
+                  <div style="display: flex; gap: 6px; align-items: center; margin-top: 2px;">
+                    <span class="adversary-type-badge type-minion">Minion</span>
+                    <span class="adversary-compact-meta">Difficulty 6</span>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
-        <!-- Items & Discoveries — collapsed -->
+        <!-- Items — collapsed, pending -->
         <div class="scene-section collapsed" data-section="items">
           <div class="scene-section-header" onclick="toggleSection(this)">
             <span class="scene-section-chevron">&#9654;</span>
-            <span class="scene-section-name">Items &amp; Discoveries</span>
-            <span class="scene-section-status empty"></span>
+            <span class="scene-section-name">Items</span>
           </div>
           <div class="scene-section-preview">
-            <span class="scene-section-meta">Pending — will populate after developments are finalized</span>
+            <span class="scene-section-meta">Pending — will populate as scene develops</span>
           </div>
         </div>
 
-        <!-- Transitions — collapsed -->
-        <div class="scene-section collapsed" data-section="transitions">
-          <div class="scene-section-header" onclick="toggleSection(this)">
+        <!-- WAVE 3: Synthesis (dimmed — not yet available) -->
+
+        <!-- Transitions — dimmed, has detail card + read-aloud -->
+        <div class="scene-section collapsed wave3-inactive has-detail" data-section="transitions">
+          <div class="scene-section-header">
             <span class="scene-section-chevron">&#9654;</span>
             <span class="scene-section-name">Transitions</span>
-            <span class="scene-section-status empty"></span>
+            <svg class="speaking-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+              <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+              <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+            </svg>
           </div>
           <div class="scene-section-preview">
-            <span class="scene-section-meta">Pending — connects to Scene 3</span>
+            <span class="scene-section-meta">Populates when sections above are complete</span>
           </div>
         </div>
 
-        <!-- GM Notes — collapsed -->
-        <div class="scene-section collapsed" data-section="gm-notes">
-          <div class="scene-section-header" onclick="toggleSection(this)">
+        <!-- GM Notes — dimmed, accordion-only -->
+        <div class="scene-section collapsed wave3-inactive" data-section="gm-notes">
+          <div class="scene-section-header">
             <span class="scene-section-chevron">&#9654;</span>
             <span class="scene-section-name">GM Notes</span>
-            <span class="scene-section-status empty"></span>
           </div>
           <div class="scene-section-preview">
-            <span class="scene-section-meta">Pending — pacing and improvisation guidance</span>
+            <span class="scene-section-meta">Populates when sections above are complete</span>
           </div>
         </div>
 
-        <!-- Continue button -->
-        <button class="btn-continue-compact" style="margin: 16px auto 12px; display: block;">Write Scene to File</button>
+      </div>
 
+      <!-- ============================================================
+           VIEW: Setup Detail Card
+           ============================================================ -->
+      <div class="panel-view" id="setup-detail">
+        <div class="detail-card-header">
+          <button class="back-btn" onclick="showView('accordion-view')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+            Back to Scene
+          </button>
+          <div class="detail-card-title">Setup</div>
+          <div class="detail-card-subtitle">Scene 2 — Wickling Hollow</div>
+        </div>
+        <div class="detail-card-body">
+          <p>The trail narrows as the forest thickens, ancient withertrees towering overhead with bark like cracked iron. Bioluminescent moss pulses faintly along the roots — the only light beneath the canopy. Then the trees open, and the Hollow reveals itself: a settlement carved into the living trunks, connected by rope bridges and spiral staircases that wind up into the dark green above.</p>
+          <p>Wickling sentries watch from elevated platforms, their carved masks impassive. The air smells of damp earth and something sharper — fungal growth, recent and aggressive, creeping along the lower walkways.</p>
+
+          <div class="read-aloud">
+            <div class="read-aloud-label">Read Aloud</div>
+            <div class="read-aloud-text">
+              The forest parts like a curtain, and you see it — a village that breathes. Enormous trees, wider than any tower you've known, rise from the earth with doors and windows carved into their living bark. Rope bridges sway between them, and somewhere above you, wind chimes made of bone and seed-pod sing a melody that sounds almost like a warning.<br><br>
+              A figure descends a spiral staircase, unhurried. An elder Wickling, their face half-hidden behind a mask of woven roots. They stop three paces away, close enough to speak, far enough to run.<br><br>
+              "Outsiders. We smelled you an hour ago." The mask tilts. "State your purpose, or the forest will state it for you."
+            </div>
+          </div>
+
+          <p>Elder Thornveil's greeting is not hostile — but it's not warm either. She watches the party's reactions carefully. A Wickling behind her adjusts the grip on a thorn-tipped spear. The party has about thirty seconds of silence before Thornveil decides the conversation is over.</p>
+        </div>
+      </div>
+
+      <!-- ============================================================
+           VIEW: Developments Detail Card
+           ============================================================ -->
+      <div class="panel-view" id="developments-detail">
+        <div class="detail-card-header">
+          <button class="back-btn" onclick="showView('accordion-view')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+            Back to Scene
+          </button>
+          <div class="detail-card-title">Developments</div>
+          <div class="detail-card-subtitle">Scene 2 — Wickling Hollow</div>
+        </div>
+        <div class="detail-card-body">
+          <p><strong>The Trade:</strong> Once the party has stated their purpose, Elder Thornveil takes them to the Hollow's central platform — a natural amphitheatre formed by three interlocking root systems. Here, she reveals the true state of things.</p>
+          <p>A Blightcrawler nest has taken root beneath the Hollow's primary water source. The creatures are aggressive, venomous, and breeding fast. The Wicklings are too few and too old to clear the nest themselves. Thornveil offers a trade: purge the nest, and she'll share what the Wicklings know about the Reaping Eye's resting place.</p>
+
+          <div class="read-aloud">
+            <div class="read-aloud-label">Read Aloud</div>
+            <div class="read-aloud-text">
+              Thornveil leads you down, past the living quarters, past the stores, to where the roots drink deep. The air changes — wet and sour, thick with something that makes your eyes water. Through a lattice of exposed roots, you see it: a pulsing mass of chitin and silk, threaded through the root system like a disease.<br><br>
+              "They came with the overgrowth," Thornveil says, her voice flat. "Three weeks. We've lost two scouts and our water tastes of venom. Help us cut this rot out, and I will tell you what the old trees told me about the Eye."
+            </div>
+          </div>
+
+          <p><strong>The Complication:</strong> Before the party can decide, a Wickling guard brings word: the Havenite prisoner is asking to speak with the outsiders. Corporal Dace, wounded and under guard in a root-cage, has heard the party arrive.</p>
+          <p>Dace claims to know a shortcut through the overgrowth to the Eye — a route his squad mapped before they were ambushed. No Wickling help needed. But Thornveil warns the party: Dace's squad burned Wickling farmland on their way through. His "shortcuts" have a cost.</p>
+          <p><strong>The Three-Way Choice:</strong></p>
+          <ul style="padding-left: 18px; margin: 8px 0;">
+            <li style="margin-bottom: 6px;"><strong>Side with the Wicklings</strong> — Fight the Blightcrawler nest. Earns Thornveil's trust and the Wicklings' knowledge. Takes time; the overgrowth advances.</li>
+            <li style="margin-bottom: 6px;"><strong>Trust Dace</strong> — Leave immediately with the shortcut. Faster, but burns the Wickling bridge and the route may have traps or ambushes Dace isn't revealing.</li>
+            <li><strong>Negotiate a compromise</strong> — Convince Thornveil to release Dace to help fight the nest in exchange for his freedom. Hardest path, but unites both factions' knowledge. Requires strong social rolls.</li>
+          </ul>
+
+          <div class="read-aloud">
+            <div class="read-aloud-label">Read Aloud</div>
+            <div class="read-aloud-text">
+              The soldier's voice is hoarse through the bars of the root-cage. "You don't need them. I've walked the deep paths — my squad mapped every mile before the green took them. I can get you to the Eye in two days. They'll have you crawling through nests and singing to trees for a week."<br><br>
+              Thornveil's mask turns toward the cage. The bone chimes go silent. "He burned our fields, outsiders. Every word he speaks is ash."
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================================
+           VIEW: NPC Detail Card — Elder Thornveil
+           ============================================================ -->
+      <div class="panel-view" id="npc-thornveil-detail">
+        <div class="detail-card-header">
+          <button class="back-btn" onclick="showView('accordion-view')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+            Back to Scene
+          </button>
+        </div>
+        <div class="npc-detail-header">
+          <div class="npc-detail-avatar">ET</div>
+          <div class="npc-detail-identity">
+            <div class="npc-detail-name">Elder Thornveil</div>
+            <span class="entity-role-tag">Leader</span>
+          </div>
+        </div>
+        <div class="detail-card-body" style="padding-top: 16px;">
+          <div class="npc-field">
+            <div class="npc-field-label">Description</div>
+            <div class="npc-field-value">Tall and angular, with bark-like skin patterns that deepen with age. Wears a mask of woven roots that covers the upper half of her face — she never removes it in front of outsiders. Moves with deliberate, unhurried precision. Her hands are stained dark green from decades of root-speaking rituals.</div>
+          </div>
+          <div class="npc-field">
+            <div class="npc-field-label">Backstory</div>
+            <div class="npc-field-value">The last of the Wickling root-speakers — those who could hear the forest's will through the mycorrhizal network beneath the soil. When Haven's army cut through Fanewick, that connection went silent. Thornveil has been faking communion with the forest ever since, holding her people together through the authority of a gift she no longer possesses.</div>
+          </div>
+          <div class="npc-field">
+            <div class="npc-field-label">Voice &amp; Mannerisms</div>
+            <div class="npc-field-value">Measured and deliberate, like someone choosing each word the way you'd choose a step on a rotting bridge. Addresses everyone as "seedling" regardless of age or station. Pauses mid-sentence to listen to sounds only she seems to hear. Fidgets with a braid of dried moss at her belt.</div>
+          </div>
+          <div class="npc-field">
+            <div class="npc-field-label">Motivation</div>
+            <div class="npc-field-value">Restore the Wickling people's faith — even if the forest never speaks again. Will sacrifice personal honor to maintain the illusion of divine communion. Desperate for the party to solve the Blightcrawler problem because it proves the forest still sends help through outsiders.</div>
+          </div>
+          <div class="npc-field">
+            <div class="npc-field-label">Secret</div>
+            <div class="npc-field-value">Thornveil knows the Reaping Eye wasn't just stolen — it was <em>given</em>. The Great Owl Nikta let Haven take it as a test, and Thornveil is the only one who witnessed the exchange. Revealing this would shatter the Wicklings' righteous anger and their reason to fight.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================================
+           VIEW: NPC Detail Card — Corporal Dace
+           ============================================================ -->
+      <div class="panel-view" id="npc-dace-detail">
+        <div class="detail-card-header">
+          <button class="back-btn" onclick="showView('accordion-view')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+            Back to Scene
+          </button>
+        </div>
+        <div class="npc-detail-header">
+          <div class="npc-detail-avatar">CD</div>
+          <div class="npc-detail-identity">
+            <div class="npc-detail-name">Corporal Dace</div>
+            <span class="entity-role-tag">Scout</span>
+          </div>
+        </div>
+        <div class="detail-card-body" style="padding-top: 16px;">
+          <div class="npc-field">
+            <div class="npc-field-label">Description</div>
+            <div class="npc-field-value">Mid-twenties, lean and sun-darkened, with a scout's watchful eyes. One arm is splinted with Wickling-made materials — they healed him even as they imprisoned him. A faded Havenite insignia is stitched to his collar, half-torn. He sits in the root-cage with the patient stillness of someone who's been waiting for exactly this moment.</div>
+          </div>
+          <div class="npc-field">
+            <div class="npc-field-label">Backstory</div>
+            <div class="npc-field-value">Part of a Havenite recon squad sent to map routes through the overgrowth. His squad was ambushed by the Witherwild itself — vines and thorns that moved with purpose. Dace survived by playing dead. The Wicklings found him three days later, delirious and half-starved. He's been their prisoner for two weeks.</div>
+          </div>
+          <div class="npc-field">
+            <div class="npc-field-label">Voice &amp; Mannerisms</div>
+            <div class="npc-field-value">Clipped and practical, with a soldier's habit of cutting to the point. Speaks faster when lying. Taps his fingers against his splint when nervous — a tell he doesn't know he has. Refers to the Wicklings as "the locals" with forced neutrality.</div>
+          </div>
+          <div class="npc-field">
+            <div class="npc-field-label">Motivation</div>
+            <div class="npc-field-value">Escape the Hollow and return to his commanding officer with the map data. Genuinely believes the shortcut is viable, but hasn't mentioned that two of the mapped waypoints were overrun by the overgrowth since his squad passed through.</div>
+          </div>
+          <div class="npc-field">
+            <div class="npc-field-label">Secret</div>
+            <div class="npc-field-value">Dace's squad didn't just map routes — they set incendiary charges along the way, designed to burn corridors through the overgrowth for a larger Havenite force. If the party follows his "shortcut," they'll trigger the charges and accelerate the Witherwild's retaliatory growth across the entire region.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================================
+           VIEW: Adversary Detail Card — Blightcrawler Alpha
+           ============================================================ -->
+      <div class="panel-view" id="adversary-alpha-detail">
+        <div class="detail-card-header">
+          <button class="back-btn" onclick="showView('accordion-view')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+            Back to Scene
+          </button>
+          <div class="detail-card-title">Blightcrawler Alpha</div>
+          <div style="display: flex; align-items: center; gap: 8px; margin-top: 6px;">
+            <span class="adversary-type-badge type-bruiser">Bruiser</span>
+            <span style="font-size: 12px; color: var(--text-muted);">Difficulty 12 &middot; Tier 2</span>
+          </div>
+        </div>
+        <div class="detail-card-body">
+          <p style="margin-bottom: 12px;">A massive centipede-like creature, three metres long, with chitin plates that shift from dark green to oily black. Its mandibles drip a paralytic venom, and it communicates with its brood through subsonic vibrations that make the roots tremble.</p>
+
+          <div class="stat-block">
+            <div class="stat-item">
+              <span class="stat-label">HP</span>
+              <span class="stat-value">18</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Stress</span>
+              <span class="stat-value">6</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Attack</span>
+              <span class="stat-value">+5</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Weapon</span>
+              <span class="stat-value">Barbed Mandibles</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Range</span>
+              <span class="stat-value">Melee</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Damage</span>
+              <span class="stat-value">2d8+3</span>
+            </div>
+          </div>
+
+          <div class="adversary-section">
+            <div class="adversary-section-label">Motives &amp; Tactics</div>
+            <div class="adversary-section-text">Protect the brood at all costs. Attacks the most threatening-looking target first, then retreats into burrow tunnels to strike from unexpected angles. Uses subsonic calls to coordinate brood attacks on flanks while it engages the party's front line.</div>
+          </div>
+
+          <div class="adversary-section">
+            <div class="adversary-section-label">Features</div>
+            <div class="adversary-feature">
+              <div class="adversary-feature-name">Burrowing Strike</div>
+              <div class="adversary-feature-desc">Can disappear into the root system and emerge adjacent to any creature within 30 feet. On its next attack after burrowing, deals an additional d6 damage.</div>
+            </div>
+            <div class="adversary-feature">
+              <div class="adversary-feature-name">Toxic Spit</div>
+              <div class="adversary-feature-desc">Ranged (20 ft). Target must make a Difficulty 14 save or become Poisoned — disadvantage on all rolls until the end of their next turn. Can use this once per short rest.</div>
+            </div>
+            <div class="adversary-feature">
+              <div class="adversary-feature-name">Brood Commander</div>
+              <div class="adversary-feature-desc">While the Alpha is alive, all Blightcrawler Brood within 30 feet gain +1 to attack rolls and cannot be Frightened.</div>
+            </div>
+          </div>
+
+          <div class="adversary-section">
+            <div class="adversary-section-label">Thresholds</div>
+            <div class="threshold-row">
+              <div class="threshold-item"><span class="threshold-label">Minor:</span> 5</div>
+              <div class="threshold-item"><span class="threshold-label">Major:</span> 10</div>
+              <div class="threshold-item"><span class="threshold-label">Severe:</span> 15</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Fixed Footer — always visible at bottom of panel -->
+      <div class="panel-footer">
+        <button class="btn-continue-compact" id="btn-confirm-scene" disabled>Confirm Scene</button>
       </div>
 
     </div>
@@ -565,27 +1087,32 @@
   </div><!-- /app-shell -->
 
   <script>
-    /* === Scene tab selection === */
-    function selectSceneTab(tab, index) {
-      // Only allow clicking complete or active tabs for now (pending tabs show preview)
-      document.querySelectorAll('.scene-selector-tab').forEach(t => {
-        if (t.classList.contains('complete')) return; // keep complete state
-        t.classList.remove('active');
-        if (!t.classList.contains('complete')) t.classList.add('pending');
-      });
-      if (!tab.classList.contains('complete')) {
-        tab.classList.remove('pending');
-        tab.classList.add('active');
+    /* === View Navigation ===
+       Multiple panel views share the same flex slot. Only one is visible.
+       Mirrors Binding's gallery↔detail cross-fade pattern.
+    */
+    function showView(viewId) {
+      document.querySelectorAll('.panel-view').forEach(v => v.classList.remove('active'));
+      const target = document.getElementById(viewId);
+      if (target) {
+        target.classList.add('active');
+        target.scrollTop = 0;
       }
     }
 
-    /* === Section collapse/expand === */
-    function toggleSection(header) {
+    /* === Section Accordion ===
+       Chevron click toggles expand/collapse. Entity cards and detail card
+       links live inside the expanded preview content.
+    */
+    function toggleSection(headerOrChevron) {
+      const header = headerOrChevron.closest('.scene-section-header');
       const section = header.closest('.scene-section');
+      // Don't toggle Wave 3 inactive sections
+      if (section.classList.contains('wave3-inactive')) return;
       section.classList.toggle('collapsed');
     }
 
-    /* === Phase dropdown === */
+    /* === Phase Dropdown === */
     function togglePhaseDropdown() {
       const dropdown = document.getElementById('phase-dropdown');
       const chevron = document.getElementById('phase-chevron');
@@ -621,12 +1148,14 @@
       }
     });
 
+    /* === Textarea Auto-resize === */
     const textarea = document.querySelector('.chat-input');
     textarea.addEventListener('input', function() {
       this.style.height = 'auto';
       this.style.height = Math.min(this.scrollHeight, 180) + 'px';
     });
 
+    /* === Scroll chat to bottom === */
     document.querySelector('.message-area').scrollTop = document.querySelector('.message-area').scrollHeight;
   </script>
 
