@@ -599,117 +599,7 @@
       border-radius: 3px;
     }
 
-    /* ---- Component Rows ---- */
-    .component-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 10px 12px;
-      border-radius: var(--radius-sm);
-      border-left: 3px solid transparent;
-      cursor: pointer;
-      transition: background 0.15s ease, border-color 0.15s ease;
-      gap: 12px;
-    }
-
-    .component-row:hover {
-      background: var(--bg-surface);
-    }
-
-    .component-row.confirmed {
-      border-left-color: var(--accent-gold);
-    }
-
-    .component-row.confirmed .component-value {
-      color: var(--text-primary);
-      font-weight: 500;
-    }
-
-    .component-row.unconfirmed {
-      opacity: 0.45;
-    }
-
-    .component-row.unconfirmed:hover {
-      opacity: 0.65;
-    }
-
-    .component-label {
-      font-size: 13px;
-      font-weight: 500;
-      color: var(--text-secondary);
-    }
-
-    .component-row.confirmed .component-label {
-      color: var(--text-secondary);
-    }
-
-    .component-value {
-      font-size: 13px;
-      font-weight: 400;
-      color: var(--text-muted);
-      text-align: right;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      max-width: 55%;
-    }
-
-    .component-check {
-      color: var(--accent-gold);
-      font-size: 13px;
-      margin-left: 4px;
-      flex-shrink: 0;
-      opacity: 0;
-      transition: opacity 0.3s ease;
-    }
-
-    .component-row.confirmed .component-check {
-      opacity: 1;
-    }
-
-    /* =======================================================================
-       CHOICE PANEL (Edit Mode)
-       ======================================================================= */
-    .choice-panel {
-      display: none;
-      flex-direction: column;
-      min-height: 0;
-      background: var(--bg-secondary);
-    }
-
-    .choice-panel.visible {
-      display: flex;
-    }
-
-    .panel-side.hidden {
-      display: none;
-    }
-
-    .choice-header {
-      flex-shrink: 0;
-      padding: var(--panel-padding);
-      border-bottom: 1px solid var(--border-subtle);
-    }
-
-    .back-btn {
-      background: none;
-      border: none;
-      color: var(--text-muted);
-      font-family: var(--font-sans);
-      font-size: 13px;
-      cursor: pointer;
-      padding: 4px 0;
-      margin-bottom: 8px;
-      transition: color 0.15s ease;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .back-btn:hover {
-      color: var(--accent-gold);
-    }
-
+    /* ---- Spark panel inline content ---- */
     .choice-component-name {
       font-family: var(--font-serif);
       font-size: 18px;
@@ -726,23 +616,10 @@
       line-height: 1.5;
     }
 
-    /* ---- Choice Content Area ---- */
-    .choice-content {
-      flex: 1;
-      overflow-y: auto;
-      padding: 16px var(--panel-padding);
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-
-      scrollbar-width: thin;
-      scrollbar-color: rgba(255,255,255,0.06) transparent;
-    }
-
     /* ---- Read-Only Summary Placeholder ----
-       Used in Invocation for Spark and Title — no interactive cards,
-       just a muted bordered area showing that the Sage will populate
-       this once the conversation distills the answer.
+       Used in Invocation for Spark — a muted bordered area showing
+       that the Sage will populate this once the conversation distills
+       the answer.
     */
     .summary-placeholder {
       padding: 20px;
@@ -754,6 +631,13 @@
       font-style: italic;
       line-height: 1.6;
       text-align: center;
+    }
+
+    /* ---- Panel Footer — fixed at bottom, matches Binding's gallery-footer ---- */
+    .panel-footer {
+      flex-shrink: 0;
+      padding: 12px var(--panel-padding) 32px;
+      border-top: 1px solid var(--border-subtle);
     }
 
     /* =======================================================================
@@ -973,54 +857,20 @@
         </div>
       </div>
 
-      <!-- Component List — 2 ungrouped components -->
+      <!-- Spark — shown inline, no clickable row needed -->
       <div class="component-list">
-
-        <div class="component-row unconfirmed" onclick="showChoicePanel('spark')" style="margin-top: 12px;">
-          <span class="component-label">Spark</span>
-          <span class="component-value">&mdash;</span>
-        </div>
-
-        <div class="component-row unconfirmed" onclick="showChoicePanel('title')">
-          <span class="component-label">Title</span>
-          <span class="component-value">&mdash;</span>
-        </div>
-
-        <!-- Continue button — disabled until Spark is confirmed -->
-        <button class="btn-continue-compact" style="margin: 16px auto 12px; display: block;" disabled>Continue to Attunement</button>
-
-      </div>
-
-    </div>
-
-    <!-- ================================================================
-         CHOICE PANEL (Edit State)
-         ================================================================ -->
-    <div class="choice-panel" id="choice-panel">
-
-      <div class="choice-header">
-        <button class="back-btn" onclick="showSummaryPanel()">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="15 18 9 12 15 6"></polyline>
-          </svg>
-          Return to Invocation
-        </button>
-        <div class="choice-component-name" id="choice-title">Spark</div>
-        <div class="choice-question" id="choice-question">What's the seed of your adventure?</div>
-      </div>
-
-      <!-- ---- Spark (read-only summary placeholder) ---- -->
-      <div class="choice-content" data-example="spark" style="display:none;">
-        <div class="summary-placeholder">
-          Your spark will appear here once the Sage distills it from your conversation.
+        <div style="margin-top: 12px;">
+          <div class="choice-component-name">Spark</div>
+          <div class="choice-question">What's the seed of your adventure?</div>
+          <div class="summary-placeholder" style="margin-top: 16px;">
+            Your spark will appear here once the Sage distills it from your conversation.
+          </div>
         </div>
       </div>
 
-      <!-- ---- Title (read-only summary placeholder) ---- -->
-      <div class="choice-content" data-example="title" style="display:none;">
-        <div class="summary-placeholder">
-          Your title will appear here once you and the Sage settle on a name.
-        </div>
+      <!-- Fixed footer — always visible at bottom of panel -->
+      <div class="panel-footer">
+        <button class="btn-continue-compact" style="width: 100%;" disabled>Continue to Attunement</button>
       </div>
 
     </div>
@@ -1033,36 +883,6 @@
        INTERACTIVE BEHAVIOR (Mockup Only)
        ==================================================================== -->
   <script>
-    // Example metadata: titles and questions for each panel
-    const EXAMPLE_META = {
-      spark: { title: 'Spark', question: "What’s the seed of your adventure?" },
-      title: { title: 'Title', question: "What will you call this adventure?" },
-    };
-
-    // Show the choice panel for a specific component
-    function showChoicePanel(exampleName) {
-      // Hide all choice content areas, show the requested one
-      document.querySelectorAll('.choice-content').forEach(el => el.style.display = 'none');
-      const target = document.querySelector(`.choice-content[data-example="${exampleName}"]`);
-      if (target) target.style.display = 'flex';
-
-      // Update header text
-      const meta = EXAMPLE_META[exampleName];
-      if (meta) {
-        document.getElementById('choice-title').textContent = meta.title;
-        document.getElementById('choice-question').textContent = meta.question;
-      }
-
-      // Toggle panels
-      document.getElementById('summary-panel').classList.add('hidden');
-      document.getElementById('choice-panel').classList.add('visible');
-    }
-
-    function showSummaryPanel() {
-      document.getElementById('choice-panel').classList.remove('visible');
-      document.getElementById('summary-panel').classList.remove('hidden');
-    }
-
     // ---- Phase dropdown toggle ----
     function togglePhaseDropdown() {
       const dropdown = document.getElementById('phase-dropdown');

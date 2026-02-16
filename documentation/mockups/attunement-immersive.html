@@ -712,9 +712,12 @@
       background: var(--bg-surface);
     }
 
-    /* Confirmed component: gold left border, full text */
+    /* Confirmed component: matches Binding's active frame card treatment
+       Gold-dim background, gold border, gold left accent, gold label */
     .component-row.confirmed {
-      border-left-color: var(--accent-gold);
+      background: var(--accent-gold-dim);
+      border: 1px solid var(--accent-gold-border);
+      border-left: 3px solid var(--accent-gold);
 
       /*
         ANIMATION: Component Confirmation Shimmer
@@ -751,7 +754,7 @@
     }
 
     .component-row.confirmed .component-label {
-      color: var(--text-secondary);
+      color: var(--accent-gold-hover);
     }
 
     .component-value {
@@ -776,6 +779,13 @@
 
     .component-row.confirmed .component-check {
       opacity: 1;
+    }
+
+    /* ---- Panel Footer — fixed at bottom, matches Binding's gallery-footer ---- */
+    .panel-footer {
+      flex-shrink: 0;
+      padding: 12px var(--panel-padding) 32px;
+      border-top: 1px solid var(--border-subtle);
     }
 
     /* =======================================================================
@@ -930,22 +940,23 @@
 
     .choice-footer {
       flex-shrink: 0;
-      padding: 16px var(--panel-padding) var(--panel-padding);
+      padding: 12px var(--panel-padding) 32px;
       border-top: 1px solid var(--border-subtle);
     }
 
     .btn-confirm {
       width: 100%;
-      padding: 12px 20px;
+      padding: 7px 16px;
       border: none;
-      border-radius: var(--radius-md);
+      border-radius: var(--radius-sm);
       background: var(--accent-gold);
       color: var(--bg-primary);
       font-family: var(--font-sans);
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 600;
       cursor: pointer;
       transition: background 0.15s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+      letter-spacing: 0.01em;
       opacity: 0.35;
       pointer-events: none;
     }
@@ -957,7 +968,7 @@
 
     .btn-confirm.active:hover {
       background: var(--accent-gold-hover);
-      box-shadow: 0 0 20px var(--accent-gold-glow);
+      box-shadow: 0 0 16px var(--accent-gold-glow);
     }
 
     /* =======================================================================
@@ -1265,9 +1276,11 @@
           </div>
         </div>
 
-        <!-- Continue button — inside component list, snug below Threads -->
-        <button class="btn-continue-compact" style="margin: 16px auto 12px; display: block;" disabled>Continue to Binding</button>
+      </div>
 
+      <!-- Fixed footer — always visible at bottom of panel -->
+      <div class="panel-footer">
+        <button class="btn-continue-compact" style="width: 100%;" disabled>Continue to Binding</button>
       </div>
 
     </div>
@@ -1457,6 +1470,11 @@
         </div>
       </div>
 
+      <!-- Fixed footer — always visible at bottom of choice panel -->
+      <div class="choice-footer">
+        <button class="btn-confirm" id="btn-confirm" onclick="confirmChoice()">Select Component</button>
+      </div>
+
     </div>
 
   </div><!-- /app-layout -->
@@ -1481,8 +1499,13 @@
       themes:            { title: 'Threads', question: 'Last one — pick up to 3 threads that resonate with your story.' },
     };
 
+    // Track which component is currently being edited
+    let currentExample = null;
+
     // Show the choice panel for a specific example
     function showChoicePanel(exampleName) {
+      currentExample = exampleName;
+
       // Hide all choice lists, show the requested one
       document.querySelectorAll('.choice-list').forEach(el => el.style.display = 'none');
       const target = document.querySelector(`.choice-list[data-example="${exampleName}"]`);
@@ -1495,14 +1518,72 @@
         document.getElementById('choice-question').textContent = meta.question;
       }
 
+      // Update confirm button label: "Select [ComponentName]"
+      const btnConfirm = document.getElementById('btn-confirm');
+      btnConfirm.textContent = 'Select ' + (meta ? meta.title : 'Component');
+
+      // Check if there's already a selection in this list
+      updateConfirmButton();
+
       // Toggle panels
       document.getElementById('summary-panel').classList.add('hidden');
       document.getElementById('choice-panel').classList.add('visible');
     }
 
+    // Return to Attunement — no active styling applied
     function showSummaryPanel() {
       document.getElementById('choice-panel').classList.remove('visible');
       document.getElementById('summary-panel').classList.remove('hidden');
+      currentExample = null;
+    }
+
+    // Confirm selection and return with active styling
+    function confirmChoice() {
+      if (!currentExample) return;
+
+      const list = document.querySelector(`.choice-list[data-example="${currentExample}"]`);
+      const selected = list ? list.querySelectorAll('.choice-card.selected') : [];
+      if (selected.length === 0) return;
+
+      // Build the display value from selection(s)
+      const values = Array.from(selected).map(c => c.querySelector('.choice-card-title').textContent);
+      const displayValue = values.join(', ');
+
+      // Find the matching component row and mark it confirmed
+      const meta = EXAMPLE_META[currentExample];
+      if (meta) {
+        const rows = document.querySelectorAll('.component-row');
+        rows.forEach(row => {
+          const label = row.querySelector('.component-label');
+          if (label && label.textContent === meta.title) {
+            row.classList.remove('unconfirmed');
+            row.classList.add('confirmed');
+            const valueEl = row.querySelector('.component-value');
+            if (valueEl) {
+              valueEl.textContent = displayValue;
+              valueEl.style.color = 'var(--text-primary)';
+            }
+          }
+        });
+      }
+
+      // Return to summary panel
+      document.getElementById('choice-panel').classList.remove('visible');
+      document.getElementById('summary-panel').classList.remove('hidden');
+      currentExample = null;
+    }
+
+    // Update confirm button active state based on selection
+    function updateConfirmButton() {
+      if (!currentExample) return;
+      const list = document.querySelector(`.choice-list[data-example="${currentExample}"]`);
+      const selected = list ? list.querySelectorAll('.choice-card.selected') : [];
+      const btnConfirm = document.getElementById('btn-confirm');
+      if (selected.length > 0) {
+        btnConfirm.classList.add('active');
+      } else {
+        btnConfirm.classList.remove('active');
+      }
     }
 
     // Choice card selection
@@ -1523,6 +1604,9 @@
         list.querySelectorAll('.choice-card').forEach(c => c.classList.remove('selected'));
         card.classList.add('selected');
       }
+
+      // Update confirm button state after selection change
+      updateConfirmButton();
     }
 
     // ---- Phase dropdown toggle ----

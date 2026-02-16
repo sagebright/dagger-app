@@ -8,9 +8,9 @@ States: **DONE** (reviewed and iterated), **ITERATION** (mockup exists, under re
 
 | # | Stage | State | Mockup |
 |---|-------|-------|--------|
-| 1 | Invocation | DONE | `documentation/mockups/invocation-immersive.html` |
-| 2 | Attunement | DONE | `documentation/mockups/attunement-immersive.html` |
-| 3 | Binding | ITERATION | `documentation/mockups/binding-immersive.html` — unified button styling (Select Frame matches Continue to Weaving: sans-serif, 13px, compact padding), fixed footer placement for both gallery and detail views, buttons bottom-aligned with chat bar (32px footer padding) |
+| 1 | Invocation | DONE | `documentation/mockups/invocation-immersive.html` — simplified to single Spark component shown inline (Title removed), fixed footer button |
+| 2 | Attunement | DONE | `documentation/mockups/attunement-immersive.html` — unified card/button styling with Binding: confirmed rows use gold-dim background + gold border, fixed footer buttons, contextual "Select [Component]" confirm action |
+| 3 | Binding | DONE | `documentation/mockups/binding-immersive.html` — unified button styling, fixed footer placement, gallery cards show inciting incident (not pitch) for upfront decision-making info |
 | 4 | Weaving | MOCKUP | `documentation/mockups/weaving-immersive.html` |
 | 5 | Inscription | MOCKUP | `documentation/mockups/inscription-immersive.html` |
 | 6 | Conjuring | MOCKUP | `documentation/mockups/conjuring-immersive.html` |
@@ -40,12 +40,11 @@ Opening the Book — the user shares their initial vision, ideas, and (optionall
 
 ### Right Panel
 
-The panel shows 2 ungrouped components (no group labels). Each component row is clickable, opening a read-only summary panel. A "Continue to Attunement" button sits below the last component, disabled until Spark is confirmed. Title is optional — the adventure can remain "Untitled."
+The panel shows **Spark** inline — no clickable rows, no separate detail panel. The Spark title, question ("What's the seed of your adventure?"), and a dashed placeholder ("Your spark will appear here...") are displayed directly on the main panel. A "Continue to Attunement" button is fixed at the bottom of the panel, disabled until Spark is confirmed.
 
 | Component | Question | Selection | Behavior |
 |------|----------|-----------|----------|
 | **Spark** | What's the seed of your adventure? | Read-only summary | Populated by the Sage once it distills the user's vision from conversation. Not user-editable. |
-| **Title** | What will you call this adventure? | Read-only summary | Populated once user and Sage settle on a name. Optional — adventure can proceed as "Untitled." |
 
 ### Chat Flow
 
@@ -125,7 +124,17 @@ The panel shows a **component summary list** grouped into three categories. Each
 
 ### Workflows
 
-(To be documented)
+- Component selection uses the same card styling as Binding's frame cards:
+  - **Default** — subtle border, clickable
+  - **Selected** (in choice panel) — gold-dim background, gold border, gold left-border accent (matches Binding's Active frame card)
+  - **Confirmed** (on summary panel) — same gold treatment as Binding's Active frame card: gold-dim background, gold border, gold left-border, gold component name
+- Two exit paths from the choice panel (matches Binding pattern):
+  - **"Return to Attunement"** — returns to summary with NO selection applied (clears any in-panel selection)
+  - **"Select [Component]" button** (fixed at bottom) — confirms selection, returns to summary with component marked Confirmed (gold treatment)
+- The "Select [Component]" button is contextual: "Select Tenor", "Select Pillars", "Select Threads", etc.
+- The "Select [Component]" button is disabled (faded) until the user picks an option; becomes active on selection
+- "Continue to Binding" button is fixed at the bottom of the panel (never scrolls away), disabled until all 8 components are confirmed
+- All fixed footer buttons (Continue to Binding, Select [Component]) match Binding's button styling: full-width, `padding: 7px 16px`, `border-radius: 8px`, `font-size: 13px`
 
 ### Mockup
 
@@ -145,9 +154,9 @@ Frame Gallery → Frame Detail Panel (Attunement-style cross-fade transition)
 
 **Frame Gallery** (default view):
 - Scrollable frame cards from the database
-- Each card shows **name + pitch** only (pitch is a 1-2 sentence hook)
+- Each card shows **name + inciting incident** (the adventure's launch event — critical decision-making info visible before clicking into detail)
 - Three card states:
-  - **Default** — subtle border, shows frame name + pitch
+  - **Default** — subtle border, shows frame name + inciting incident
   - **Exploring** — white/light border on all sides (clicked, viewing detail panel)
   - **Active** — gold left-border + gold-dim background, gold frame name (frame confirmed via "Select Frame" button)
 
@@ -192,7 +201,7 @@ Sage presents available frames. User explores via conversation — Sage describe
 - Clicking a different frame after confirming resets the previous selection
 - Explicit confirmation via "Select Frame" button — no implicit confirm-on-back
 - The "Select Frame" button is fixed at the bottom of the detail panel, visible even when scrolling through dense content
-- Active frame card shows gold treatment with name + pitch visible
+- Active frame card shows gold treatment with name + inciting incident visible
 
 ### Schema Migration Plan (Future Dev Task)
 
