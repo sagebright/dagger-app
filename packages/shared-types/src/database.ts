@@ -288,6 +288,7 @@ export type Database = {
           difficulty: number | null;
           potential_adversaries: string[] | null;
           features: Json[] | null;
+          throughline: string | null;
           searchable_text: string | null;
           embedding: string | null;
           source_book: string | null;
@@ -303,6 +304,7 @@ export type Database = {
           difficulty?: number | null;
           potential_adversaries?: string[] | null;
           features?: Json[] | null;
+          throughline?: string | null;
           searchable_text?: string | null;
           embedding?: string | null;
           source_book?: string | null;
@@ -318,6 +320,7 @@ export type Database = {
           difficulty?: number | null;
           potential_adversaries?: string[] | null;
           features?: Json[] | null;
+          throughline?: string | null;
           searchable_text?: string | null;
           embedding?: string | null;
           source_book?: string | null;
