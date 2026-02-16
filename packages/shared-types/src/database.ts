@@ -601,6 +601,60 @@ export type Database = {
         };
         Relationships: [];
       };
+      daggerheart_npcs: {
+        Row: {
+          id: string;
+          name: string;
+          tier: number;
+          role: string;
+          description: string;
+          appearance: string;
+          personality: string;
+          motivations: string[] | null;
+          connections: string[] | null;
+          notable_traits: string[] | null;
+          features: Json[] | null;
+          searchable_text: string | null;
+          embedding: string | null;
+          source_book: string | null;
+          created_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          tier: number;
+          role: string;
+          description: string;
+          appearance: string;
+          personality: string;
+          motivations?: string[] | null;
+          connections?: string[] | null;
+          notable_traits?: string[] | null;
+          features?: Json[] | null;
+          searchable_text?: string | null;
+          embedding?: string | null;
+          source_book?: string | null;
+          created_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          tier?: number;
+          role?: string;
+          description?: string;
+          appearance?: string;
+          personality?: string;
+          motivations?: string[] | null;
+          connections?: string[] | null;
+          notable_traits?: string[] | null;
+          features?: Json[] | null;
+          searchable_text?: string | null;
+          embedding?: string | null;
+          source_book?: string | null;
+          created_at?: string | null;
+        };
+        Relationships: [];
+      };
       daggerheart_adventures: {
         Row: {
           id: string;
@@ -761,6 +815,7 @@ export type DaggerheartDomain = Database['public']['Tables']['daggerheart_domain
 export type DaggerheartAbility = Database['public']['Tables']['daggerheart_abilities']['Row'];
 export type DaggerheartCommunity = Database['public']['Tables']['daggerheart_communities']['Row'];
 export type DaggerheartLocation = Database['public']['Tables']['daggerheart_locations']['Row'];
+export type DaggerheartNPC = Database['public']['Tables']['daggerheart_npcs']['Row'];
 export type DaggerheartAdventure = Database['public']['Tables']['daggerheart_adventures']['Row'];
 export type DaggerheartCustomFrame = Database['public']['Tables']['daggerheart_custom_frames']['Row'];
 
@@ -782,6 +837,7 @@ export const DAGGERHEART_TABLES = [
   'daggerheart_abilities',
   'daggerheart_communities',
   'daggerheart_locations',
+  'daggerheart_npcs',
   'daggerheart_adventures',
   'daggerheart_custom_frames',
 ] as const;

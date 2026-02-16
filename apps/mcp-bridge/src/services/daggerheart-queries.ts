@@ -21,6 +21,7 @@ import type {
   DaggerheartAbility,
   DaggerheartCommunity,
   DaggerheartLocation,
+  DaggerheartNPC,
 } from '@dagger-app/shared-types';
 
 /**
@@ -379,6 +380,48 @@ export async function getLocationByName(name: string): Promise<QueryResult<Dagge
 
   return {
     data: (data as DaggerheartLocation | null) ?? null,
+    error: error?.message ?? null,
+  };
+}
+
+/**
+ * Fetch NPCs with optional tier and role filters
+ */
+export async function getNPCs(options?: {
+  tier?: number;
+  role?: string;
+}): Promise<QueryResult<DaggerheartNPC[]>> {
+  const supabase = getSupabase();
+  let query = supabase.from('daggerheart_npcs').select('*');
+
+  if (options?.tier !== undefined) {
+    query = query.eq('tier', options.tier);
+  }
+  if (options?.role) {
+    query = query.eq('role', options.role);
+  }
+
+  const { data, error } = await query.order('name');
+
+  return {
+    data: (data as DaggerheartNPC[] | null) ?? null,
+    error: error?.message ?? null,
+  };
+}
+
+/**
+ * Fetch a single NPC by name
+ */
+export async function getNPCByName(name: string): Promise<QueryResult<DaggerheartNPC>> {
+  const supabase = getSupabase();
+  const { data, error } = await supabase
+    .from('daggerheart_npcs')
+    .select('*')
+    .eq('name', name)
+    .single();
+
+  return {
+    data: (data as DaggerheartNPC | null) ?? null,
     error: error?.message ?? null,
   };
 }
