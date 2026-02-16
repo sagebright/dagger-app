@@ -9,33 +9,40 @@
     ==========================================================================
     STAGE 3: BINDING — Which frame holds the story?
     ==========================================================================
-    Panel pattern: FRAME GALLERY → SETTINGS PANEL (two-step selection)
+    Panel pattern: FRAME GALLERY → COMBINED DETAIL + SETTINGS PANEL
     The user selects a thematic framework (frame) that anchors the story,
-    then chooses a setting within that frame. Frames come from
-    daggerheart_frames in Supabase. Settings are AI-generated per frame.
+    explores its full detail, then chooses a setting within that frame.
+    Frames come from the unified daggerheart_frames table. Settings are
+    AI-generated per frame.
 
-    Step 1: Frame Gallery — scrollable frame cards with name, desc, themes.
-    Step 2: Settings Panel — cross-fades in when a frame is clicked.
+    Step 1: Frame Gallery — scrollable frame cards with name + pitch only.
+    Step 2: Combined Panel — cross-fades in when a frame is clicked.
+      Top: Collapsible detail sections (overview, themes, tone/feel,
+           touchstones, distinctions expanded by default; heritage/classes,
+           principles, mechanics, inciting incident, session-zero questions,
+           complexity rating collapsed by default).
+      Bottom: AI-generated setting cards below a divider (with loading state).
 
     Three frame card states:
-      Default  — subtle border, no highlight (name + desc + theme pills)
-      Exploring — white/light border (clicked, viewing settings)
-      Selected — gold treatment, desc + pills hidden, replaced by setting
-                 name (em dash prefix, serif 14px bold, gold) + 1-line
-                 setting description (13px, secondary color)
+      Default   — subtle border, no highlight (name + pitch)
+      Exploring — white/light border (clicked, viewing combined panel)
+      Selected  — gold treatment, pitch hidden, replaced by setting
+                  name (em dash prefix, serif 14px bold, gold) + 1-line
+                  setting description (13px, secondary color)
 
-    Interaction: No confirm button on settings panel. User selects a setting
-    card and clicks "Back to Frames" — select + back = confirmed. If no
-    setting is selected, back reverts the frame to default. Re-entering a
-    confirmed frame shows the settings panel with the previous selection
-    pre-highlighted.
+    Interaction: No confirm button. User selects a setting card and clicks
+    "Back to Frames" — select + back = confirmed. If no setting is selected,
+    back reverts the frame to default. Re-entering a confirmed frame shows
+    the combined panel with the previous setting pre-highlighted.
 
-    DESIGN RATIONALE: Frame selection is a single high-stakes choice, not
-    a multi-component tuning exercise like Attunement. The panel needs to
-    communicate enough about each frame for an informed decision — but not
-    so much that it becomes a wiki. Description + theme pills is the sweet
-    spot. The settings sub-panel reuses the Attunement cross-fade pattern
-    to keep interactions consistent across stages.
+    KEY UX: Frame detail sections load instantly (from database). Setting
+    cards generate asynchronously (AI). User reads frame details WHILE
+    settings generate — no blocking wait state.
+
+    DESIGN RATIONALE: Frames are rich multi-section documents (~11 fields),
+    not thin cards. The gallery shows only name + pitch for scan-ability.
+    All depth lives in the combined panel. One transition, one back button,
+    no three-level navigation.
     ==========================================================================
   -->
 
@@ -266,23 +273,121 @@
       font-size: 15px;
       font-weight: 600;
       color: var(--text-primary);
-      margin-bottom: 6px;
     }
     .frame-card.selected .frame-card-name {
       color: var(--accent-gold-hover);
     }
-    .frame-card-desc {
+    .frame-card-pitch {
       font-size: 13px;
       color: var(--text-secondary);
       line-height: 1.5;
-      margin-bottom: 10px;
+      margin-top: 4px;
     }
-    .frame-themes {
+
+    /* === COMBINED DETAIL + SETTINGS PANEL ===
+       Shown when a frame is clicked. Cross-fades in/out like Attunement's
+       choice panels. Top: collapsible frame detail sections. Bottom:
+       AI-generated setting suggestions below a divider.
+    */
+    .detail-panel {
+      flex: 1; display: flex; flex-direction: column; min-height: 0;
+      padding: 0 var(--panel-padding);
+      opacity: 0; pointer-events: none; position: absolute;
+      transition: opacity 0.15s ease;
+    }
+    .detail-panel.visible {
+      opacity: 1; pointer-events: auto; position: relative;
+    }
+
+    .detail-panel-header {
+      flex-shrink: 0;
+      padding: 8px 0 4px;
+    }
+    .detail-frame-name {
+      font-family: var(--font-serif);
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-top: 8px;
+    }
+    .detail-frame-pitch {
+      font-family: var(--font-serif);
+      font-size: 13px;
+      font-style: italic;
+      color: var(--text-secondary);
+      margin-top: 4px;
+      line-height: 1.5;
+    }
+
+    /* Scrollable content: detail sections + settings */
+    .detail-content {
+      flex: 1; overflow-y: auto;
+      padding-bottom: 16px;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255,255,255,0.06) transparent;
+    }
+    .detail-content::-webkit-scrollbar { width: 5px; }
+    .detail-content::-webkit-scrollbar-track { background: transparent; }
+    .detail-content::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.06); border-radius: 3px; }
+
+    /* --- Collapsible Detail Sections --- */
+    .detail-section {
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .detail-section:last-of-type {
+      border-bottom: none;
+    }
+    .detail-section-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 0;
+      cursor: pointer;
+      transition: color 0.15s ease;
+      user-select: none;
+    }
+    .detail-section-header:hover {
+      color: var(--accent-gold);
+    }
+    .detail-section-header:hover .detail-section-label {
+      color: var(--accent-gold);
+    }
+    .detail-section-chevron {
+      font-size: 10px;
+      color: var(--text-muted);
+      transition: transform 0.2s ease;
+      flex-shrink: 0;
+      width: 14px;
+      text-align: center;
+    }
+    .detail-section.expanded .detail-section-chevron {
+      transform: rotate(90deg);
+    }
+    .detail-section-label {
+      font-family: var(--font-serif);
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      transition: color 0.15s ease;
+    }
+    .detail-section-body {
+      display: none;
+      padding: 0 0 12px 22px;
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+    .detail-section.expanded .detail-section-body {
+      display: block;
+    }
+
+    /* Pill rows inside detail sections */
+    .detail-pills {
       display: flex;
       flex-wrap: wrap;
       gap: 6px;
     }
-    .frame-theme-pill {
+    .detail-pill {
       font-size: 11px;
       font-weight: 500;
       color: var(--text-muted);
@@ -291,50 +396,20 @@
       padding: 2px 10px;
       white-space: nowrap;
     }
-    .frame-card.selected .frame-theme-pill {
-      color: var(--accent-gold);
-      border-color: var(--accent-gold-border);
-    }
 
-    /* === SETTINGS PANEL (Binding sub-view) ===
-       Shown when a frame is clicked. Cross-fades in/out like Attunement's
-       choice panels. Contains AI-generated setting suggestions for the
-       selected frame.
-    */
-    .settings-panel {
-      flex: 1; display: flex; flex-direction: column; min-height: 0;
-      padding: 0 var(--panel-padding);
-      opacity: 0; pointer-events: none; position: absolute;
-      transition: opacity 0.15s ease;
-    }
-    .settings-panel.visible {
-      opacity: 1; pointer-events: auto; position: relative;
-    }
-    .settings-header {
-      display: flex; align-items: center; gap: 10px;
-      padding: 8px 0 4px;
-    }
-    /* settings-back-btn styles moved below (with text variant) */
-    .settings-frame-name {
-      font-family: var(--font-serif);
-      font-size: 15px;
-      font-weight: 600;
-      color: var(--text-primary);
+    /* --- Settings Divider & Subtitle --- */
+    .settings-divider {
+      height: 1px;
+      background: var(--border-medium);
+      margin: 16px 0;
     }
     .settings-subtitle {
       font-family: var(--font-serif);
       font-size: 13px;
       font-style: italic;
       color: var(--text-muted);
-      padding: 4px 0 12px;
+      padding: 0 0 12px;
     }
-    .settings-list {
-      flex: 1; overflow-y: auto;
-      scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.06) transparent;
-    }
-    .settings-list::-webkit-scrollbar { width: 5px; }
-    .settings-list::-webkit-scrollbar-track { background: transparent; }
-    .settings-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.06); border-radius: 3px; }
 
     .setting-card {
       padding: 16px;
@@ -393,8 +468,7 @@
     .frame-card.selected .frame-card-setting {
       display: block;
     }
-    .frame-card.selected .frame-card-desc,
-    .frame-card.selected .frame-themes {
+    .frame-card.selected .frame-card-pitch {
       display: none;
     }
     .frame-card-setting-name {
@@ -460,7 +534,7 @@
             <div class="sage-label">Sage</div>
             <div class="message-text">
               <p>Your components are tuned and humming. Now we bind the spell to a foundation — a <strong>frame</strong> that anchors your adventure's world, factions, and core conflict, and a <strong>setting</strong> that grounds the story in a specific place.</p>
-              <p>I've pulled the frames from the archive. Take a look at the panel — each one is a world waiting to be explored. Once you choose a frame, I'll suggest settings within it.</p>
+              <p>I've pulled the frames from the archive. Take a look at the panel — each card is a world waiting to be explored. Click one to see its full story and the settings I'll suggest for it.</p>
             </div>
           </div>
 
@@ -590,43 +664,25 @@
         <!-- The Witherwild — SELECTED (frame + setting confirmed) -->
         <div class="frame-card selected" data-frame="witherwild" onclick="clickFrame(this)">
           <div class="frame-card-name">The Witherwild</div>
+          <div class="frame-card-pitch">A stolen relic triggers endless spring — three factions clash as nature devours everything in its path.</div>
           <div class="frame-card-setting">
             <div class="frame-card-setting-name">&mdash; The Village of Thornhollow</div>
             <div class="frame-card-setting-desc">A Wickling settlement on the forest's edge, where overgrowth creeps closer each day and refugees from Haven arrive in desperate waves.</div>
-          </div>
-          <div class="frame-card-desc">When an invading nation attacks an ancient forest deity, a virulent overgrowth spreads throughout the land.</div>
-          <div class="frame-themes">
-            <span class="frame-theme-pill">Cultural Clash</span>
-            <span class="frame-theme-pill">Grief</span>
-            <span class="frame-theme-pill">Survival</span>
-            <span class="frame-theme-pill">People vs. Nature</span>
-            <span class="frame-theme-pill">Transformation</span>
           </div>
         </div>
 
         <!-- The Shattered Bastion — unselected -->
         <div class="frame-card" data-frame="bastion" onclick="clickFrame(this)">
           <div class="frame-card-name">The Shattered Bastion</div>
+          <div class="frame-card-pitch">A fortress-city tears itself apart as its founding orders wage war over fragments of divine authority.</div>
           <div class="frame-card-setting"></div>
-          <div class="frame-card-desc">A legendary fortress-city torn apart by a civil war between its founding orders, each wielding a fragment of divine authority.</div>
-          <div class="frame-themes">
-            <span class="frame-theme-pill">Power & Duty</span>
-            <span class="frame-theme-pill">Fractured Loyalty</span>
-            <span class="frame-theme-pill">Sacred Violence</span>
-          </div>
         </div>
 
         <!-- The Drowned Court — unselected -->
         <div class="frame-card" data-frame="drowned" onclick="clickFrame(this)">
           <div class="frame-card-name">The Drowned Court</div>
+          <div class="frame-card-pitch">A sunken kingdom resurfaces after centuries, bringing old debts, undead courtiers, and a vacant throne.</div>
           <div class="frame-card-setting"></div>
-          <div class="frame-card-desc">A sunken kingdom resurfaces after centuries beneath the waves, bringing with it old debts, undead courtiers, and a throne no one alive can rightfully claim.</div>
-          <div class="frame-themes">
-            <span class="frame-theme-pill">Legacy</span>
-            <span class="frame-theme-pill">Undeath</span>
-            <span class="frame-theme-pill">Sovereignty</span>
-            <span class="frame-theme-pill">The Deep</span>
-          </div>
         </div>
 
         <!-- Continue button — enabled because Witherwild is selected with setting -->
@@ -634,20 +690,179 @@
 
       </div>
 
-      <!-- Settings Panel — hidden by default, shown when a frame is clicked -->
-      <div class="settings-panel" id="settings-panel">
-        <div class="settings-header" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+      <!--
+        COMBINED DETAIL + SETTINGS PANEL — replaces the old settings-only panel.
+        Top: Collapsible frame detail sections (11 sections, 5 expanded by default).
+        Bottom: AI-generated setting cards below a divider.
+
+        MOCKUP NOTE: Detail section content is static (Witherwild only).
+        In production, clicking any frame populates all sections dynamically
+        from the database row. The same collapsible structure applies to all frames.
+
+        PRODUCTION BEHAVIOR: When a frame is clicked:
+        1. Detail sections populate immediately from the frame data (already loaded)
+        2. Settings section shows the loading indicator
+        3. AI generates 3-5 setting suggestions based on frame + user's tuned components
+        4. Loading indicator is replaced by setting cards (fade transition)
+
+        The user can read frame details WHILE settings generate — this is the key
+        UX advantage of the combined panel over a separate settings-only view.
+      -->
+      <div class="detail-panel" id="detail-panel">
+        <!-- Fixed header -->
+        <div class="detail-panel-header">
           <button class="settings-back-btn" onclick="backToGallery()">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <polyline points="15 18 9 12 15 6"></polyline>
             </svg>
             Back to Frames
           </button>
-          <span class="settings-frame-name" id="settings-frame-name">The Witherwild</span>
+          <div class="detail-frame-name" id="detail-frame-name">The Witherwild</div>
+          <div class="detail-frame-pitch" id="detail-frame-pitch">A stolen relic triggers endless spring — three factions clash as nature devours everything in its path.</div>
         </div>
-        <div class="settings-subtitle">Where does your adventure take root?</div>
 
-        <div class="settings-list">
+        <!-- Scrollable content: detail sections + settings -->
+        <div class="detail-content">
+
+          <!-- ===== EXPANDED BY DEFAULT (selection-relevant) ===== -->
+
+          <div class="detail-section expanded" data-section="overview">
+            <div class="detail-section-header" onclick="toggleSection(this)">
+              <span class="detail-section-chevron">&#x25B8;</span>
+              <span class="detail-section-label">Overview</span>
+            </div>
+            <div class="detail-section-body">
+              The nation of Haven, ravaged by plague, invaded the forest realm of Fanewick and stole the Reaping Eye from Nikta, the Great Owl. This triggered an endless spring — unchecked growth devouring everything in its path. Three factions now clash: the <strong>Wicklings</strong>, hardy forest folk following ancient rules; the <strong>Havenites</strong>, desperate survivors driven to invasion by plague; and <strong>the Witherwild itself</strong> — nature run amok, neither good nor evil, just relentless.
+            </div>
+          </div>
+
+          <div class="detail-section expanded" data-section="themes">
+            <div class="detail-section-header" onclick="toggleSection(this)">
+              <span class="detail-section-chevron">&#x25B8;</span>
+              <span class="detail-section-label">Themes</span>
+            </div>
+            <div class="detail-section-body">
+              <div class="detail-pills">
+                <span class="detail-pill">Cultural Clash</span>
+                <span class="detail-pill">Grief</span>
+                <span class="detail-pill">Survival</span>
+                <span class="detail-pill">People vs. Nature</span>
+                <span class="detail-pill">Transformation</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="detail-section expanded" data-section="tone-feel">
+            <div class="detail-section-header" onclick="toggleSection(this)">
+              <span class="detail-section-chevron">&#x25B8;</span>
+              <span class="detail-section-label">Tone &amp; Feel</span>
+            </div>
+            <div class="detail-section-body">
+              <div class="detail-pills">
+                <span class="detail-pill">Morally Complex</span>
+                <span class="detail-pill">Urgent</span>
+                <span class="detail-pill">Bittersweet</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="detail-section expanded" data-section="touchstones">
+            <div class="detail-section-header" onclick="toggleSection(this)">
+              <span class="detail-section-chevron">&#x25B8;</span>
+              <span class="detail-section-label">Touchstones</span>
+            </div>
+            <div class="detail-section-body">
+              <div class="detail-pills">
+                <span class="detail-pill">Princess Mononoke</span>
+                <span class="detail-pill">The Last of Us</span>
+                <span class="detail-pill">Annihilation</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="detail-section expanded" data-section="distinctions">
+            <div class="detail-section-header" onclick="toggleSection(this)">
+              <span class="detail-section-chevron">&#x25B8;</span>
+              <span class="detail-section-label">Distinctions</span>
+            </div>
+            <div class="detail-section-body">
+              Three factions with legitimate grievances — no clear villain. The Witherwild itself is neither good nor evil, just relentless. The conflict was caused by desperation, not malice. Every faction thinks they're right; your players will have to decide who to help.
+            </div>
+          </div>
+
+          <!-- ===== COLLAPSED BY DEFAULT (deep-dive / campaign-prep) ===== -->
+
+          <div class="detail-section" data-section="heritage-classes">
+            <div class="detail-section-header" onclick="toggleSection(this)">
+              <span class="detail-section-chevron">&#x25B8;</span>
+              <span class="detail-section-label">Heritage &amp; Classes Guidance</span>
+            </div>
+            <div class="detail-section-body">
+              Wicklings favor Druids and Rangers — those attuned to the forest's rhythms. Havenites lean toward Fighters and Clerics, shaped by military discipline and faith. The Wild calls to Warlocks and those with nature-touched ancestries like Fungril or Fauns.
+            </div>
+          </div>
+
+          <div class="detail-section" data-section="principles">
+            <div class="detail-section-header" onclick="toggleSection(this)">
+              <span class="detail-section-chevron">&#x25B8;</span>
+              <span class="detail-section-label">Player &amp; GM Principles</span>
+            </div>
+            <div class="detail-section-body">
+              <strong>Players:</strong> Listen to the forest. Every faction believes they are right. Your choices shape who survives.<br><br>
+              <strong>GM:</strong> The Witherwild is a character, not a backdrop. Escalate the overgrowth steadily. Let factions react to the party's choices, not a predetermined script.
+            </div>
+          </div>
+
+          <div class="detail-section" data-section="custom-mechanics">
+            <div class="detail-section-header" onclick="toggleSection(this)">
+              <span class="detail-section-chevron">&#x25B8;</span>
+              <span class="detail-section-label">Custom Mechanics</span>
+            </div>
+            <div class="detail-section-body">
+              <strong>Overgrowth Clock:</strong> A 6-segment clock that advances when the party delays or the wild senses conflict. At full, a Witherwild surge overtakes the current location, transforming the environment and forcing immediate action.
+            </div>
+          </div>
+
+          <div class="detail-section" data-section="inciting-incident">
+            <div class="detail-section-header" onclick="toggleSection(this)">
+              <span class="detail-section-chevron">&#x25B8;</span>
+              <span class="detail-section-label">Inciting Incident</span>
+            </div>
+            <div class="detail-section-body">
+              A Wickling elder sends a desperate plea — the overgrowth has breached the village walls, and something ancient stirs in the deep forest. The party is the last group willing to answer.
+            </div>
+          </div>
+
+          <div class="detail-section" data-section="session-zero">
+            <div class="detail-section-header" onclick="toggleSection(this)">
+              <span class="detail-section-chevron">&#x25B8;</span>
+              <span class="detail-section-label">Session Zero Questions</span>
+            </div>
+            <div class="detail-section-body">
+              <ul style="padding-left: 16px; margin: 0; list-style: disc;">
+                <li>How does your character feel about nature's unchecked power?</li>
+                <li>Which faction's cause resonates most with your backstory?</li>
+                <li>What would your character sacrifice to end the overgrowth?</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="detail-section" data-section="complexity">
+            <div class="detail-section-header" onclick="toggleSection(this)">
+              <span class="detail-section-chevron">&#x25B8;</span>
+              <span class="detail-section-label">Complexity Rating</span>
+            </div>
+            <div class="detail-section-body">
+              <strong>3 / 5</strong> — Multiple factions and moral ambiguity add planning complexity, but the core conflict is straightforward.
+            </div>
+          </div>
+
+          <!-- ===== SETTINGS SECTION (below detail) ===== -->
+
+          <div class="settings-divider"></div>
+
+          <div class="settings-subtitle">Where does your adventure take root?</div>
+
           <!-- Setting 1: Thornhollow -->
           <div class="setting-card" onclick="selectSetting(this)">
             <div class="setting-card-name">The Village of Thornhollow</div>
@@ -666,8 +881,8 @@
             <div class="setting-card-desc">A fortified encampment where Havenite soldiers cling to a strip of cleared land, caught between the plague behind them and the wild ahead.</div>
           </div>
 
-        </div>
-      </div>
+        </div><!-- /detail-content -->
+      </div><!-- /detail-panel -->
 
     </div>
 
@@ -687,9 +902,14 @@
     selectedFrame = document.querySelector('.frame-card[data-frame="witherwild"]');
     settingsForFrame['witherwild'] = 0; // Index of Thornhollow (first setting card)
 
+    function toggleSection(header) {
+      const section = header.closest('.detail-section');
+      section.classList.toggle('expanded');
+    }
+
     function clickFrame(card) {
       const gallery = document.getElementById('frame-gallery');
-      const panel = document.getElementById('settings-panel');
+      const panel = document.getElementById('detail-panel');
       const frameName = card.dataset.frame;
 
       // Clear any previous exploring state
@@ -702,9 +922,11 @@
 
       exploringFrame = card;
 
-      // Update settings panel header with frame name
+      // Update detail panel header with frame name and pitch
       const displayName = card.querySelector('.frame-card-name').textContent;
-      document.getElementById('settings-frame-name').textContent = displayName;
+      const displayPitch = card.querySelector('.frame-card-pitch').textContent;
+      document.getElementById('detail-frame-name').textContent = displayName;
+      document.getElementById('detail-frame-pitch').textContent = displayPitch;
 
       // Reset setting selection in panel
       document.querySelectorAll('.setting-card').forEach(c => c.classList.remove('selected'));
@@ -720,14 +942,18 @@
         }
       }
 
-      // Cross-fade: gallery out, settings in
+      // Reset scroll to top so user sees detail first
+      const detailContent = panel.querySelector('.detail-content');
+      if (detailContent) detailContent.scrollTop = 0;
+
+      // Cross-fade: gallery out, detail panel in
       gallery.classList.add('hidden');
       panel.classList.add('visible');
     }
 
     function backToGallery() {
       const gallery = document.getElementById('frame-gallery');
-      const panel = document.getElementById('settings-panel');
+      const panel = document.getElementById('detail-panel');
 
       if (exploringFrame && selectedSetting) {
         // A setting was selected — treat as confirmation
@@ -761,7 +987,7 @@
 
       exploringFrame = null;
 
-      // Cross-fade: settings out, gallery in
+      // Cross-fade: detail panel out, gallery in
       panel.classList.remove('visible');
       gallery.classList.remove('hidden');
     }

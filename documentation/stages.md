@@ -137,46 +137,84 @@ The panel shows a **component summary list** grouped into three categories. Each
 
 > *Which frame holds the story?*
 
-Binding the spell to a foundation — a two-step process selecting the thematic framework (Frame) and a specific narrative anchor point (Setting) within it. Frames come from the `daggerheart_frames` Supabase table; Settings are AI-generated based on the selected frame.
+Binding the spell to a foundation — selecting the thematic framework (Frame) and a specific narrative anchor point (Setting) within it. Frames are rich multi-section documents sourced from the unified `daggerheart_frames` table; Settings are AI-generated based on the selected frame and the user's tuned components.
 
 ### Right Panel
 
-Frame Gallery → Settings Panel (Attunement-style cross-fade transition)
+Frame Gallery → Combined Detail + Settings Panel (Attunement-style cross-fade transition)
 
-**Frame gallery** (default view):
-- Scrollable frame cards from Supabase (name, 1-line description, theme pills)
+**Frame Gallery** (default view):
+- Scrollable frame cards from the database
+- Each card shows **name + pitch** only (pitch is a 1-2 sentence hook)
 - Three card states:
-  - **Default** — subtle border, shows frame name + description + theme pills
-  - **Exploring** — white/light border on all sides (clicked, viewing settings for this frame)
-  - **Selected** — gold left-border + gold-dim background; description and theme pills hidden, replaced by setting name (em dash prefix, serif 14px bold, gold) + 1-line setting description (13px, secondary color)
+  - **Default** — subtle border, shows frame name + pitch
+  - **Exploring** — white/light border on all sides (clicked, viewing combined panel)
+  - **Selected** — gold left-border + gold-dim background; pitch hidden, replaced by setting name (em dash prefix, serif 14px bold, gold) + 1-line setting description (13px, secondary color)
 
-**Settings sub-panel** (after clicking a frame):
-- Header: "Back to Frames" text button (matches Attunement's back button pattern) + frame name below
+**Combined Detail + Settings Panel** (after clicking a frame):
+- Header: "Back to Frames" text button (Attunement pattern) + frame name + pitch (italic)
+- Single scrollable area with two zones:
+
+**Top — Frame Detail Sections** (collapsible accordion):
+- Expanded by default (selection-relevant):
+  - **Overview** — world background, factions, core conflict
+  - **Themes** — thematic pillars (pill row)
+  - **Tone & Feel** — atmospheric qualities (pill row)
+  - **Touchstones** — pop culture references (pill row)
+  - **Distinctions** — what makes this frame unique
+- Collapsed by default (deep-dive / campaign-prep):
+  - **Heritage & Classes Guidance** — ancestry and class fit
+  - **Player & GM Principles** — conduct guidance
+  - **Custom Mechanics** — unique rules for this frame
+  - **Inciting Incident** — campaign launch event
+  - **Session Zero Questions** — preparation topics
+  - **Complexity Rating** — how much the frame deviates from core rules
+
+**Bottom — Settings** (below a divider):
 - Subtitle: "Where does your adventure take root?"
 - 3–5 setting cards, AI-generated based on the selected frame
-- A Setting = single narrative anchor point; description can encompass multiple locations (e.g., "A haunted forest outside the Village of Holdenbatten")
-- No confirm button — user selects a setting card and clicks "Back to Frames" to confirm (same implicit pattern as Attunement)
+- A Setting = single narrative anchor point; description can encompass multiple locations
+- Loading state while settings generate (detail sections are readable immediately)
+
+**Interaction model:**
+- No confirm button — user selects a setting card and clicks "Back to Frames" to confirm
 - Select + back = confirmed: selecting a setting and returning confirms the frame+setting pair
 - Back without selecting = frame reverts to default styling
-- Re-entry: clicking a confirmed frame reopens settings with the previous selection pre-highlighted; user can change or go back
-
-Continue button: disabled until frame + setting are both confirmed. Clicking a different frame clears the previous selection.
+- Re-entry: clicking a confirmed frame reopens the combined panel with the previous setting pre-highlighted
+- Continue button: disabled until frame + setting confirmed. Clicking a different frame clears the previous selection.
 
 ### Chat Flow
 
-Sage presents available frames. User explores via conversation — Sage describes themes, factions, and connections to tuned components. When settings appear, Sage elaborates on options. After setting confirmed, Sage acknowledges and invites progression to Weaving.
+Sage presents available frames. User explores via conversation — Sage describes themes, factions, and connections to tuned components. When the user clicks a frame, the combined panel provides reference while the Sage can elaborate in conversation. After settings generate, Sage elaborates on options. After setting confirmed, Sage acknowledges and invites progression to Weaving.
 
 ### Workflows
 
-- AI generates 3–5 setting suggestions when a frame is clicked (loading state in production)
+- Frame detail sections load immediately from database when a frame is clicked
+- AI generates 3–5 setting suggestions asynchronously (loading state visible below detail sections)
+- Users can read full frame details WHILE settings generate — no blocking wait state
 - Users can request edits to setting cards via chat
 - Users CANNOT edit Frames — they are read-only from the database
 - User can describe a custom setting via chat instead of picking a card
-- Clicking a different frame after confirming resets the previous selection (setting content cleared, desc+pills restored)
-- Settings panel shows a loading/generating state before cards appear (in production)
+- Clicking a different frame after confirming resets the previous selection
 - Implicit confirmation: selecting a setting card + clicking "Back to Frames" confirms the pair; no explicit confirm button
-- Re-entry to a confirmed frame shows the settings panel with the previously chosen setting pre-highlighted
-- Selected frame card hides description and theme pills; shows setting name (em dash prefix) + description instead. Cleared when selection is reset.
+- Re-entry to a confirmed frame shows the combined panel with the previously chosen setting pre-highlighted
+- Selected frame card hides pitch; shows setting name (em dash prefix) + description instead. Cleared when selection is reset.
+
+### Schema Migration Plan (Future Dev Task)
+
+The current database has two frame tables:
+- `daggerheart_frames` — official frames with minimal fields (id, name, description, themes, typical_adversaries, lore, embedding, source_book)
+- `daggerheart_custom_frames` — user-created frames with the full rich schema (title, concept, pitch, tone_feel, themes, complexity_rating, touchstones, overview, heritage_classes, player_principles, gm_principles, distinctions, inciting_incident, custom_mechanics, session_zero_questions)
+
+**Target:** Merge into a single `daggerheart_frames` table using the `daggerheart_custom_frames` schema as the target, plus:
+- Add `is_official` boolean flag (or `source` enum: `'official' | 'custom'`)
+- Migrate existing official frame data into the rich schema fields (content authoring required)
+- Drop the `daggerheart_custom_frames` table after migration
+- Update `packages/shared-types/src/database.ts` to reflect the unified schema
+- Update `apps/mcp-bridge/src/routes/custom-frames.ts` and `apps/mcp-bridge/src/services/daggerheart-queries.ts` to query the unified table
+- Update `apps/web/src/components/content/FramePanel.tsx` to use the unified type
+
+This migration is **not part of the current mockup iteration** — it is documented here for when the Binding stage is implemented as a React component.
 
 ### Mockup
 
