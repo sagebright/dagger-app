@@ -12,7 +12,8 @@
     "clean": "rm -rf dist node_modules",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@dagger-app/shared-types": "workspace:*",
