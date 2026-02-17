@@ -9,7 +9,8 @@
  *   GET    /api/session/:id     - Load a specific session
  *   GET    /api/sessions        - List all sessions for the user
  *   DELETE /api/session/:id     - Abandon (deactivate) a session
- *   POST   /api/session/:id/advance - Advance to next stage
+ *   POST   /api/session/:id/advance  - Advance to next stage
+ *   POST   /api/session/:id/complete - Mark session as completed
  */
 
 import { Router } from 'express';
@@ -20,6 +21,7 @@ import {
   listSessions,
   abandonSession,
   advanceStage,
+  completeSession,
 } from '../services/session-state.js';
 
 const router: RouterType = Router();
@@ -126,6 +128,31 @@ router.post('/:id/advance', async (req: Request, res: Response) => {
   }
 
   const result = await advanceStage(extractParamId(req), userId);
+
+  if (result.error) {
+    const status = result.error.includes('not found') ? 404 : 400;
+    res.status(status).json({ error: result.error });
+    return;
+  }
+
+  res.json(result.data);
+});
+
+/**
+ * POST /api/session/:id/complete
+ *
+ * Mark a session as completed. Only valid when the session is in the
+ * 'delivering' stage. Deactivates the session to free the user for
+ * a new adventure.
+ */
+router.post('/:id/complete', async (req: Request, res: Response) => {
+  const userId = req.user?.id;
+  if (!userId) {
+    res.status(401).json({ error: 'User not authenticated' });
+    return;
+  }
+
+  const result = await completeSession(extractParamId(req), userId);
 
   if (result.error) {
     const status = result.error.includes('not found') ? 404 : 400;

@@ -5,15 +5,19 @@
  * then parses the SSE event stream and dispatches typed callbacks
  * for each SageEvent type.
  *
+ * Features:
+ * - Automatic SSE reconnection on dropped connections
+ * - Classified error handling (rate limit, timeout, network)
+ * - User-friendly error messages with retry support
+ * - Configurable timeout for long-running generation requests
+ *
  * Usage:
- *   const { sendMessage, isStreaming, error } = useSageStream({
+ *   const { sendMessage, isStreaming, error, abort, retry } = useSageStream({
  *     sessionId: 'abc-123',
  *     accessToken: session.access_token,
  *     onChatStart: (data) => { ... },
  *     onChatDelta: (data) => { ... },
  *     onChatEnd: (data) => { ... },
- *     onToolStart: (data) => { ... },
- *     onToolEnd: (data) => { ... },
  *     onError: (data) => { ... },
  *   });
  */
@@ -31,9 +35,37 @@ import type {
   PanelSceneArcsEvent,
   PanelSceneArcEvent,
   PanelNameEvent,
+  PanelSectionsEvent,
+  PanelSectionEvent,
+  PanelWave3InvalidatedEvent,
+  PanelBalanceWarningEvent,
+  PanelSceneConfirmedEvent,
+  PanelEntityNPCsEvent,
+  PanelEntityAdversariesEvent,
+  PanelEntityItemsEvent,
+  PanelEntityPortentsEvent,
   UIReadyEvent,
   SageErrorEvent,
 } from '@dagger-app/shared-types';
+import {
+  classifyError,
+  delay,
+  calculateReconnectDelay,
+  MAX_RECONNECT_ATTEMPTS,
+  DEFAULT_REQUEST_TIMEOUT_MS,
+} from './stream-error-classifier';
+import { parseSSEBuffer, dispatchEvent } from './sse-event-dispatcher';
+import type { StreamError } from './stream-error-classifier';
+
+// Re-export types and constants for consumers
+export type { StreamErrorCode, StreamError } from './stream-error-classifier';
+export {
+  MAX_RECONNECT_ATTEMPTS,
+  DEFAULT_REQUEST_TIMEOUT_MS,
+  EXTENDED_REQUEST_TIMEOUT_MS,
+  classifyError,
+  isNetworkError,
+} from './stream-error-classifier';
 
 // =============================================================================
 // Types
@@ -51,6 +83,15 @@ export interface SageStreamCallbacks {
   onPanelSceneArcs?: (data: PanelSceneArcsEvent['data']) => void;
   onPanelSceneArc?: (data: PanelSceneArcEvent['data']) => void;
   onPanelName?: (data: PanelNameEvent['data']) => void;
+  onPanelSections?: (data: PanelSectionsEvent['data']) => void;
+  onPanelSection?: (data: PanelSectionEvent['data']) => void;
+  onPanelWave3Invalidated?: (data: PanelWave3InvalidatedEvent['data']) => void;
+  onPanelBalanceWarning?: (data: PanelBalanceWarningEvent['data']) => void;
+  onPanelSceneConfirmed?: (data: PanelSceneConfirmedEvent['data']) => void;
+  onPanelEntityNPCs?: (data: PanelEntityNPCsEvent['data']) => void;
+  onPanelEntityAdversaries?: (data: PanelEntityAdversariesEvent['data']) => void;
+  onPanelEntityItems?: (data: PanelEntityItemsEvent['data']) => void;
+  onPanelEntityPortents?: (data: PanelEntityPortentsEvent['data']) => void;
   onUIReady?: (data: UIReadyEvent['data']) => void;
   onError?: (data: SageErrorEvent['data']) => void;
 }
@@ -58,117 +99,16 @@ export interface SageStreamCallbacks {
 export interface UseSageStreamOptions extends SageStreamCallbacks {
   sessionId: string;
   accessToken: string;
+  /** Request timeout in milliseconds (default: 30000) */
+  requestTimeoutMs?: number;
 }
 
 export interface UseSageStreamReturn {
   sendMessage: (message: string) => Promise<void>;
   isStreaming: boolean;
-  error: string | null;
+  error: StreamError | null;
   abort: () => void;
-}
-
-// =============================================================================
-// SSE Line Parser
-// =============================================================================
-
-interface ParsedSSELine {
-  eventType: string;
-  data: unknown;
-}
-
-/**
- * Parse buffered SSE text into individual events.
- *
- * Each event is separated by a double newline. Within each event:
- * - "event: <type>" sets the event type
- * - "data: <json>" sets the data payload
- */
-function parseSSEBuffer(buffer: string): {
-  events: ParsedSSELine[];
-  remaining: string;
-} {
-  const events: ParsedSSELine[] = [];
-  const blocks = buffer.split('\n\n');
-
-  // Last element may be incomplete; keep it as remaining
-  const remaining = blocks.pop() ?? '';
-
-  for (const block of blocks) {
-    if (!block.trim()) continue;
-
-    let eventType = 'message';
-    let dataStr = '';
-
-    for (const line of block.split('\n')) {
-      if (line.startsWith('event:')) {
-        eventType = line.slice('event:'.length).trim();
-      } else if (line.startsWith('data:')) {
-        dataStr = line.slice('data:'.length).trim();
-      }
-    }
-
-    if (!dataStr) continue;
-
-    try {
-      events.push({ eventType, data: JSON.parse(dataStr) });
-    } catch {
-      events.push({ eventType, data: dataStr });
-    }
-  }
-
-  return { events, remaining };
-}
-
-// =============================================================================
-// Event Dispatcher
-// =============================================================================
-
-function dispatchEvent(
-  eventType: string,
-  data: unknown,
-  callbacks: SageStreamCallbacks
-): void {
-  switch (eventType) {
-    case 'chat:start':
-      callbacks.onChatStart?.(data as ChatStartEvent['data']);
-      break;
-    case 'chat:delta':
-      callbacks.onChatDelta?.(data as ChatDeltaEvent['data']);
-      break;
-    case 'chat:end':
-      callbacks.onChatEnd?.(data as ChatEndEvent['data']);
-      break;
-    case 'tool:start':
-      callbacks.onToolStart?.(data as ToolStartEvent['data']);
-      break;
-    case 'tool:end':
-      callbacks.onToolEnd?.(data as ToolEndEvent['data']);
-      break;
-    case 'panel:spark':
-      callbacks.onPanelSpark?.(data as PanelSparkEvent['data']);
-      break;
-    case 'panel:component':
-      callbacks.onPanelComponent?.(data as PanelComponentEvent['data']);
-      break;
-    case 'panel:frames':
-      callbacks.onPanelFrames?.(data as PanelFramesEvent['data']);
-      break;
-    case 'panel:scene_arcs':
-      callbacks.onPanelSceneArcs?.(data as PanelSceneArcsEvent['data']);
-      break;
-    case 'panel:scene_arc':
-      callbacks.onPanelSceneArc?.(data as PanelSceneArcEvent['data']);
-      break;
-    case 'panel:name':
-      callbacks.onPanelName?.(data as PanelNameEvent['data']);
-      break;
-    case 'ui:ready':
-      callbacks.onUIReady?.(data as UIReadyEvent['data']);
-      break;
-    case 'error':
-      callbacks.onError?.(data as SageErrorEvent['data']);
-      break;
-  }
+  retry: () => Promise<void>;
 }
 
 // =============================================================================
@@ -179,8 +119,10 @@ export function useSageStream(
   options: UseSageStreamOptions
 ): UseSageStreamReturn {
   const [isStreaming, setIsStreaming] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<StreamError | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const lastMessageRef = useRef<string | null>(null);
+  const reconnectAttemptsRef = useRef(0);
 
   const abort = useCallback(() => {
     abortControllerRef.current?.abort();
@@ -188,15 +130,19 @@ export function useSageStream(
     setIsStreaming(false);
   }, []);
 
-  const sendMessage = useCallback(
+  /**
+   * Execute a chat request with timeout and error classification.
+   */
+  const executeRequest = useCallback(
     async (message: string): Promise<void> => {
-      if (isStreaming) return;
-
-      setIsStreaming(true);
-      setError(null);
-
+      const timeoutMs = options.requestTimeoutMs ?? DEFAULT_REQUEST_TIMEOUT_MS;
       const controller = new AbortController();
       abortControllerRef.current = controller;
+
+      // Set up request timeout
+      const timeoutId = setTimeout(() => {
+        controller.abort();
+      }, timeoutMs);
 
       try {
         const response = await fetch('/api/chat', {
@@ -212,36 +158,135 @@ export function useSageStream(
           signal: controller.signal,
         });
 
+        clearTimeout(timeoutId);
+
         if (!response.ok) {
           const body = await response.json().catch(() => ({}));
-          throw new Error(
-            (body as { error?: string }).error ??
-              `Chat request failed: ${response.status}`
+          const serverMessage = (body as { error?: string }).error;
+          const classified = classifyError(
+            new Error(serverMessage ?? `HTTP ${response.status}`),
+            response.status
           );
+          throw Object.assign(new Error(classified.message), {
+            streamError: classified,
+          });
         }
 
         if (!response.body) {
           throw new Error('Response body is null — streaming not supported');
         }
 
+        // Reset reconnect counter on successful connection
+        reconnectAttemptsRef.current = 0;
+
         await readSSEStream(response.body, options, controller.signal);
-      } catch (err) {
-        if ((err as Error).name !== 'AbortError') {
-          const errorMessage =
-            err instanceof Error ? err.message : 'Stream failed';
-          setError(errorMessage);
-          options.onError?.({ code: 'FETCH_ERROR', message: errorMessage });
+      } finally {
+        clearTimeout(timeoutId);
+      }
+    },
+    [options]
+  );
+
+  /**
+   * Attempt to reconnect after a stream disconnection.
+   *
+   * Uses exponential backoff up to MAX_RECONNECT_ATTEMPTS.
+   * If all attempts fail, surfaces the error to the user.
+   */
+  const attemptReconnect = useCallback(
+    async (message: string): Promise<boolean> => {
+      while (reconnectAttemptsRef.current < MAX_RECONNECT_ATTEMPTS) {
+        const attempt = reconnectAttemptsRef.current;
+        reconnectAttemptsRef.current += 1;
+
+        const waitMs = calculateReconnectDelay(attempt);
+        await delay(waitMs);
+
+        try {
+          await executeRequest(message);
+          return true;
+        } catch {
+          // Continue to next attempt
         }
+      }
+
+      return false;
+    },
+    [executeRequest]
+  );
+
+  const sendMessage = useCallback(
+    async (message: string): Promise<void> => {
+      if (isStreaming) return;
+
+      setIsStreaming(true);
+      setError(null);
+      lastMessageRef.current = message;
+      reconnectAttemptsRef.current = 0;
+
+      try {
+        await executeRequest(message);
+      } catch (err) {
+        if ((err as Error).name === 'AbortError') {
+          // Check if this was a timeout (AbortError from our timeout)
+          const timeoutError = classifyError(err);
+          if (timeoutError.code === 'TIMEOUT') {
+            setError(timeoutError);
+            options.onError?.({
+              code: timeoutError.code,
+              message: timeoutError.message,
+            });
+          }
+          // Otherwise it was a manual abort — no error to show
+          return;
+        }
+
+        // Check for stream error metadata attached by executeRequest
+        const streamErr = (err as { streamError?: StreamError }).streamError;
+        if (streamErr) {
+          setError(streamErr);
+          options.onError?.({ code: streamErr.code, message: streamErr.message });
+          return;
+        }
+
+        // Classify the error and decide whether to reconnect
+        const classified = classifyError(err);
+
+        if (classified.code === 'NETWORK_ERROR' || classified.code === 'STREAM_DISCONNECTED') {
+          const reconnected = await attemptReconnect(message);
+          if (reconnected) return;
+        }
+
+        setError(classified);
+        options.onError?.({ code: classified.code, message: classified.message });
       } finally {
         abortControllerRef.current = null;
         setIsStreaming(false);
       }
     },
-    [isStreaming, options]
+    [isStreaming, options, executeRequest, attemptReconnect]
   );
 
-  return { sendMessage, isStreaming, error, abort };
+  /**
+   * Retry the last failed message.
+   *
+   * Allows the user to manually retry after a retryable error
+   * without re-typing their message.
+   */
+  const retry = useCallback(async (): Promise<void> => {
+    const lastMessage = lastMessageRef.current;
+    if (!lastMessage) return;
+
+    reconnectAttemptsRef.current = 0;
+    await sendMessage(lastMessage);
+  }, [sendMessage]);
+
+  return { sendMessage, isStreaming, error, abort, retry };
 }
+
+// =============================================================================
+// SSE Stream Reader
+// =============================================================================
 
 /**
  * Read an SSE stream from a ReadableStream, parsing events and

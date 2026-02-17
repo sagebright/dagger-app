@@ -294,12 +294,12 @@ const WEAVING_TOOLS: ToolDefinition[] = [
 // Inscribing Tools
 // =============================================================================
 
-const UPDATE_SCENE_SECTION: ToolDefinition = {
-  name: 'update_scene_section',
+const UPDATE_SECTION: ToolDefinition = {
+  name: 'update_section',
   description:
-    'Update a single section of an inscribed scene. Sections: ' +
-    'introduction, keyMoments, resolution, npcs, adversaries, ' +
-    'items, portents, tierGuidance, toneNotes.',
+    'Update a single section of the currently active scene. ' +
+    'Sections: overview, setup, developments, npcs_present, adversaries, ' +
+    'items, transitions, portents, gm_notes.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -307,20 +307,116 @@ const UPDATE_SCENE_SECTION: ToolDefinition = {
         type: 'string',
         description: 'The scene arc ID to update',
       },
-      section: {
+      sectionId: {
         type: 'string',
         description: 'Which section to update',
         enum: [
-          'introduction', 'keyMoments', 'resolution',
-          'npcs', 'adversaries', 'items',
-          'portents', 'tierGuidance', 'toneNotes',
+          'overview', 'setup', 'developments',
+          'npcs_present', 'adversaries', 'items',
+          'transitions', 'portents', 'gm_notes',
         ],
       },
-      value: {
-        description: 'The new section content (shape depends on section)',
+      content: {
+        type: 'string',
+        description: 'The new section content. For narrative sections, ' +
+          'wrap GM read-aloud text in [READ_ALOUD]...[/READ_ALOUD] markers.',
       },
     },
-    required: ['sceneArcId', 'section', 'value'],
+    required: ['sceneArcId', 'sectionId', 'content'],
+  },
+};
+
+const SET_WAVE: ToolDefinition = {
+  name: 'set_wave',
+  description:
+    'Populate an entire wave of sections at once. Wave 1: overview, setup, ' +
+    'developments. Wave 2: npcs_present, adversaries, items. Wave 3: ' +
+    'transitions, portents, gm_notes. Call this to fill a complete wave.',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      sceneArcId: {
+        type: 'string',
+        description: 'The scene arc ID',
+      },
+      wave: {
+        type: 'number',
+        description: 'Wave number (1, 2, or 3)',
+        enum: [1, 2, 3],
+      },
+      sections: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            sectionId: {
+              type: 'string',
+              description: 'Section identifier',
+            },
+            content: {
+              type: 'string',
+              description: 'Section content',
+            },
+          },
+          required: ['sectionId', 'content'],
+        },
+        description: 'The sections to populate for this wave',
+      },
+    },
+    required: ['sceneArcId', 'wave', 'sections'],
+  },
+};
+
+const INVALIDATE_WAVE3: ToolDefinition = {
+  name: 'invalidate_wave3',
+  description:
+    'Mark Wave 3 sections (transitions, portents, gm_notes) for ' +
+    'regeneration. Call this when Wave 1 or Wave 2 content has been ' +
+    'revised and Wave 3 is no longer coherent with the changes.',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      sceneArcId: {
+        type: 'string',
+        description: 'The scene arc ID',
+      },
+      reason: {
+        type: 'string',
+        description: 'Why Wave 3 needs regeneration',
+      },
+    },
+    required: ['sceneArcId', 'reason'],
+  },
+};
+
+const WARN_BALANCE: ToolDefinition = {
+  name: 'warn_balance',
+  description:
+    'Emit a game balance warning about the current scene. Use when ' +
+    'adversary difficulty, item rewards, or encounter balance seems ' +
+    'inappropriate for the party tier.',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      sceneArcId: {
+        type: 'string',
+        description: 'The scene arc ID',
+      },
+      message: {
+        type: 'string',
+        description: 'The balance warning message',
+      },
+      sectionId: {
+        type: 'string',
+        description: 'Optional section the warning relates to',
+        enum: [
+          'overview', 'setup', 'developments',
+          'npcs_present', 'adversaries', 'items',
+          'transitions', 'portents', 'gm_notes',
+        ],
+      },
+    },
+    required: ['sceneArcId', 'message'],
   },
 };
 
@@ -388,11 +484,89 @@ const QUERY_ITEMS: ToolDefinition = {
   },
 };
 
+const PROPAGATE_RENAME: ToolDefinition = {
+  name: 'propagate_rename',
+  description:
+    'Propagate an entity rename across all sections of the active scene. ' +
+    'Uses deterministic find-and-replace with word-boundary matching. ' +
+    'Call this after renaming an NPC, adversary, or item to keep all ' +
+    'sections consistent. Returns which sections were updated.',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      sceneArcId: {
+        type: 'string',
+        description: 'The scene arc ID to propagate within',
+      },
+      oldName: {
+        type: 'string',
+        description: 'The previous entity name',
+      },
+      newName: {
+        type: 'string',
+        description: 'The new entity name',
+      },
+      originSectionId: {
+        type: 'string',
+        description:
+          'The section where the rename originated (excluded from propagation)',
+        enum: [
+          'overview', 'setup', 'developments',
+          'npcs_present', 'adversaries', 'items',
+          'transitions', 'portents', 'gm_notes',
+        ],
+      },
+    },
+    required: ['sceneArcId', 'oldName', 'newName'],
+  },
+};
+
+const PROPAGATE_SEMANTIC: ToolDefinition = {
+  name: 'propagate_semantic',
+  description:
+    'Signal that a semantic entity change (motivation, role, description) ' +
+    'requires cross-section review. The system identifies which sections ' +
+    'reference the entity and returns a hint for updating them. ' +
+    'Call this when an NPC\'s role or motivation changes.',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      sceneArcId: {
+        type: 'string',
+        description: 'The scene arc ID to check',
+      },
+      entityName: {
+        type: 'string',
+        description: 'The entity name to search for',
+      },
+      changeType: {
+        type: 'string',
+        description: 'What aspect changed',
+        enum: ['motivation', 'role', 'description', 'backstory', 'voice', 'secret'],
+      },
+      oldValue: {
+        type: 'string',
+        description: 'The previous value',
+      },
+      newValue: {
+        type: 'string',
+        description: 'The new value',
+      },
+    },
+    required: ['sceneArcId', 'entityName', 'changeType', 'oldValue', 'newValue'],
+  },
+};
+
 const INSCRIBING_TOOLS: ToolDefinition[] = [
-  UPDATE_SCENE_SECTION,
+  UPDATE_SECTION,
+  SET_WAVE,
+  INVALIDATE_WAVE3,
+  WARN_BALANCE,
   CONFIRM_SCENE,
   QUERY_ADVERSARIES,
   QUERY_ITEMS,
+  PROPAGATE_RENAME,
+  PROPAGATE_SEMANTIC,
 ];
 
 // =============================================================================

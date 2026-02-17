@@ -128,6 +128,273 @@ export interface PanelNameEvent {
   };
 }
 
+// =============================================================================
+// Inscribing Panel Events
+// =============================================================================
+
+/** All 9 sections populated by set_wave tool (one wave at a time) */
+export interface PanelSectionsEvent {
+  type: 'panel:sections';
+  data: {
+    sceneArcId: string;
+    wave: WaveNumber;
+    sections: InscribingSectionData[];
+  };
+}
+
+/** Single section update by update_section tool */
+export interface PanelSectionEvent {
+  type: 'panel:section';
+  data: {
+    sceneArcId: string;
+    sectionId: InscribingSectionId;
+    content: string;
+    streaming: boolean;
+  };
+}
+
+/** Wave 3 has been invalidated due to Wave 1-2 changes */
+export interface PanelWave3InvalidatedEvent {
+  type: 'panel:wave3_invalidated';
+  data: {
+    sceneArcId: string;
+    reason: string;
+  };
+}
+
+/** Game balance warning emitted by warn_balance tool */
+export interface PanelBalanceWarningEvent {
+  type: 'panel:balance_warning';
+  data: {
+    sceneArcId: string;
+    message: string;
+    sectionId?: InscribingSectionId;
+  };
+}
+
+/** Scene confirmation event — all 9 sections locked */
+export interface PanelSceneConfirmedEvent {
+  type: 'panel:scene_confirmed';
+  data: {
+    sceneArcId: string;
+  };
+}
+
+// =============================================================================
+// Entity Panel Events (Inscribing Wave 2 & 3 entity data)
+// =============================================================================
+
+/** NPCs populated for a scene section */
+export interface PanelEntityNPCsEvent {
+  type: 'panel:entity_npcs';
+  data: {
+    sceneArcId: string;
+    npcs: NPCCardData[];
+  };
+}
+
+/** Adversaries populated for a scene section */
+export interface PanelEntityAdversariesEvent {
+  type: 'panel:entity_adversaries';
+  data: {
+    sceneArcId: string;
+    adversaries: AdversaryCardData[];
+  };
+}
+
+/** Items populated for a scene section */
+export interface PanelEntityItemsEvent {
+  type: 'panel:entity_items';
+  data: {
+    sceneArcId: string;
+    items: ItemCardData[];
+  };
+}
+
+/** Portent categories populated for a scene section */
+export interface PanelEntityPortentsEvent {
+  type: 'panel:entity_portents';
+  data: {
+    sceneArcId: string;
+    categories: PortentCategoryData[];
+  };
+}
+
+// =============================================================================
+// Inscribing Data Types
+// =============================================================================
+
+/** Wave numbers for the 3-wave generation lifecycle */
+export type WaveNumber = 1 | 2 | 3;
+
+/** The 9 section identifiers for Inscribing */
+export type InscribingSectionId =
+  | 'overview'
+  | 'setup'
+  | 'developments'
+  | 'npcs_present'
+  | 'adversaries'
+  | 'items'
+  | 'transitions'
+  | 'portents'
+  | 'gm_notes';
+
+/** Lightweight section data for the accordion panel */
+export interface InscribingSectionData {
+  id: InscribingSectionId;
+  label: string;
+  content: string;
+  wave: WaveNumber;
+  /** Whether this section has a drill-in detail view */
+  hasDetail: boolean;
+  /** Optional entity data for Wave 2 / Wave 3 entity sections */
+  entityNPCs?: NPCCardData[];
+  entityAdversaries?: AdversaryCardData[];
+  entityItems?: ItemCardData[];
+  entityPortents?: PortentCategoryData[];
+}
+
+/** Wave groupings for the 9 sections */
+export const WAVE_SECTIONS: Record<WaveNumber, InscribingSectionId[]> = {
+  1: ['overview', 'setup', 'developments'],
+  2: ['npcs_present', 'adversaries', 'items'],
+  3: ['transitions', 'portents', 'gm_notes'],
+};
+
+/** Human-readable labels for each section */
+export const SECTION_LABELS: Record<InscribingSectionId, string> = {
+  overview: 'Overview',
+  setup: 'Setup',
+  developments: 'Developments',
+  npcs_present: 'NPCs Present',
+  adversaries: 'Adversaries',
+  items: 'Items',
+  transitions: 'Transitions',
+  portents: 'Portents',
+  gm_notes: 'GM Notes',
+};
+
+/** Sections that support narrative drill-in detail views */
+export const NARRATIVE_SECTIONS: InscribingSectionId[] = [
+  'setup',
+  'developments',
+  'transitions',
+];
+
+// =============================================================================
+// Entity Card Data Types (Inscribing Wave 2 & 3)
+// =============================================================================
+
+/** NPC role for card color coding */
+export type NPCCardRole =
+  | 'ally'
+  | 'neutral'
+  | 'antagonist'
+  | 'quest-giver'
+  | 'bystander'
+  | 'leader'
+  | 'oracle'
+  | 'scout'
+  | 'informant';
+
+/** Lightweight NPC data for entity cards in the accordion */
+export interface NPCCardData {
+  id: string;
+  name: string;
+  role: NPCCardRole;
+  description: string;
+  sceneAppearances: string[];
+  isEnriched: boolean;
+}
+
+/** Full NPC detail data for drill-in view */
+export interface NPCDetailData extends NPCCardData {
+  backstory: string;
+  voice: string;
+  motivation: string;
+  secret: string;
+}
+
+/** Adversary type for badge color coding */
+export type AdversaryCardType =
+  | 'bruiser'
+  | 'minion'
+  | 'leader'
+  | 'solo'
+  | 'skulk'
+  | 'horde'
+  | 'environment';
+
+/** Lightweight adversary data for entity cards */
+export interface AdversaryCardData {
+  id: string;
+  name: string;
+  type: AdversaryCardType;
+  difficulty: number;
+  quantity: number;
+  sceneAppearances: string[];
+  stats: {
+    hp: number;
+    stress: number;
+    attack: string;
+    damage: string;
+  };
+}
+
+/** Full adversary detail data for drill-in view */
+export interface AdversaryDetailData extends AdversaryCardData {
+  description: string;
+  traits: string[];
+  moves: Array<{ name: string; description: string }>;
+}
+
+/** Item category for type labels */
+export type ItemCardCategory = 'weapon' | 'armor' | 'item' | 'consumable';
+
+/** Lightweight item data for entity cards */
+export interface ItemCardData {
+  id: string;
+  name: string;
+  category: ItemCardCategory;
+  tier: number;
+  statLine: string;
+  sceneAppearances: string[];
+}
+
+/** Portent category for accordion grouping */
+export type PortentCategoryId =
+  | 'items_clues'
+  | 'environmental'
+  | 'social'
+  | 'magical'
+  | 'future_threads';
+
+/** A single portent entry with trigger/benefit/complication */
+export interface PortentEntry {
+  id: string;
+  title: string;
+  sceneBadge: string;
+  trigger: string;
+  benefit: string;
+  complication: string;
+}
+
+/** Portent category card data for the accordion */
+export interface PortentCategoryData {
+  category: PortentCategoryId;
+  label: string;
+  entries: PortentEntry[];
+}
+
+/** Labels for portent categories */
+export const PORTENT_CATEGORY_LABELS: Record<PortentCategoryId, string> = {
+  items_clues: 'Items & Clues',
+  environmental: 'Environmental Shifts',
+  social: 'Social Openings',
+  magical: 'Magical Effects',
+  future_threads: 'Future Threads',
+};
+
 /** Lightweight scene arc data for the Weaving panel */
 export interface SceneArcData {
   id: string;
@@ -196,6 +463,40 @@ export interface SageErrorEvent {
 }
 
 // =============================================================================
+// Cross-Section Propagation Events
+// =============================================================================
+
+/** A section in a propagation update (deterministic or semantic) */
+export interface PropagationSectionUpdate {
+  sectionId: string;
+  replacementCount: number;
+}
+
+/** Deterministic propagation completed (literal name replacements) */
+export interface PanelPropagationDeterministicEvent {
+  type: 'panel:propagation_deterministic';
+  data: {
+    sceneArcId: string;
+    oldName: string;
+    newName: string;
+    updatedSections: PropagationSectionUpdate[];
+    totalReplacements: number;
+  };
+}
+
+/** Semantic propagation hint queued for LLM review */
+export interface PanelPropagationSemanticEvent {
+  type: 'panel:propagation_semantic';
+  data: {
+    sceneArcId: string;
+    entityName: string;
+    changeType: string;
+    affectedSectionIds: string[];
+    suggestedAction: string;
+  };
+}
+
+// =============================================================================
 // Discriminated Union
 // =============================================================================
 
@@ -212,6 +513,17 @@ export type SageEvent =
   | PanelSceneArcsEvent
   | PanelSceneArcEvent
   | PanelNameEvent
+  | PanelSectionsEvent
+  | PanelSectionEvent
+  | PanelWave3InvalidatedEvent
+  | PanelBalanceWarningEvent
+  | PanelSceneConfirmedEvent
+  | PanelEntityNPCsEvent
+  | PanelEntityAdversariesEvent
+  | PanelEntityItemsEvent
+  | PanelEntityPortentsEvent
+  | PanelPropagationDeterministicEvent
+  | PanelPropagationSemanticEvent
   | UIReadyEvent
   | SessionStageEvent
   | SageErrorEvent;

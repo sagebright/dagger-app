@@ -76,22 +76,32 @@ const config: Config = {
         'panel-padding': 'var(--panel-padding)',
       },
       animation: {
-        'message-appear': 'message-appear 0.4s ease-out both',
-        'thinking-pulse': 'thinking-pulse 1.4s ease-in-out infinite',
-        'cursor-blink': 'cursor-blink 1s step-end infinite',
+        'message-appear': 'message-appear 0.35s ease-out both',
+        'thinking-pulse': 'thinking-pulse 1.6s ease-in-out infinite',
+        'cursor-blink': 'cursor-blink 0.8s step-end infinite',
+        'confirmation-shimmer': 'confirmation-shimmer 0.8s ease-out forwards',
+        'stage-enter': 'stage-transition 0.3s ease-out both',
       },
       keyframes: {
         'message-appear': {
-          from: { opacity: '0', transform: 'translateY(8px)' },
+          from: { opacity: '0', transform: 'translateY(6px)' },
           to: { opacity: '1', transform: 'translateY(0)' },
         },
         'thinking-pulse': {
-          '0%, 80%, 100%': { opacity: '0.2', transform: 'scale(0.85)' },
-          '40%': { opacity: '0.9', transform: 'scale(1)' },
+          '0%, 100%': { opacity: '0.15', transform: 'scale(0.8)' },
+          '50%': { opacity: '0.95', transform: 'scale(1.05)' },
         },
         'cursor-blink': {
           '0%, 100%': { opacity: '1' },
           '50%': { opacity: '0' },
+        },
+        'confirmation-shimmer': {
+          '0%': { 'background-position': '-200% center' },
+          '100%': { 'background-position': '200% center' },
+        },
+        'stage-transition': {
+          from: { opacity: '0', transform: 'translateX(8px)' },
+          to: { opacity: '1', transform: 'translateX(0)' },
         },
       },
     },

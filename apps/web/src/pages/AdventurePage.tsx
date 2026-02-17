@@ -20,6 +20,8 @@ import { InvokingPage } from './InvokingPage';
 import { AttuningPage } from './AttuningPage';
 import { BindingPage } from './BindingPage';
 import { WeavingPage } from './WeavingPage';
+import { InscribingPage } from './InscribingPage';
+import { DeliveringPage } from './DeliveringPage';
 import type { AdventureState, Stage } from '@dagger-app/shared-types';
 import { createEmptyAdventureState } from '@dagger-app/shared-types';
 
@@ -181,22 +183,9 @@ export function AdventurePage() {
       return <BindingPage sessionId={sessionId} />;
     case 'weaving':
       return <WeavingPage sessionId={sessionId} />;
-    default:
-      // Placeholder for stages not yet implemented
-      return (
-        <div
-          className="flex items-center justify-center h-screen"
-          style={{ background: 'var(--bg-primary)' }}
-        >
-          <div className="text-center">
-            <p className="font-serif text-[18px]" style={{ color: 'var(--accent-gold)' }}>
-              {stage.charAt(0).toUpperCase() + stage.slice(1)}
-            </p>
-            <p className="mt-2" style={{ color: 'var(--text-muted)' }}>
-              This stage is not yet implemented.
-            </p>
-          </div>
-        </div>
-      );
+    case 'inscribing':
+      return <InscribingPage sessionId={sessionId} />;
+    case 'delivering':
+      return <DeliveringPage sessionId={sessionId} />;
   }
 }

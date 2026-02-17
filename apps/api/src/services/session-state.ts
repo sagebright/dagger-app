@@ -317,3 +317,51 @@ export async function advanceStage(
 
   return { data: data as SageSession, error: null };
 }
+
+/**
+ * Mark a session as completed.
+ *
+ * Only valid when the session is in the 'delivering' stage.
+ * Sets is_active to false so the user can start a new adventure.
+ */
+export async function completeSession(
+  sessionId: string,
+  userId: string
+): Promise<ServiceResult<SageSession>> {
+  const loadResult = await loadSession(sessionId, userId);
+  if (loadResult.error || !loadResult.data) {
+    return { data: null, error: loadResult.error ?? 'Session not found' };
+  }
+
+  const { session } = loadResult.data;
+
+  if (!session.is_active) {
+    return { data: null, error: 'Session is already inactive' };
+  }
+
+  if (session.stage !== 'delivering') {
+    return {
+      data: null,
+      error: 'Session can only be completed from the delivering stage',
+    };
+  }
+
+  const supabase = getSupabase();
+
+  const { data, error } = await supabase
+    .from('sage_sessions')
+    .update({ is_active: false })
+    .eq('id', sessionId)
+    .eq('user_id', userId)
+    .select()
+    .single();
+
+  if (error || !data) {
+    return {
+      data: null,
+      error: error?.message ?? 'Failed to complete session',
+    };
+  }
+
+  return { data: data as SageSession, error: null };
+}

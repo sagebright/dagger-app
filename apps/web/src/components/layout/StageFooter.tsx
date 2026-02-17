@@ -27,12 +27,13 @@ export interface StageFooterProps {
 
 export function StageFooter({ label, isReady, onAdvance }: StageFooterProps) {
   return (
-    <div className="panel-footer">
+    <div className="panel-footer" role="navigation" aria-label="Stage advancement">
       <button
         className="footer-button"
         disabled={!isReady}
         onClick={onAdvance}
         type="button"
+        aria-label={isReady ? label : `${label} (not yet ready)`}
       >
         {label}
       </button>

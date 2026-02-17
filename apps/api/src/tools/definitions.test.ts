@@ -61,7 +61,10 @@ describe('getToolsForStage', () => {
 
   it('should include inscribing-specific tools', () => {
     const names = getToolNamesForStage('inscribing');
-    expect(names).toContain('update_scene_section');
+    expect(names).toContain('update_section');
+    expect(names).toContain('set_wave');
+    expect(names).toContain('invalidate_wave3');
+    expect(names).toContain('warn_balance');
     expect(names).toContain('confirm_scene');
     expect(names).toContain('query_adversaries');
     expect(names).toContain('query_items');

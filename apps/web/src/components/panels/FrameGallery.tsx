@@ -50,6 +50,8 @@ export function FrameGallery({
       <div
         className="flex-1 overflow-y-auto scrollbar-panel"
         style={{ padding: '8px var(--panel-padding)' }}
+        role="listbox"
+        aria-label="Available adventure frames"
       >
         {frames.length === 0 && (
           <div
@@ -106,7 +108,9 @@ function FrameCard({ frame, isExploring, isActive, onClick }: FrameCardProps) {
       className={`frame-card ${stateClass}`}
       onClick={onClick}
       type="button"
-      aria-label={`Explore frame: ${frame.name}`}
+      role="option"
+      aria-selected={isActive}
+      aria-label={`${frame.name}${isActive ? ' (selected)' : isExploring ? ' (exploring)' : ''}`}
       style={{ display: 'block', width: '100%', textAlign: 'left' }}
     >
       <div className="frame-card-name">{frame.name}</div>

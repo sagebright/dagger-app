@@ -57,7 +57,10 @@ describe('buildSystemPrompt', () => {
 
   it('should include available tool names for inscribing', () => {
     const prompt = buildSystemPrompt('inscribing');
-    expect(prompt).toContain('update_scene_section');
+    expect(prompt).toContain('update_section');
+    expect(prompt).toContain('set_wave');
+    expect(prompt).toContain('invalidate_wave3');
+    expect(prompt).toContain('warn_balance');
     expect(prompt).toContain('confirm_scene');
     expect(prompt).toContain('query_adversaries');
     expect(prompt).toContain('query_items');

@@ -11,7 +11,7 @@
  * can review sealed stages without modifying them.
  */
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, type KeyboardEvent } from 'react';
 import { STAGES } from '@dagger-app/shared-types';
 import type { Stage } from '@dagger-app/shared-types';
 
@@ -81,7 +81,7 @@ export function StageDropdown({ currentStage, onNavigate }: StageDropdownProps) 
   useEffect(() => {
     if (!isOpen) return;
 
-    function handleKeyDown(event: KeyboardEvent) {
+    function handleKeyDown(event: globalThis.KeyboardEvent) {
       if (event.key === 'Escape') {
         setIsOpen(false);
         triggerRef.current?.focus();
@@ -90,6 +90,15 @@ export function StageDropdown({ currentStage, onNavigate }: StageDropdownProps) 
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen]);
+
+  // Focus first interactive item when menu opens
+  useEffect(() => {
+    if (!isOpen || !menuRef.current) return;
+    const firstFocusable = menuRef.current.querySelector<HTMLButtonElement>(
+      'button:not([disabled])'
+    );
+    firstFocusable?.focus();
   }, [isOpen]);
 
   function getStageState(stageOrder: number): StageState {
@@ -104,7 +113,53 @@ export function StageDropdown({ currentStage, onNavigate }: StageDropdownProps) 
       onNavigate(stage);
     }
     setIsOpen(false);
+    triggerRef.current?.focus();
   }
+
+  /** Handle arrow key navigation within the dropdown menu */
+  const handleMenuKeyDown = useCallback(
+    (event: KeyboardEvent<HTMLDivElement>) => {
+      const menu = menuRef.current;
+      if (!menu) return;
+
+      const items = Array.from(
+        menu.querySelectorAll<HTMLButtonElement>('button:not([disabled])')
+      );
+      const activeIndex = items.findIndex(
+        (el) => el === document.activeElement
+      );
+
+      switch (event.key) {
+        case 'ArrowDown': {
+          event.preventDefault();
+          const nextIndex = activeIndex < items.length - 1 ? activeIndex + 1 : 0;
+          items[nextIndex]?.focus();
+          break;
+        }
+        case 'ArrowUp': {
+          event.preventDefault();
+          const prevIndex = activeIndex > 0 ? activeIndex - 1 : items.length - 1;
+          items[prevIndex]?.focus();
+          break;
+        }
+        case 'Home': {
+          event.preventDefault();
+          items[0]?.focus();
+          break;
+        }
+        case 'End': {
+          event.preventDefault();
+          items[items.length - 1]?.focus();
+          break;
+        }
+        case 'Tab': {
+          setIsOpen(false);
+          break;
+        }
+      }
+    },
+    []
+  );
 
   return (
     <div className="relative">
@@ -114,6 +169,7 @@ export function StageDropdown({ currentStage, onNavigate }: StageDropdownProps) 
         onClick={toggleDropdown}
         aria-expanded={isOpen}
         aria-haspopup="true"
+        aria-label={`Stage navigation: ${currentStageInfo?.label ?? 'Unknown'}`}
         type="button"
       >
         <span
@@ -141,7 +197,13 @@ export function StageDropdown({ currentStage, onNavigate }: StageDropdownProps) 
       </button>
 
       {isOpen && (
-        <div ref={menuRef} className="stage-dropdown-menu" role="menu">
+        <div
+          ref={menuRef}
+          className="stage-dropdown-menu"
+          role="menu"
+          aria-label="Adventure stages"
+          onKeyDown={handleMenuKeyDown}
+        >
           {STAGES.map((stage) => {
             const state = getStageState(stage.order);
             return (

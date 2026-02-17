@@ -154,6 +154,8 @@ export function ComponentChoice({
       <div
         className="flex-1 overflow-y-auto scrollbar-panel flex flex-col gap-2"
         style={{ padding: '16px var(--panel-padding)' }}
+        role={isMultiSelect ? 'group' : 'listbox'}
+        aria-label={`${metadata?.label ?? componentId} choices`}
       >
         {choices.map((choice) => {
           const isSelected = isMultiSelect

@@ -53,11 +53,13 @@ export function ChatPanel({
   }, [messages, isThinking]);
 
   return (
-    <div className="chat-panel">
+    <div className="chat-panel" role="region" aria-label="Chat conversation">
       {/* Scrollable message area */}
       <div
         ref={messageAreaRef}
         className="message-area scrollbar-thin"
+        aria-live="polite"
+        aria-relevant="additions"
       >
         <div className="flex flex-col gap-[var(--message-gap)] message-stagger">
           {messages.map((msg) => (
