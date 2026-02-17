@@ -32,6 +32,9 @@ export * from './custom-frames.js';
 // Re-export Sage event types (SSE streaming, tool definitions)
 export * from './sage-events.js';
 
+// Re-export adventure state types (Sage Codex state model)
+export * from './adventure-state.js';
+
 /**
  * API health check response
  */

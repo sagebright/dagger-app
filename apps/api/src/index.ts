@@ -16,6 +16,7 @@ import authRouter from './routes/auth.js';
 import daggerheartRouter from './routes/daggerheart.js';
 import sessionRouter, { sessionsListRouter } from './routes/session.js';
 import chatRouter from './routes/chat.js';
+import undoRouter from './routes/undo.js';
 import { requireAuth } from './middleware/auth.js';
 
 export const API_VERSION = '0.0.1';
@@ -34,6 +35,7 @@ app.use('/api/daggerheart', requireAuth, daggerheartRouter);
 app.use('/api/session', requireAuth, sessionRouter);
 app.use('/api/sessions', requireAuth, sessionsListRouter);
 app.use('/api/chat', requireAuth, chatRouter);
+app.use('/api/section', requireAuth, undoRouter);
 
 /**
  * Export the app for testing (supertest) and the start function
