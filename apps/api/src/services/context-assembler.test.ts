@@ -141,7 +141,10 @@ describe('assembleAnthropicPayload', () => {
       });
 
       const toolNames = result.streamOptions.tools?.map((t) => t.name) ?? [];
-      expect(toolNames).toContain('update_scene_section');
+      expect(toolNames).toContain('update_section');
+      expect(toolNames).toContain('set_wave');
+      expect(toolNames).toContain('invalidate_wave3');
+      expect(toolNames).toContain('warn_balance');
       expect(toolNames).toContain('confirm_scene');
       expect(toolNames).toContain('query_adversaries');
     });

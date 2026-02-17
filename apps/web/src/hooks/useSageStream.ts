@@ -31,6 +31,11 @@ import type {
   PanelSceneArcsEvent,
   PanelSceneArcEvent,
   PanelNameEvent,
+  PanelSectionsEvent,
+  PanelSectionEvent,
+  PanelWave3InvalidatedEvent,
+  PanelBalanceWarningEvent,
+  PanelSceneConfirmedEvent,
   UIReadyEvent,
   SageErrorEvent,
 } from '@dagger-app/shared-types';
@@ -51,6 +56,11 @@ export interface SageStreamCallbacks {
   onPanelSceneArcs?: (data: PanelSceneArcsEvent['data']) => void;
   onPanelSceneArc?: (data: PanelSceneArcEvent['data']) => void;
   onPanelName?: (data: PanelNameEvent['data']) => void;
+  onPanelSections?: (data: PanelSectionsEvent['data']) => void;
+  onPanelSection?: (data: PanelSectionEvent['data']) => void;
+  onPanelWave3Invalidated?: (data: PanelWave3InvalidatedEvent['data']) => void;
+  onPanelBalanceWarning?: (data: PanelBalanceWarningEvent['data']) => void;
+  onPanelSceneConfirmed?: (data: PanelSceneConfirmedEvent['data']) => void;
   onUIReady?: (data: UIReadyEvent['data']) => void;
   onError?: (data: SageErrorEvent['data']) => void;
 }
@@ -161,6 +171,21 @@ function dispatchEvent(
       break;
     case 'panel:name':
       callbacks.onPanelName?.(data as PanelNameEvent['data']);
+      break;
+    case 'panel:sections':
+      callbacks.onPanelSections?.(data as PanelSectionsEvent['data']);
+      break;
+    case 'panel:section':
+      callbacks.onPanelSection?.(data as PanelSectionEvent['data']);
+      break;
+    case 'panel:wave3_invalidated':
+      callbacks.onPanelWave3Invalidated?.(data as PanelWave3InvalidatedEvent['data']);
+      break;
+    case 'panel:balance_warning':
+      callbacks.onPanelBalanceWarning?.(data as PanelBalanceWarningEvent['data']);
+      break;
+    case 'panel:scene_confirmed':
+      callbacks.onPanelSceneConfirmed?.(data as PanelSceneConfirmedEvent['data']);
       break;
     case 'ui:ready':
       callbacks.onUIReady?.(data as UIReadyEvent['data']);

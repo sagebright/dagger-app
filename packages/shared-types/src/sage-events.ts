@@ -128,6 +128,114 @@ export interface PanelNameEvent {
   };
 }
 
+// =============================================================================
+// Inscribing Panel Events
+// =============================================================================
+
+/** All 9 sections populated by set_wave tool (one wave at a time) */
+export interface PanelSectionsEvent {
+  type: 'panel:sections';
+  data: {
+    sceneArcId: string;
+    wave: WaveNumber;
+    sections: InscribingSectionData[];
+  };
+}
+
+/** Single section update by update_section tool */
+export interface PanelSectionEvent {
+  type: 'panel:section';
+  data: {
+    sceneArcId: string;
+    sectionId: InscribingSectionId;
+    content: string;
+    streaming: boolean;
+  };
+}
+
+/** Wave 3 has been invalidated due to Wave 1-2 changes */
+export interface PanelWave3InvalidatedEvent {
+  type: 'panel:wave3_invalidated';
+  data: {
+    sceneArcId: string;
+    reason: string;
+  };
+}
+
+/** Game balance warning emitted by warn_balance tool */
+export interface PanelBalanceWarningEvent {
+  type: 'panel:balance_warning';
+  data: {
+    sceneArcId: string;
+    message: string;
+    sectionId?: InscribingSectionId;
+  };
+}
+
+/** Scene confirmation event — all 9 sections locked */
+export interface PanelSceneConfirmedEvent {
+  type: 'panel:scene_confirmed';
+  data: {
+    sceneArcId: string;
+  };
+}
+
+// =============================================================================
+// Inscribing Data Types
+// =============================================================================
+
+/** Wave numbers for the 3-wave generation lifecycle */
+export type WaveNumber = 1 | 2 | 3;
+
+/** The 9 section identifiers for Inscribing */
+export type InscribingSectionId =
+  | 'overview'
+  | 'setup'
+  | 'developments'
+  | 'npcs_present'
+  | 'adversaries'
+  | 'items'
+  | 'transitions'
+  | 'portents'
+  | 'gm_notes';
+
+/** Lightweight section data for the accordion panel */
+export interface InscribingSectionData {
+  id: InscribingSectionId;
+  label: string;
+  content: string;
+  wave: WaveNumber;
+  /** Whether this section has a drill-in detail view */
+  hasDetail: boolean;
+}
+
+/** Wave groupings for the 9 sections */
+export const WAVE_SECTIONS: Record<WaveNumber, InscribingSectionId[]> = {
+  1: ['overview', 'setup', 'developments'],
+  2: ['npcs_present', 'adversaries', 'items'],
+  3: ['transitions', 'portents', 'gm_notes'],
+};
+
+/** Human-readable labels for each section */
+export const SECTION_LABELS: Record<InscribingSectionId, string> = {
+  overview: 'Overview',
+  setup: 'Setup',
+  developments: 'Developments',
+  npcs_present: 'NPCs Present',
+  adversaries: 'Adversaries',
+  items: 'Items',
+  transitions: 'Transitions',
+  portents: 'Portents',
+  gm_notes: 'GM Notes',
+};
+
+/** Sections that support narrative drill-in detail views */
+export const NARRATIVE_SECTIONS: InscribingSectionId[] = [
+  'setup',
+  'developments',
+  'transitions',
+];
+
 /** Lightweight scene arc data for the Weaving panel */
 export interface SceneArcData {
   id: string;
@@ -212,6 +320,11 @@ export type SageEvent =
   | PanelSceneArcsEvent
   | PanelSceneArcEvent
   | PanelNameEvent
+  | PanelSectionsEvent
+  | PanelSectionEvent
+  | PanelWave3InvalidatedEvent
+  | PanelBalanceWarningEvent
+  | PanelSceneConfirmedEvent
   | UIReadyEvent
   | SessionStageEvent
   | SageErrorEvent;

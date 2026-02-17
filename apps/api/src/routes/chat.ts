@@ -27,6 +27,7 @@ import { drainPendingEvents } from '../tools/invoking.js';
 import { drainAttuningEvents } from '../tools/attuning.js';
 import { drainBindingEvents } from '../tools/binding.js';
 import { drainWeavingEvents } from '../tools/weaving.js';
+import { drainInscribingEvents } from '../tools/inscribing.js';
 import { logTokenUsage } from '../services/token-tracker.js';
 import { storeMessage, loadConversationHistory } from '../services/message-store.js';
 import type { AnthropicMessage, AnthropicContentBlock } from '../services/anthropic.js';
@@ -236,6 +237,10 @@ router.post('/', async (req: Request, res: Response) => {
       }
       const weavingEvents = drainWeavingEvents();
       for (const event of weavingEvents) {
+        sendSSEEvent(res, event);
+      }
+      const inscribingEvents = drainInscribingEvents();
+      for (const event of inscribingEvents) {
         sendSSEEvent(res, event);
       }
 

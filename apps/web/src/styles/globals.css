@@ -755,6 +755,214 @@
 }
 
 /* =============================================================================
+ * Inscribing — Section Accordion, Wave Indicators, Read-Aloud Blocks
+ *
+ * 9-section accordion grouped in 3 waves. Narrative sections (Setup,
+ * Developments, Transitions) have drill-in detail views with read-aloud blocks.
+ * Wave 3 dims at 0.4 opacity until Waves 1-2 settle.
+ * ============================================================================= */
+
+@layer components {
+  /* Section accordion item */
+  .section-accordion-item {
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .section-accordion-item:last-child {
+    border-bottom: none;
+  }
+
+  .section-accordion-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    border-radius: var(--radius-sm);
+    transition: background 0.12s ease;
+    user-select: none;
+    background: none;
+    border: none;
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+    color: inherit;
+    font: inherit;
+  }
+
+  .section-accordion-header:hover {
+    background: var(--bg-surface);
+  }
+
+  .section-accordion-chevron {
+    font-size: 10px;
+    color: var(--text-muted);
+    flex-shrink: 0;
+    transition: transform 0.2s ease;
+    width: 16px;
+    text-align: center;
+  }
+
+  .section-accordion-item--expanded .section-accordion-chevron {
+    transform: rotate(90deg);
+  }
+
+  .section-accordion-name {
+    font-family: var(--font-sans);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+    flex: 1;
+    min-width: 0;
+  }
+
+  .section-accordion-item--expanded .section-accordion-name {
+    color: var(--accent-gold);
+  }
+
+  /* Narrative sections have clickable names */
+  .section-accordion-item--has-detail .section-accordion-name {
+    cursor: pointer;
+    transition: color 0.15s ease;
+  }
+
+  .section-accordion-item--has-detail .section-accordion-name:hover {
+    color: var(--accent-gold);
+  }
+
+  .section-accordion-body {
+    padding: 0 12px 12px 36px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+  }
+
+  /* Wave label divider */
+  .wave-divider {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px 4px;
+  }
+
+  .wave-divider-label {
+    font-family: var(--font-serif);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    white-space: nowrap;
+  }
+
+  .wave-divider-line {
+    flex: 1;
+    height: 1px;
+    background: var(--border-subtle);
+  }
+
+  /* Wave 3 dimmed state */
+  .wave-group--dimmed {
+    opacity: 0.4;
+    transition: opacity 0.3s ease;
+  }
+
+  .wave-group--active {
+    opacity: 1;
+    transition: opacity 0.3s ease;
+  }
+
+  /* Wave indicator dots */
+  .wave-indicator {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 0;
+  }
+
+  .wave-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    border: 1.5px solid var(--text-muted);
+    transition: all 0.2s ease;
+  }
+
+  .wave-dot--filled {
+    background: var(--accent-gold);
+    border-color: var(--accent-gold);
+  }
+
+  .wave-dot--active {
+    border-color: var(--accent-gold);
+    box-shadow: 0 0 4px var(--accent-gold-glow);
+  }
+
+  .wave-dot--dimmed {
+    opacity: 0.4;
+  }
+
+  /* Read-aloud block (Inscribing narrative sections) */
+  .read-aloud-block {
+    padding: 12px 16px;
+    border-left: 3px solid var(--accent-gold);
+    background: var(--accent-gold-dim);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    margin: 12px 0;
+  }
+
+  .read-aloud-label {
+    display: block;
+    font-family: var(--font-sans);
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--accent-gold);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 6px;
+  }
+
+  .read-aloud-text {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 14px;
+    line-height: 1.65;
+    color: var(--text-primary);
+  }
+
+  .read-aloud-text + .read-aloud-text {
+    margin-top: 8px;
+  }
+
+  /* Invalidation banner */
+  .invalidation-banner {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: rgba(219, 126, 126, 0.08);
+    border: 1px solid rgba(219, 126, 126, 0.25);
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    color: #db7e7e;
+    margin: 4px 0;
+  }
+
+  /* Balance warning */
+  .balance-warning {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: rgba(212, 165, 116, 0.08);
+    border: 1px solid rgba(212, 165, 116, 0.25);
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    color: #d4a574;
+    margin: 4px 0;
+  }
+}
+
+/* =============================================================================
  * Sage Speaking Indicator
  * ============================================================================= */
 
