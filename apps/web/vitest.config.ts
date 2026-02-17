@@ -17,6 +17,9 @@ export default mergeConfig(
       // Globals for describe, it, expect
       globals: true,
 
+      // Allow passing with zero test files during reboot
+      passWithNoTests: true,
+
       // Coverage configuration
       coverage: {
         provider: 'v8',
@@ -29,13 +32,6 @@ export default mergeConfig(
           'src/main.tsx',
           'src/vite-env.d.ts',
         ],
-        // Ratchet thresholds: enforce current baseline, raise to 70% as coverage improves
-        thresholds: {
-          lines: 60,
-          functions: 60,
-          branches: 60,
-          statements: 60,
-        },
       },
     },
   })

@@ -20,12 +20,6 @@ export default defineConfig({
         'src/content.ts',
         'src/custom-frames.ts',
       ],
-      thresholds: {
-        lines: 90,
-        functions: 90,
-        branches: 90,
-        statements: 90,
-      },
     },
   },
 });

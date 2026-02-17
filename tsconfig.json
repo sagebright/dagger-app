@@ -14,7 +14,8 @@
   "references": [
     { "path": "./packages/shared-types" },
     { "path": "./apps/web" },
-    { "path": "./apps/mcp-bridge" }
+    { "path": "./apps/mcp-bridge" },
+    { "path": "./apps/api" }
   ],
   "files": []
 }

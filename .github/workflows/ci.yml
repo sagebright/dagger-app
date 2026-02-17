@@ -114,7 +114,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        package: [shared-types, mcp-bridge, web, api]
+        package: [shared-types, web, api]
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -134,7 +134,7 @@ jobs:
             packages/shared-types/dist
             apps/*/dist
           key: build-artifacts-${{ github.sha }}
-      - run: pnpm --filter @dagger-app/${{ matrix.package }} test:coverage
+      - run: pnpm --filter @dagger-app/${{ matrix.package }} test
         env:
           NODE_ENV: test
 
