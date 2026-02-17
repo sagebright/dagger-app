@@ -28,6 +28,9 @@ import type {
   PanelSparkEvent,
   PanelComponentEvent,
   PanelFramesEvent,
+  PanelSceneArcsEvent,
+  PanelSceneArcEvent,
+  PanelNameEvent,
   UIReadyEvent,
   SageErrorEvent,
 } from '@dagger-app/shared-types';
@@ -45,6 +48,9 @@ export interface SageStreamCallbacks {
   onPanelSpark?: (data: PanelSparkEvent['data']) => void;
   onPanelComponent?: (data: PanelComponentEvent['data']) => void;
   onPanelFrames?: (data: PanelFramesEvent['data']) => void;
+  onPanelSceneArcs?: (data: PanelSceneArcsEvent['data']) => void;
+  onPanelSceneArc?: (data: PanelSceneArcEvent['data']) => void;
+  onPanelName?: (data: PanelNameEvent['data']) => void;
   onUIReady?: (data: UIReadyEvent['data']) => void;
   onError?: (data: SageErrorEvent['data']) => void;
 }
@@ -146,6 +152,15 @@ function dispatchEvent(
       break;
     case 'panel:frames':
       callbacks.onPanelFrames?.(data as PanelFramesEvent['data']);
+      break;
+    case 'panel:scene_arcs':
+      callbacks.onPanelSceneArcs?.(data as PanelSceneArcsEvent['data']);
+      break;
+    case 'panel:scene_arc':
+      callbacks.onPanelSceneArc?.(data as PanelSceneArcEvent['data']);
+      break;
+    case 'panel:name':
+      callbacks.onPanelName?.(data as PanelNameEvent['data']);
       break;
     case 'ui:ready':
       callbacks.onUIReady?.(data as UIReadyEvent['data']);

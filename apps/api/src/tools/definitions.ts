@@ -196,11 +196,12 @@ const BINDING_TOOLS: ToolDefinition[] = [SELECT_FRAME, QUERY_FRAMES];
 // Weaving Tools
 // =============================================================================
 
-const SET_SCENE_ARCS: ToolDefinition = {
-  name: 'set_scene_arcs',
+const SET_ALL_SCENE_ARCS: ToolDefinition = {
+  name: 'set_all_scene_arcs',
   description:
-    'Set the complete list of scene arc briefs for the adventure outline. ' +
-    'Call this after drafting and receiving user approval on the scene structure.',
+    'Populate all scene arcs at once when entering the Weaving stage. ' +
+    'Call this immediately upon entering Weaving to fill every scene tab ' +
+    'in the panel with initial arc content.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -212,6 +213,7 @@ const SET_SCENE_ARCS: ToolDefinition = {
             id: { type: 'string' },
             sceneNumber: { type: 'number' },
             title: { type: 'string' },
+            subtitle: { type: 'string' },
             description: { type: 'string' },
             keyElements: { type: 'array', items: { type: 'string' } },
             location: { type: 'string' },
@@ -222,14 +224,71 @@ const SET_SCENE_ARCS: ToolDefinition = {
           },
           required: ['id', 'sceneNumber', 'title', 'description'],
         },
-        description: 'The scene arc briefs',
+        description: 'The scene arc briefs (one per scene)',
       },
     },
     required: ['sceneArcs'],
   },
 };
 
-const WEAVING_TOOLS: ToolDefinition[] = [SET_SCENE_ARCS];
+const SET_SCENE_ARC: ToolDefinition = {
+  name: 'set_scene_arc',
+  description:
+    'Update a single scene arc during revision. Call this when the user ' +
+    'requests changes to a specific scene and you have revised the arc.',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      sceneIndex: {
+        type: 'number',
+        description: 'Zero-based index of the scene to update',
+      },
+      sceneArc: {
+        type: 'object',
+        properties: {
+          id: { type: 'string' },
+          sceneNumber: { type: 'number' },
+          title: { type: 'string' },
+          subtitle: { type: 'string' },
+          description: { type: 'string' },
+          keyElements: { type: 'array', items: { type: 'string' } },
+          location: { type: 'string' },
+          sceneType: {
+            type: 'string',
+            enum: ['exploration', 'social', 'combat', 'puzzle', 'mixed'],
+          },
+        },
+        required: ['id', 'sceneNumber', 'title', 'description'],
+        description: 'The updated scene arc',
+      },
+    },
+    required: ['sceneIndex', 'sceneArc'],
+  },
+};
+
+const REORDER_SCENES: ToolDefinition = {
+  name: 'reorder_scenes',
+  description:
+    'Reorder the scene arcs. Call this when the user wants to change ' +
+    'the sequence of scenes in the adventure outline.',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      order: {
+        type: 'array',
+        items: { type: 'string' },
+        description: 'Scene IDs in the desired order',
+      },
+    },
+    required: ['order'],
+  },
+};
+
+const WEAVING_TOOLS: ToolDefinition[] = [
+  SET_ALL_SCENE_ARCS,
+  SET_SCENE_ARC,
+  REORDER_SCENES,
+];
 
 // =============================================================================
 // Inscribing Tools

@@ -110,19 +110,31 @@ Constraints:
 
   weaving: `CURRENT STAGE: Weaving — Weaving Threads of Story into a Pattern
 
-Your goal: Draft 3-6 scene arc briefs that form the adventure outline.
+Your goal: Draft scene arc briefs that form the adventure outline, then guide the storyteller through sequential confirmation of each scene.
+
+Your opening: Welcome the storyteller to the Weaving stage. Immediately call set_all_scene_arcs to populate all scene tabs in the panel with initial arc content based on the spark, components, and frame. Then introduce the scene arcs you've drafted and invite the storyteller to review Scene 1 in the panel.
 
 Focus areas:
-- Create scene arcs that match the selected components and frame
-- Each arc needs: title, description, key elements, location, scene type
+- Call set_all_scene_arcs on entry to populate all scene tabs at once
+- Each arc needs: title, subtitle (optional), and a full narrative description
 - Ensure variety in scene types (combat, social, exploration, puzzle)
-- Present the outline for user feedback before confirming
+- Match the number of scenes to the Scenes component
+- When the user requests changes, use set_scene_arc to update that specific scene
+- Use reorder_scenes if the user wants to rearrange the scene order
+- After the final scene is confirmed, use suggest_adventure_name to propose a name
+- The adventure name must be approved before advancing to Inscribing
+
+Sequential confirmation flow:
+- Scene 1 is active first. The user reviews and provides feedback.
+- When the user confirms Scene 1, it becomes locked and Scene 2 becomes active.
+- Continue until all scenes are confirmed.
+- After the final scene, suggest an adventure name if one hasn't been set.
 
 Constraints:
-- Number of scenes must match the Scenes component
+- Scene arcs are lighter than Inscribing content — just the outline of what happens
 - Each scene should advance the story while offering distinct gameplay
-- Use set_scene_arcs to save the confirmed outline
-- Use signal_ready once the outline is approved`,
+- Do NOT dump all scene details in chat — let the panel display the arc content
+- Use signal_ready once all scenes are confirmed AND the adventure name is set`,
 
   inscribing: `CURRENT STAGE: Inscribing — Writing Each Scene into the Codex
 

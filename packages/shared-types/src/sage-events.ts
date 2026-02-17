@@ -100,6 +100,44 @@ export interface PanelFramesEvent {
   };
 }
 
+/** All scene arcs populated by set_all_scene_arcs tool (Weaving entry) */
+export interface PanelSceneArcsEvent {
+  type: 'panel:scene_arcs';
+  data: {
+    sceneArcs: SceneArcData[];
+    activeSceneIndex: number;
+  };
+}
+
+/** Single scene arc update by set_scene_arc tool (Weaving revision) */
+export interface PanelSceneArcEvent {
+  type: 'panel:scene_arc';
+  data: {
+    sceneIndex: number;
+    sceneArc: SceneArcData;
+    streaming: boolean;
+  };
+}
+
+/** Adventure name suggestion from suggest_adventure_name tool */
+export interface PanelNameEvent {
+  type: 'panel:name';
+  data: {
+    name: string;
+    reason?: string;
+  };
+}
+
+/** Lightweight scene arc data for the Weaving panel */
+export interface SceneArcData {
+  id: string;
+  sceneNumber: number;
+  title: string;
+  subtitle?: string;
+  description: string;
+  confirmed: boolean;
+}
+
 /** Lightweight frame data for gallery cards */
 export interface FrameCardData {
   id: string;
@@ -171,6 +209,9 @@ export type SageEvent =
   | PanelSparkEvent
   | PanelComponentEvent
   | PanelFramesEvent
+  | PanelSceneArcsEvent
+  | PanelSceneArcEvent
+  | PanelNameEvent
   | UIReadyEvent
   | SessionStageEvent
   | SageErrorEvent;

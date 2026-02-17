@@ -19,10 +19,12 @@ import chatRouter from './routes/chat.js';
 import undoRouter from './routes/undo.js';
 import componentRouter from './routes/component.js';
 import frameRouter from './routes/frame.js';
+import sceneRouter from './routes/scene.js';
 import { requireAuth } from './middleware/auth.js';
 import { registerInvokingTools } from './tools/invoking.js';
 import { registerAttuningTools } from './tools/attuning.js';
 import { registerBindingTools } from './tools/binding.js';
+import { registerWeavingTools } from './tools/weaving.js';
 
 export const API_VERSION = '0.0.1';
 
@@ -30,6 +32,7 @@ export const API_VERSION = '0.0.1';
 registerInvokingTools();
 registerAttuningTools();
 registerBindingTools();
+registerWeavingTools();
 
 const app: Express = express();
 
@@ -48,6 +51,7 @@ app.use('/api/chat', requireAuth, chatRouter);
 app.use('/api/section', requireAuth, undoRouter);
 app.use('/api/component', requireAuth, componentRouter);
 app.use('/api/frame', requireAuth, frameRouter);
+app.use('/api/scene', requireAuth, sceneRouter);
 
 /**
  * Export the app for testing (supertest) and the start function

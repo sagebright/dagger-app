@@ -51,9 +51,12 @@ describe('getToolsForStage', () => {
     expect(getToolNamesForStage('invoking')).not.toContain('query_frames');
   });
 
-  it('should include set_scene_arcs only in weaving', () => {
-    expect(getToolNamesForStage('weaving')).toContain('set_scene_arcs');
-    expect(getToolNamesForStage('inscribing')).not.toContain('set_scene_arcs');
+  it('should include weaving-specific tools', () => {
+    const names = getToolNamesForStage('weaving');
+    expect(names).toContain('set_all_scene_arcs');
+    expect(names).toContain('set_scene_arc');
+    expect(names).toContain('reorder_scenes');
+    expect(getToolNamesForStage('inscribing')).not.toContain('set_all_scene_arcs');
   });
 
   it('should include inscribing-specific tools', () => {
