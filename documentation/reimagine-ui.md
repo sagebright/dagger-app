@@ -133,7 +133,7 @@ A small audio/voice icon shown next to section names that contain read-aloud con
 
 | Property | Value | Rationale |
 |----------|-------|-----------|
-| Icon | Sound wave SVG (speaker + wave arcs) | Evokes audio/voice clearly |
+| Icon | Speech bubble SVG (message outline) | Universally readable "speech" symbol at small sizes — signals read-aloud content |
 | Size | 16x16px | Small enough to not compete with section name |
 | Color | `--text-muted` | Quiet by default |
 | Hover color | `--accent-gold` | Gold on hover confirms interactivity |
@@ -141,6 +141,42 @@ A small audio/voice icon shown next to section names that contain read-aloud con
 | Placement | After section name, before any trailing elements | Right of the text, left of the edge |
 
 Used in: Inscription accordion headers (Setup, Developments, Transitions sections).
+
+### Color-Coded Entity Labels (Shared Pattern)
+
+Entity labels (NPC roles, adversary types, item types) use color to encode categorical information for quick scanning. All follow the same structural pattern: colored text + subtle tinted background + tinted border at 0.35 opacity + background at 0.08 opacity. Scene badges and frame attribute pills stay neutral — they're navigational metadata, not tactical categories.
+
+**NPC Role Colors** (warm, human tones):
+
+| Role | Color | Hex | Reasoning |
+|------|-------|-----|-----------|
+| Leader | Warm amber | `#d4a574` | Authority, warmth |
+| Antagonist | Warm red | `#db7e7e` | Tension, opposition |
+| Oracle | Sage green | `#8bc4a8` | Wisdom, guidance |
+| Scout | Steel blue | `#8badc4` | Practical, military |
+| Minor | Warm taupe | `#a09590` | Present but not prominent |
+
+**Adversary Type Colors** (tactical combat tones — established in Summoning):
+
+| Type | Color | Hex | Reasoning |
+|------|-------|-----|-----------|
+| Bruiser | Coral | `#e07c5a` | Heavy, aggressive |
+| Minion | Cool blue | `#8b9dc3` | Numerous, disposable |
+| Leader | Purple | `#c98bdb` | Commanding, magical |
+| Solo | Red | `#db6b6b` | Dangerous, singular |
+
+**Item Type Colors** (material/object tones):
+
+| Type | Color | Hex | Reasoning |
+|------|-------|-----|-----------|
+| Weapon | Copper | `#d4836d` | Danger, forged metal |
+| Armor | Slate | `#8b9fb8` | Protection, steel |
+| Consumable | Sage green | `#8bc4a8` | Potions, nature, healing |
+| Item | Warm tan | `#c4b08b` | General treasure, parchment |
+
+CSS class pattern: `.entity-role-tag.role-leader`, `.adversary-type-badge.type-bruiser`, `.item-type-label.type-weapon`. Each overrides the neutral base with colored text, border, and background.
+
+Used in: Inscription (NPC detail cards, adversary cards, item cards). Reference patterns in Conjuring, Summoning, Enchanting mockups.
 
 ### Section Detail Card (Shared Pattern)
 

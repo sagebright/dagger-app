@@ -274,6 +274,13 @@
     .scene-section:not(.collapsed) .scene-section-chevron {
       transform: rotate(90deg);
     }
+    /* Expanded sections: title and icon go gold (matches Binding frame pattern) */
+    .scene-section:not(.collapsed) .scene-section-name {
+      color: var(--accent-gold);
+    }
+    .scene-section:not(.collapsed) .speaking-icon {
+      color: var(--accent-gold);
+    }
 
     .scene-section-name {
       font-family: var(--font-sans); font-size: 13px; font-weight: 500;
@@ -374,10 +381,10 @@
       color: var(--text-primary); line-height: 1.7;
     }
 
-    /* === NPC COMPACT CARDS (reused from Conjuring) ===
-       Initials avatar, name, role tag pill. Clickable → NPC detail card.
+    /* === ENTITY CARDS (NPC + Adversary) ===
+       Name + description. Clickable → detail card drill-in.
     */
-    .entity-list { padding: 4px 0 8px 24px; }
+    .entity-list { padding: 4px 0 8px 0; }
     .entity-card {
       display: flex; flex-direction: row; align-items: center;
       padding: 10px 12px; gap: 10px;
@@ -400,6 +407,30 @@
       display: inline-block; font-size: 11px; font-weight: 500;
       color: var(--text-muted); border: 1px solid var(--border-medium);
       border-radius: 12px; padding: 1px 8px; white-space: nowrap; width: fit-content;
+    }
+    /* NPC role color variants — warm, human tones */
+    .entity-role-tag.role-leader {
+      color: #d4a574; border-color: rgba(212, 165, 116, 0.35);
+      background: rgba(212, 165, 116, 0.08);
+    }
+    .entity-role-tag.role-antagonist {
+      color: #db7e7e; border-color: rgba(219, 126, 126, 0.35);
+      background: rgba(219, 126, 126, 0.08);
+    }
+    .entity-role-tag.role-oracle {
+      color: #8bc4a8; border-color: rgba(139, 196, 168, 0.35);
+      background: rgba(139, 196, 168, 0.08);
+    }
+    .entity-role-tag.role-scout {
+      color: #8badc4; border-color: rgba(139, 173, 196, 0.35);
+      background: rgba(139, 173, 196, 0.08);
+    }
+    .entity-role-tag.role-minor {
+      color: #a09590; border-color: rgba(160, 149, 144, 0.35);
+      background: rgba(160, 149, 144, 0.08);
+    }
+    .entity-desc {
+      font-size: 12px; color: var(--text-secondary); line-height: 1.5;
     }
 
     /* === NPC DETAIL CARD ===
@@ -517,6 +548,23 @@
       font-size: 10px; font-weight: 500; color: var(--text-muted);
       border: 1px solid var(--border-medium); border-radius: 10px;
       padding: 1px 7px; text-transform: uppercase; letter-spacing: 0.04em;
+    }
+    /* Item type color variants — material/object tones */
+    .item-type-label.type-weapon {
+      color: #d4836d; border-color: rgba(212, 131, 109, 0.35);
+      background: rgba(212, 131, 109, 0.08);
+    }
+    .item-type-label.type-armor {
+      color: #8b9fb8; border-color: rgba(139, 159, 184, 0.35);
+      background: rgba(139, 159, 184, 0.08);
+    }
+    .item-type-label.type-consumable {
+      color: #8bc4a8; border-color: rgba(139, 196, 168, 0.35);
+      background: rgba(139, 196, 168, 0.08);
+    }
+    .item-type-label.type-item {
+      color: #c4b08b; border-color: rgba(196, 176, 139, 0.35);
+      background: rgba(196, 176, 139, 0.08);
     }
     .item-card-stat {
       font-size: 12px; color: var(--text-secondary); margin-top: 2px; padding-left: 0;
@@ -703,15 +751,13 @@
           <div class="scene-section-header">
             <span class="scene-section-chevron" onclick="toggleSection(this.closest('.scene-section-header'))">&#9654;</span>
             <span class="scene-section-name" onclick="showView('setup-detail')">Setup</span>
-            <!-- Speaking icon — read-aloud content available -->
+            <!-- Speaking icon — read-aloud content available (speech bubble) -->
             <svg class="speaking-icon" onclick="showView('setup-detail')" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
-              <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
-              <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
             </svg>
           </div>
           <div class="scene-section-preview">
-            <span class="scene-section-meta">Location: Wickling Hollow — Mood: Tense, wary</span>
+            The party arrives at a settlement carved into living withertrees. Bioluminescent moss lights the walkways, but the Wicklings haven't seen outsiders since the overgrowth began. Elder Thornveil greets them with guarded hospitality, demanding to know their purpose.
           </div>
         </div>
 
@@ -721,9 +767,7 @@
             <span class="scene-section-chevron" onclick="toggleSection(this.closest('.scene-section-header'))">&#9654;</span>
             <span class="scene-section-name" onclick="showView('developments-detail')">Developments</span>
             <svg class="speaking-icon" onclick="showView('developments-detail')" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
-              <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
-              <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
             </svg>
           </div>
           <div class="scene-section-preview">
@@ -740,29 +784,23 @@
             <span class="scene-section-name">NPCs Present</span>
           </div>
           <div class="scene-section-preview">
-            <span class="scene-section-meta">Elder Thornveil, Corporal Dace, Wickling sentries</span>
-
-            <!-- Entity list — visible when expanded -->
-            <div class="entity-list" style="margin-top: 10px;">
+            <div class="entity-list">
               <div class="entity-card" onclick="event.stopPropagation(); showView('npc-thornveil-detail')">
-                <div class="entity-avatar">ET</div>
                 <div class="entity-info">
                   <div class="entity-name">Elder Thornveil</div>
-                  <span class="entity-role-tag">Leader</span>
+                  <div class="entity-desc">Leader of the Wickling people. The last of the root-speakers — intent on restoring her people's faith.</div>
                 </div>
               </div>
               <div class="entity-card" onclick="event.stopPropagation(); showView('npc-dace-detail')">
-                <div class="entity-avatar">CD</div>
                 <div class="entity-info">
                   <div class="entity-name">Corporal Dace</div>
-                  <span class="entity-role-tag">Scout</span>
+                  <div class="entity-desc">Wounded Havenite scout. Claims to know a shortcut to the Eye, but his squad burned Wickling farmland.</div>
                 </div>
               </div>
               <div class="entity-card" style="opacity: 0.6; cursor: default;">
-                <div class="entity-avatar">WS</div>
                 <div class="entity-info">
                   <div class="entity-name">Wickling Sentries</div>
-                  <span class="entity-role-tag">Minor</span>
+                  <div class="entity-desc">Masked guards watching from elevated platforms. Loyal to Thornveil, hostile to outsiders.</div>
                 </div>
               </div>
             </div>
@@ -776,55 +814,73 @@
             <span class="scene-section-name">Adversaries</span>
           </div>
           <div class="scene-section-preview">
-            <span class="scene-section-meta">Blightcrawler Alpha, Blightcrawler brood</span>
-
-            <div class="entity-list" style="margin-top: 10px;">
+            <div class="entity-list">
               <div class="entity-card" onclick="event.stopPropagation(); showView('adversary-alpha-detail')">
-                <div class="entity-avatar" style="border-radius: var(--radius-sm); font-size: 16px;">&#x2620;</div>
                 <div class="entity-info">
                   <div class="entity-name">Blightcrawler Alpha</div>
                   <div style="display: flex; gap: 6px; align-items: center; margin-top: 2px;">
                     <span class="adversary-type-badge type-bruiser">Bruiser</span>
                     <span class="adversary-compact-meta">Difficulty 12</span>
                   </div>
+                  <div class="entity-desc">Massive centipede-like creature. Its mandibles drip a paralytic venom.</div>
                 </div>
               </div>
               <div class="entity-card" onclick="event.stopPropagation();">
-                <div class="entity-avatar" style="border-radius: var(--radius-sm); font-size: 16px;">&#x2620;</div>
                 <div class="entity-info">
                   <div class="entity-name">Blightcrawler Brood</div>
                   <div style="display: flex; gap: 6px; align-items: center; margin-top: 2px;">
                     <span class="adversary-type-badge type-minion">Minion</span>
                     <span class="adversary-compact-meta">Difficulty 6</span>
                   </div>
+                  <div class="entity-desc">Smaller spawn that swarm in packs, coordinated by the Alpha's subsonic calls.</div>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Items — collapsed, pending -->
+        <!-- Items — collapsed, item cards -->
         <div class="scene-section collapsed" data-section="items">
           <div class="scene-section-header" onclick="toggleSection(this)">
             <span class="scene-section-chevron">&#9654;</span>
             <span class="scene-section-name">Items</span>
           </div>
           <div class="scene-section-preview">
-            <span class="scene-section-meta">Pending — will populate as scene develops</span>
+            <div class="entity-list">
+              <div class="item-card" onclick="event.stopPropagation(); showView('item-rootstaff-detail')" style="cursor: pointer;">
+                <div class="item-card-header">
+                  <span class="item-card-name">Thornveil's Root-Staff</span>
+                  <span class="item-type-label type-weapon">Weapon</span>
+                </div>
+                <div class="item-card-stat">1d8+2, Melee. Wickling ceremonial weapon, hums when near blighted growth.</div>
+              </div>
+              <div class="item-card">
+                <div class="item-card-header">
+                  <span class="item-card-name">Blightcrawler Antivenom</span>
+                  <span class="item-type-label type-consumable">Consumable</span>
+                </div>
+                <div class="item-card-stat">Cures Poisoned condition. Brewed from the nest's own secretions.</div>
+              </div>
+              <div class="item-card">
+                <div class="item-card-header">
+                  <span class="item-card-name">Scout's Waymap</span>
+                  <span class="item-type-label type-item">Item</span>
+                </div>
+                <div class="item-card-stat">Dace's hand-drawn map of routes through the overgrowth. Some waypoints are crossed out.</div>
+              </div>
+            </div>
           </div>
         </div>
 
         <!-- WAVE 3: Synthesis (dimmed — not yet available) -->
 
-        <!-- Transitions — dimmed, has detail card + read-aloud -->
+        <!-- Transitions — dimmed, has detail card + read-aloud (clickable for review) -->
         <div class="scene-section collapsed wave3-inactive has-detail" data-section="transitions">
-          <div class="scene-section-header">
+          <div class="scene-section-header" style="pointer-events: auto;">
             <span class="scene-section-chevron">&#9654;</span>
-            <span class="scene-section-name">Transitions</span>
-            <svg class="speaking-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
-              <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
-              <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+            <span class="scene-section-name" onclick="showView('transitions-detail')" style="cursor: pointer;">Transitions</span>
+            <svg class="speaking-icon" onclick="showView('transitions-detail')" style="cursor: pointer;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
             </svg>
           </div>
           <div class="scene-section-preview">
@@ -832,11 +888,11 @@
           </div>
         </div>
 
-        <!-- GM Notes — dimmed, accordion-only -->
-        <div class="scene-section collapsed wave3-inactive" data-section="gm-notes">
-          <div class="scene-section-header">
+        <!-- GM Notes — dimmed (clickable for review) -->
+        <div class="scene-section collapsed wave3-inactive has-detail" data-section="gm-notes">
+          <div class="scene-section-header" style="pointer-events: auto;">
             <span class="scene-section-chevron">&#9654;</span>
-            <span class="scene-section-name">GM Notes</span>
+            <span class="scene-section-name" onclick="showView('gm-notes-detail')" style="cursor: pointer;">GM Notes</span>
           </div>
           <div class="scene-section-preview">
             <span class="scene-section-meta">Populates when sections above are complete</span>
@@ -928,10 +984,9 @@
           </button>
         </div>
         <div class="npc-detail-header">
-          <div class="npc-detail-avatar">ET</div>
           <div class="npc-detail-identity">
             <div class="npc-detail-name">Elder Thornveil</div>
-            <span class="entity-role-tag">Leader</span>
+            <span class="entity-role-tag role-leader">Leader</span>
           </div>
         </div>
         <div class="detail-card-body" style="padding-top: 16px;">
@@ -969,10 +1024,9 @@
           </button>
         </div>
         <div class="npc-detail-header">
-          <div class="npc-detail-avatar">CD</div>
           <div class="npc-detail-identity">
             <div class="npc-detail-name">Corporal Dace</div>
-            <span class="entity-role-tag">Scout</span>
+            <span class="entity-role-tag role-scout">Scout</span>
           </div>
         </div>
         <div class="detail-card-body" style="padding-top: 16px;">
@@ -1042,6 +1096,18 @@
               <span class="stat-label">Damage</span>
               <span class="stat-value">2d8+3</span>
             </div>
+            <div class="stat-item">
+              <span class="stat-label">Minor</span>
+              <span class="stat-value">5</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Major</span>
+              <span class="stat-value">10</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Severe</span>
+              <span class="stat-value">15</span>
+            </div>
           </div>
 
           <div class="adversary-section">
@@ -1065,13 +1131,97 @@
             </div>
           </div>
 
-          <div class="adversary-section">
-            <div class="adversary-section-label">Thresholds</div>
-            <div class="threshold-row">
-              <div class="threshold-item"><span class="threshold-label">Minor:</span> 5</div>
-              <div class="threshold-item"><span class="threshold-label">Major:</span> 10</div>
-              <div class="threshold-item"><span class="threshold-label">Severe:</span> 15</div>
+        </div>
+      </div>
+
+      <!-- ============================================================
+           VIEW: Item Detail Card — Thornveil's Root-Staff
+           ============================================================ -->
+      <div class="panel-view" id="item-rootstaff-detail">
+        <div class="detail-card-header">
+          <button class="back-btn" onclick="showView('accordion-view')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+            Back to Scene
+          </button>
+          <div class="detail-card-title">Thornveil's Root-Staff</div>
+          <div style="display: flex; align-items: center; gap: 8px; margin-top: 6px;">
+            <span class="item-type-label type-weapon">Weapon</span>
+            <span style="font-size: 12px; color: var(--text-muted);">Melee &middot; 1d8+2</span>
+          </div>
+        </div>
+        <div class="detail-card-body">
+          <p>A staff of living withertree root, still faintly warm to the touch. The bark spirals in tight whorls around a core that pulses with a dim green luminescence. Thornveil carried it for decades as both walking aid and symbol of her station as root-speaker.</p>
+
+          <div class="npc-field" style="margin-top: 16px;">
+            <div class="npc-field-label">Properties</div>
+            <div class="npc-field-value">When within 30 feet of blighted growth, the staff hums at a low frequency and the green light intensifies — functioning as a reliable detector. On a critical hit, vines briefly entangle the target (Difficulty 12 save or lose 5 feet of movement next turn).</div>
+          </div>
+          <div class="npc-field">
+            <div class="npc-field-label">Lore</div>
+            <div class="npc-field-value">Thornveil will only part with the staff if the party earns her deep trust — clearing the Blightcrawler nest alone isn't enough. She needs to believe they'll use it to protect, not to conquer. If given freely, it signifies the Wicklings' full alliance.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================================
+           VIEW: Transitions Detail Card (Wave 3 — review content)
+           ============================================================ -->
+      <div class="panel-view" id="transitions-detail" style="opacity: 0.4;">
+        <div class="detail-card-header">
+          <button class="back-btn" onclick="showView('accordion-view')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+            Back to Scene
+          </button>
+          <div class="detail-card-title">Transitions</div>
+          <div class="detail-card-subtitle">Scene 2 — Wickling Hollow</div>
+          <div style="margin-top: 8px; padding: 6px 10px; background: var(--bg-surface); border: 1px solid var(--border-medium); border-radius: var(--radius-sm); font-size: 11px; color: var(--text-muted); font-style: italic;">Text displayed in inactive section for review purposes only</div>
+        </div>
+        <div class="detail-card-body">
+          <p><strong>If the party sided with the Wicklings:</strong> Thornveil leads them to the Hollow's eastern edge, where the canopy opens onto a narrow ridge. She points toward a column of sickly green light on the horizon. "The Eye rests where the rot began. Follow the dead trees — they'll point the way." She presses a carved root-token into the party leader's hand. "Show this to any Wickling you meet. They'll know you're friends of the Hollow."</p>
+
+          <div class="read-aloud">
+            <div class="read-aloud-label">Read Aloud</div>
+            <div class="read-aloud-text">
+              The ridge falls away beneath you, and for the first time since entering the Witherwild, you can see the sky. It's wrong — tinged green, like looking through stained glass. In the distance, a pillar of light rises from the forest floor, pulsing slowly, like a heartbeat.<br><br>
+              Thornveil stands beside you, her mask turned toward the light. "That is where it sleeps. The Eye. Whatever you find there — remember that the forest is watching. It always watches."
             </div>
+          </div>
+
+          <p><strong>If the party trusted Dace:</strong> Dace leads them through a root-tunnel beneath the Hollow's walls, bypassing the sentries. The passage is tight and smells of char — the remnants of his squad's incendiary work. He moves fast, checking a hand-drawn map by torchlight. "Two days. Maybe less if we don't stop." The tunnel opens onto an overgrown game trail, and the sounds of the Hollow fade behind them.</p>
+
+          <p><strong>If the party negotiated a compromise:</strong> The unlikely alliance departs together — Thornveil's knowledge of the forest paired with Dace's mapped routes. The tension between them is palpable, but both recognize the party as the bridge holding the arrangement together. Thornveil walks ahead, listening to the trees. Dace walks behind, checking his map. Neither speaks to the other.</p>
+        </div>
+      </div>
+
+      <!-- ============================================================
+           VIEW: GM Notes Detail Card (Wave 3 — review content)
+           ============================================================ -->
+      <div class="panel-view" id="gm-notes-detail" style="opacity: 0.4;">
+        <div class="detail-card-header">
+          <button class="back-btn" onclick="showView('accordion-view')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+            Back to Scene
+          </button>
+          <div class="detail-card-title">GM Notes</div>
+          <div class="detail-card-subtitle">Scene 2 — Wickling Hollow</div>
+          <div style="margin-top: 8px; padding: 6px 10px; background: var(--bg-surface); border: 1px solid var(--border-medium); border-radius: var(--radius-sm); font-size: 11px; color: var(--text-muted); font-style: italic;">Text displayed in inactive section for review purposes only</div>
+        </div>
+        <div class="detail-card-body">
+          <div class="npc-field">
+            <div class="npc-field-label">Pacing</div>
+            <div class="npc-field-value">This is the social/exploration heart of the adventure. Let the negotiation breathe — don't rush to the Blightcrawler fight. The three-way choice is the scene's climax, not the combat. If players try to skip negotiation entirely, have Thornveil refuse to speak until they've shown respect (a short skill challenge).</div>
+          </div>
+          <div class="npc-field">
+            <div class="npc-field-label">Improvisation Hooks</div>
+            <div class="npc-field-value">If the party splits (some help Wicklings, some talk to Dace), run parallel scenes — cut between them to build tension. If they try to free Dace by force, the Wickling sentries intervene and the scene shifts to a tense standoff. If they ignore both options and try to leave, the overgrowth blocks the obvious exits — the forest is funneling them toward the choice.</div>
+          </div>
+          <div class="npc-field">
+            <div class="npc-field-label">Consequences That Carry</div>
+            <div class="npc-field-value">The choice here ripples through Scenes 3 and 4. Siding with the Wicklings earns allies but costs time — the overgrowth advances, making Scene 3 harder. Trusting Dace is faster but triggers the incendiary charges in Scene 3, with environmental consequences in Scene 4. The compromise path is the hardest to earn but provides the most resources for the finale.</div>
+          </div>
+          <div class="npc-field">
+            <div class="npc-field-label">Thornveil's Secret</div>
+            <div class="npc-field-value">Thornveil's knowledge that the Eye was given (not stolen) is a bombshell best saved for Scene 3 or 4, but a high Insight check during negotiation might catch her hesitation. Don't reveal it outright — plant doubt. "She pauses too long before answering. Something about the way she says 'stolen' doesn't sit right."</div>
           </div>
         </div>
       </div>

@@ -4,7 +4,7 @@ Each adventure in the Book of Many Paths is woven through a 7-stage ritual. Huma
 
 ## Mockup Status
 
-States: **DONE** (reviewed and iterated), **ITERATION** (mockup exists, under revision), **MOCKUP** (first draft complete).
+States: **DONE** (reviewed and iterated), **ITERATION** (mockup exists, under revision), **MOCKUP** (first draft complete), **DROPPED** (removed from ritual).
 
 | # | Stage | State | Mockup |
 |---|-------|-------|--------|
@@ -12,9 +12,12 @@ States: **DONE** (reviewed and iterated), **ITERATION** (mockup exists, under re
 | 2 | Attunement | DONE | `documentation/mockups/attunement-immersive.html` — unified card/button styling with Binding: confirmed rows use gold-dim background + gold border, fixed footer buttons, contextual "Select [Component]" confirm action |
 | 3 | Binding | DONE | `documentation/mockups/binding-immersive.html` — unified button styling, fixed footer placement, gallery cards show inciting incident (not pitch) for upfront decision-making info |
 | 4 | Weaving | MOCKUP | `documentation/mockups/weaving-immersive.html` |
-| 5 | Inscription | ITERATION | `documentation/mockups/inscription-immersive.html` — full rebuild: three-wave section model, gallery↔detail pattern, NPC/adversary/item entity cards, read-aloud blocks, 7-stage dropdown, three scene tab states |
+| 5 | Inscription | DONE | `documentation/mockups/inscription-immersive.html` — full rebuild: three-wave section model, gallery↔detail pattern, NPC/adversary/item entity cards, read-aloud blocks, 7-stage dropdown, three scene tab states, color-coded entity labels, speech bubble speaking icon, gold expanded titles |
 | 6 | Scrying | MOCKUP | `documentation/mockups/scrying-immersive.html` |
 | 7 | Sealing | MOCKUP | `documentation/mockups/sealing-immersive.html` |
+| — | Conjuring | DROPPED | Subsumed into Inscription — NPCs Present section |
+| — | Summoning | DROPPED | Subsumed into Inscription — Adversaries section |
+| — | Enchanting | DROPPED | Subsumed into Inscription — Items section |
 
 ### Absorbed Stages
 
@@ -295,7 +298,7 @@ The panel shows a collapsible accordion with all 8 sections per scene. Each sect
 
 No status dots — the flow is conversational, not checkbox-driven.
 
-When collapsed, sections show a **metadata preview line** (italic, muted) for orientation without expansion — e.g., "Location: Wickling Hollow — Mood: Tense, wary" or "Elder Thornveil, Corporal Dace, Wickling sentries".
+When collapsed, narrative sections (Overview, Setup, Developments) show a **metadata preview line** (italic, muted) for orientation without expansion — e.g., "Location: Wickling Hollow — Mood: Tense, wary". Entity sections (NPCs Present, Adversaries, Items) show only the section name when collapsed — no preview text.
 
 #### Sections Per Scene
 
@@ -325,13 +328,13 @@ Three distinct patterns depending on section type:
 - No click-through
 
 **Entity sections (NPCs Present, Adversaries):**
-- Accordion collapsed: metadata preview ("Elder Thornveil, Corporal Dace, Wickling sentries")
-- Accordion expanded: Compact entity cards (Conjuring NPC card pattern: initials avatar, name, role tag pill)
+- Accordion collapsed: bare section name + chevron (no preview text)
+- Accordion expanded: Compact entity cards (name + description sentence). No avatars or initials — just text. Adversary cards also show type badge pill and difficulty level.
 - Click a specific entity → **Entity detail card**: Full treatment for that one entity. "Back to Scene" returns to accordion.
 
 **Items:**
-- Accordion collapsed: metadata preview
-- Accordion expanded: Enchanting-style item cards with type labels (weapon/armor/item/consumable). No click-through.
+- Accordion collapsed: bare section name + chevron (no preview text)
+- Accordion expanded: Enchanting-style item cards with type labels (weapon/armor/item/consumable) and a short description. No click-through.
 
 #### Section Detail Card (narrative sections)
 
@@ -349,7 +352,7 @@ Read-aloud text appears **only in detail cards** — never in the accordion prev
 
 #### Speaking Icon (Read-Aloud Indicator)
 
-Sections that contain read-aloud text show a small speaking/voice icon (sound wave SVG) next to the section name in the accordion. Signals "click through for read-aloud content" without cluttering the preview. Styled in `--text-muted`, turning gold on hover.
+Sections that contain read-aloud text show a small speech bubble icon (message outline) next to the section name in the accordion. Signals "click through for read-aloud content" without cluttering the preview. Styled in `--text-muted`, turning gold on hover.
 
 Applies to: Setup, Developments, Transitions.
 
