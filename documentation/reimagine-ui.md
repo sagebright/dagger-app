@@ -108,7 +108,7 @@ A muted pill badge for scene association on content entries. Deliberately NOT go
 | Label format | "Scene 1" (full word) | Immersive — no abbreviations |
 | Multi-scene | Side-by-side separate pills | Each in its own `.scene-badge` span |
 
-Used in: NPC cards (Inscription entity drill-in), adversary cards (Inscription entity drill-in). Scene selector filter tabs use the same "Scene N" label format for consistency.
+Used in: NPC cards (Inscribing entity drill-in), adversary cards (Inscribing entity drill-in). Scene selector filter tabs use the same "Scene N" label format for consistency.
 
 ### Read-Aloud Block (Shared Component)
 
@@ -125,7 +125,7 @@ Distinct styling for GM read-aloud text in narrative sections (Setup, Developmen
 | Label | "READ ALOUD" (above block) | 11px `--font-sans`, weight 500, `--text-muted`, uppercase, 0.04em spacing |
 | Margin | 16px 0 | Breathing room from surrounding prose |
 
-First used in: Inscription (Setup, Developments, Transitions detail cards). May appear in future stages if read-aloud patterns expand.
+First used in: Inscribing (Setup, Developments, Transitions detail cards). May appear in future stages if read-aloud patterns expand.
 
 ### Speaking Icon (Shared Component)
 
@@ -140,7 +140,7 @@ A small audio/voice icon shown next to section names that contain read-aloud con
 | Cursor | pointer | Clickable — opens detail card |
 | Placement | After section name, before any trailing elements | Right of the text, left of the edge |
 
-Used in: Inscription accordion headers (Setup, Developments, Transitions sections).
+Used in: Inscribing accordion headers (Setup, Developments, Transitions sections).
 
 ### Color-Coded Entity Labels (Shared Pattern)
 
@@ -176,7 +176,7 @@ Entity labels (NPC roles, adversary types, item types) use color to encode categ
 
 CSS class pattern: `.entity-role-tag.role-leader`, `.adversary-type-badge.type-bruiser`, `.item-type-label.type-weapon`. Each overrides the neutral base with colored text, border, and background.
 
-Used in: Inscription (NPC detail cards, adversary cards, item cards). Reference patterns in Conjuring, Summoning, Enchanting mockups.
+Used in: Inscribing (NPC detail cards, adversary cards, item cards). Reference patterns in Conjuring, Summoning, Enchanting mockups.
 
 ### Section Detail Card (Shared Pattern)
 
@@ -192,7 +192,7 @@ Reuses Binding's gallery↔detail cross-fade pattern for navigating from a list 
 
 **Back button styling:** Matches Binding's `.back-btn` pattern — flex row, 13px sans-serif, `--text-muted` default, `--accent-gold` on hover, left-chevron SVG icon.
 
-First used in: Binding (frame detail). Extended in: Inscription (narrative detail cards, NPC detail cards, adversary detail cards).
+First used in: Binding (frame detail). Extended in: Inscribing (narrative detail cards, NPC detail cards, adversary detail cards).
 
 ## Strategic Path
 

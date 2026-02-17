@@ -8,30 +8,30 @@ States: **DONE** (reviewed and iterated), **ITERATION** (mockup exists, under re
 
 | # | Stage | State | Mockup |
 |---|-------|-------|--------|
-| 1 | Invocation | DONE | `documentation/mockups/invocation-immersive.html` — simplified to single Spark component shown inline (Title removed), fixed footer button |
-| 2 | Attunement | DONE | `documentation/mockups/attunement-immersive.html` — unified card/button styling with Binding: confirmed rows use gold-dim background + gold border, fixed footer buttons, contextual "Select [Component]" confirm action |
+| 1 | Invoking | DONE | `documentation/mockups/invoking-immersive.html` — simplified to single Spark component shown inline (Title removed), fixed footer button |
+| 2 | Attuning | DONE | `documentation/mockups/attuning-immersive.html` — unified card/button styling with Binding: confirmed rows use gold-dim background + gold border, fixed footer buttons, contextual "Select [Component]" confirm action |
 | 3 | Binding | DONE | `documentation/mockups/binding-immersive.html` — unified button styling, fixed footer placement, gallery cards show inciting incident (not pitch) for upfront decision-making info |
-| 4 | Weaving | DONE | `documentation/mockups/weaving-immersive.html` — redesigned to mirror Inscription: scene tabs, full arc content per scene, sequential confirmation, pinned footer, 6-stage dropdown |
-| 5 | Inscription | DONE | `documentation/mockups/inscription-immersive.html` — full rebuild: three-wave section model (9 sections), gallery↔detail pattern, NPC/adversary/item entity cards, Portents echo drill-in, read-aloud blocks, 6-stage dropdown, three scene tab states, color-coded entity labels, speech bubble speaking icon, gold expanded titles |
+| 4 | Weaving | DONE | `documentation/mockups/weaving-immersive.html` — redesigned to mirror Inscribing: scene tabs, full arc content per scene, sequential confirmation, pinned footer, 6-stage dropdown |
+| 5 | Inscribing | DONE | `documentation/mockups/inscribing-immersive.html` — full rebuild: three-wave section model (9 sections), gallery↔detail pattern, NPC/adversary/item entity cards, Portents echo drill-in, read-aloud blocks, 6-stage dropdown, three scene tab states, color-coded entity labels, speech bubble speaking icon, gold expanded titles |
 | 6 | Sealing | MOCKUP | `documentation/mockups/sealing-immersive.html` |
-| — | Conjuring | DROPPED | Subsumed into Inscription — NPCs Present section |
-| — | Summoning | DROPPED | Subsumed into Inscription — Adversaries section |
-| — | Enchanting | DROPPED | Subsumed into Inscription — Items section |
-| — | Scrying | DROPPED | Subsumed into Inscription — Portents section (echo categories with drill-in) |
+| — | Conjuring | DROPPED | Subsumed into Inscribing — NPCs Present section |
+| — | Summoning | DROPPED | Subsumed into Inscribing — Adversaries section |
+| — | Enchanting | DROPPED | Subsumed into Inscribing — Items section |
+| — | Scrying | DROPPED | Subsumed into Inscribing — Portents section (echo categories with drill-in) |
 
 ### Absorbed Stages
 
-Stages 6–8 of the original 10-stage design (Conjuring, Summoning, Enchanting) were absorbed into Inscription. Their panel content now appears as entity sections within each scene:
+Stages 6–8 of the original 10-stage design (Conjuring, Summoning, Enchanting) were absorbed into Inscribing. Their panel content now appears as entity sections within each scene:
 
 - **Conjuring** → NPCs Present section (compact cards + NPC detail drill-in)
 - **Summoning** → Adversaries section (compact cards + adversary stat block drill-in)
 - **Enchanting** → Items section (Enchanting-style item cards with type labels)
 
-Scrying (formerly stage 9 of the original design, stage 6 of the 7-stage design) was also absorbed into Inscription as a Wave 3 section:
+Scrying (formerly stage 9 of the original design, stage 6 of the 7-stage design) was also absorbed into Inscribing as a Wave 3 section:
 
 - **Scrying** → Portents section (5 echo categories with detail drill-in per category)
 
-The original mockup files remain as reference for the card/styling patterns reused in Inscription:
+The original mockup files remain as reference for the card/styling patterns reused in Inscribing:
 - `documentation/mockups/conjuring-immersive.html` — NPC card pattern reference
 - `documentation/mockups/summoning-immersive.html` — adversary card + type badge reference
 - `documentation/mockups/enchanting-immersive.html` — item card styling reference
@@ -50,7 +50,7 @@ When updating a stage, always check for workflow details that go beyond the mock
 
 ---
 
-## 1. Invocation
+## 1. Invoking
 
 > *What shape will your adventure take?*
 
@@ -58,7 +58,7 @@ Opening the Book — the user shares their initial vision, ideas, and (optionall
 
 ### Right Panel
 
-The panel shows **Spark** inline — no clickable rows, no separate detail panel. The Spark title, question ("What's the seed of your adventure?"), and a dashed placeholder ("Your spark will appear here...") are displayed directly on the main panel. A "Continue to Attunement" button is fixed at the bottom of the panel, disabled until Spark is confirmed.
+The panel shows **Spark** inline — no clickable rows, no separate detail panel. The Spark title, question ("What's the seed of your adventure?"), and a dashed placeholder ("Your spark will appear here...") are displayed directly on the main panel. A "Continue to Attuning" button is fixed at the bottom of the panel, disabled until Spark is confirmed.
 
 | Component | Question | Selection | Behavior |
 |------|----------|-----------|----------|
@@ -66,7 +66,7 @@ The panel shows **Spark** inline — no clickable rows, no separate detail panel
 
 ### Chat Flow
 
-The Invocation conversation is freeform — no predefined card choices. The Sage opens with an introduction and naming prompt (single combined message), then probes for the user's vision through open-ended questions. The mockup captures a mid-conversation snapshot: the user has shared their premise and the Sage is thinking.
+The Invoking conversation is freeform — no predefined card choices. The Sage opens with an introduction and naming prompt (single combined message), then probes for the user's vision through open-ended questions. The mockup captures a mid-conversation snapshot: the user has shared their premise and the Sage is thinking.
 
 ### Workflows
 
@@ -74,11 +74,11 @@ The Invocation conversation is freeform — no predefined card choices. The Sage
 
 ### Mockup
 
-`documentation/mockups/invocation-immersive.html`
+`documentation/mockups/invoking-immersive.html`
 
 ---
 
-## 2. Attunement
+## 2. Attuning
 
 > *How should it feel?*
 
@@ -147,7 +147,7 @@ The panel shows a **component summary list** grouped into three categories. Each
   - **Selected** (in choice panel) — gold-dim background, gold border, gold left-border accent (matches Binding's Active frame card)
   - **Confirmed** (on summary panel) — same gold treatment as Binding's Active frame card: gold-dim background, gold border, gold left-border, gold component name
 - Two exit paths from the choice panel (matches Binding pattern):
-  - **"Return to Attunement"** — returns to summary with NO selection applied (clears any in-panel selection)
+  - **"Return to Attuning"** — returns to summary with NO selection applied (clears any in-panel selection)
   - **"Select [Component]" button** (fixed at bottom) — confirms selection, returns to summary with component marked Confirmed (gold treatment)
 - The "Select [Component]" button is contextual: "Select Tenor", "Select Pillars", "Select Threads", etc.
 - The "Select [Component]" button is disabled (faded) until the user picks an option; becomes active on selection
@@ -156,7 +156,7 @@ The panel shows a **component summary list** grouped into three categories. Each
 
 ### Mockup
 
-`documentation/mockups/attunement-immersive.html`
+`documentation/mockups/attuning-immersive.html`
 
 ---
 
@@ -168,7 +168,7 @@ Binding the spell to a foundation — selecting the thematic framework (Frame) t
 
 ### Right Panel
 
-Frame Gallery → Frame Detail Panel (Attunement-style cross-fade transition)
+Frame Gallery → Frame Detail Panel (Attuning-style cross-fade transition)
 
 **Frame Gallery** (default view):
 - Scrollable frame cards from the database
@@ -179,7 +179,7 @@ Frame Gallery → Frame Detail Panel (Attunement-style cross-fade transition)
   - **Active** — gold left-border + gold-dim background, gold frame name (frame confirmed via "Select Frame" button)
 
 **Frame Detail Panel** (after clicking a frame):
-- Header: "Back to Frames" text link (Attunement pattern) + frame name + pitch (italic)
+- Header: "Back to Frames" text link (Attuning pattern) + frame name + pitch (italic)
 - Scrollable content area with collapsible detail sections
 - Fixed "Select Frame" button at the bottom — always visible, never scrolls away
 
@@ -247,15 +247,15 @@ This migration is **not part of the current mockup iteration** — it is documen
 
 > *How does the plot unfold?*
 
-Weaving threads of story into a pattern — drafting a scene-by-scene arc through a conversational feedback loop between Sage and user. Mirrors Inscription's scene-tab structure: same spatial model, lighter content.
+Weaving threads of story into a pattern — drafting a scene-by-scene arc through a conversational feedback loop between Sage and user. Mirrors Inscribing's scene-tab structure: same spatial model, lighter content.
 
 ### Right Panel
 
 #### Scene Tabs
 
-Horizontal numbered tabs (Scene 1, Scene 2, ...) matching Inscription's scene selector. Sequential flow — Scene 1 is active first. Each confirmation locks the scene and advances to the next.
+Horizontal numbered tabs (Scene 1, Scene 2, ...) matching Inscribing's scene selector. Sequential flow — Scene 1 is active first. Each confirmation locks the scene and advances to the next.
 
-Three tab states (matching Inscription):
+Three tab states (matching Inscribing):
 
 | State | Visual | Meaning |
 |-------|--------|---------|
@@ -265,7 +265,7 @@ Three tab states (matching Inscription):
 
 #### Scene Arc Content
 
-Below the tabs, the full scene arc for the active scene. Lighter than Inscription's 9-section accordion — just the narrative outline:
+Below the tabs, the full scene arc for the active scene. Lighter than Inscribing's 9-section accordion — just the narrative outline:
 
 - **Scene title** (16px serif header, weight 600)
 - **Scene subtitle** (12px, muted — "Scene N of N")
@@ -275,9 +275,9 @@ The conversation drives content; the panel reflects the result. The Sage updates
 
 #### Fixed Footer
 
-Footer button fixed at bottom of panel (never scrolls away), matching Inscription's `.panel-footer` pattern:
+Footer button fixed at bottom of panel (never scrolls away), matching Inscribing's `.panel-footer` pattern:
 - Scenes 1 through N-1: **"Confirm Scene Summary"** — seals the current scene and advances to the next
-- Final scene (Scene N): **"Continue to Inscription"** — activates when the user confirms the last scene is good in chat; seals the final scene and advances to Inscription
+- Final scene (Scene N): **"Continue to Inscribing"** — activates when the user confirms the last scene is good in chat; seals the final scene and advances to Inscribing
 - Button is disabled until the Sage signals readiness in conversation
 
 ### Chat Flow
@@ -288,11 +288,11 @@ The conversation is scene-focused: while Scene 1 is active, the dialogue centers
 
 ### Workflows
 
-- Scene tab states match Inscription exactly — same CSS classes (`.scene-selector-tab.active`, `.confirmed`, `.inactive`)
-- Panel view pattern matches Inscription — `.panel-view` divs, one per scene, only the active scene visible
+- Scene tab states match Inscribing exactly — same CSS classes (`.scene-selector-tab.active`, `.confirmed`, `.inactive`)
+- Panel view pattern matches Inscribing — `.panel-view` divs, one per scene, only the active scene visible
 - Sequential flow: Scene 1 unlocked first. Each "Confirm Scene Summary" click locks the current scene (tab → confirmed state) and activates the next (tab → active state)
 - The Sage determines when a scene is ready and signals it conversationally. The footer button is disabled until the Sage triggers readiness
-- For the final scene, the footer button label changes to "Continue to Inscription" — this is the only scene where confirmation also advances the stage
+- For the final scene, the footer button label changes to "Continue to Inscribing" — this is the only scene where confirmation also advances the stage
 - Users can request scene reordering through conversation ("swap Scenes 2 and 3") — the Sage handles the restructuring
 - If the user wants to revisit a confirmed scene's content, they can discuss it in chat, but the panel shows it as locked. Major changes would require the Sage to propose unlocking
 
@@ -302,11 +302,11 @@ The conversation is scene-focused: while Scene 1 is active, the dialogue centers
 
 ---
 
-## 5. Inscription
+## 5. Inscribing
 
 > *What unfolds in each scene?*
 
-The most content-dense stage — inscribing each scene into the Book through a draft-feedback-revise cycle with the Sage. Inscription absorbs the work formerly done in Conjuring (NPCs), Summoning (adversaries), Enchanting (items), and Scrying (echoes), managing all scene content through 9 sections organized in three progressive waves.
+The most content-dense stage — inscribing each scene into the Book through a draft-feedback-revise cycle with the Sage. Inscribing absorbs the work formerly done in Conjuring (NPCs), Summoning (adversaries), Enchanting (items), and Scrying (echoes), managing all scene content through 9 sections organized in three progressive waves.
 
 ### Right Panel
 
@@ -510,7 +510,7 @@ The Sage determines when a scene is ready and signals it conversationally ("I th
 - Section accordion expand/collapse: chevron click toggles
 - Detail card navigation: "Back to Scene" link (matches Binding's "Back to Frames")
 - Cross-fade transitions between accordion and detail card views
-- Fixed footer button pattern (matches Binding/Attunement)
+- Fixed footer button pattern (matches Binding/Attuning)
 - Entity card styling reused from Conjuring (NPC), Summoning (adversary), Enchanting (items)
 - Echo category + trigger/benefit/complication styling reused from Scrying
 - Read-aloud blocks are a new shared component — spec in reimagine-ui.md
@@ -524,7 +524,7 @@ NPCs are currently LLM-generated with no database backing. A GitHub issue should
 
 ### Mockup
 
-`documentation/mockups/inscription-immersive.html`
+`documentation/mockups/inscribing-immersive.html`
 
 ---
 

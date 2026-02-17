@@ -246,11 +246,11 @@ The Supabase database contains 14 tables for Daggerheart content:
 
 **The Book of Many Paths** — the app is a magical artifact where human and AI are co-casters, weaving a grand spell (an adventure) through a 6-phase ritual:
 
-1. **Invocation** (`invocation`) — Opening the Book, naming the spell (adventure) you intend to cast
-2. **Attunement** (`attunement`) — Tuning the spell's frequencies; harmonizing the 8 components that shape the adventure (CRITICAL: conversational feel)
+1. **Invoking** (`invoking`) — Opening the Book, naming the spell (adventure) you intend to cast
+2. **Attuning** (`attuning`) — Tuning the spell's frequencies; harmonizing the 8 components that shape the adventure (CRITICAL: conversational feel)
 3. **Binding** (`binding`) — Binding the spell to a foundation; selecting the thematic framework that anchors the story
 4. **Weaving** (`weaving`) — Weaving threads of story into a pattern; drafting 3-6 scene briefs with feedback loop
-5. **Inscription** (`inscription`) — Inscribing each scene into the Book; draft-feedback-revise per scene with NPCs, adversaries, items, and portents per scene (absorbs former Conjuring/Summoning/Enchanting/Scrying stages)
+5. **Inscribing** (`inscribing`) — Writing each scene into the Book; draft-feedback-revise per scene with NPCs, adversaries, items, and portents per scene (absorbs former Conjuring/Summoning/Enchanting/Scrying stages)
 6. **Sealing** (`sealing`) — The spell is sealed; the adventure is bound into the Book, ready for export
 
 ## Technology Stack

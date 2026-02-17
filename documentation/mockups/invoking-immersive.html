@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dagger-App — Invocation (Immersive Mockup)</title>
+  <title>Dagger-App — Invoking (Immersive Mockup)</title>
 
   <!--
     ==========================================================================
     DESIGN RATIONALE
     ==========================================================================
-    This mockup demonstrates the "reimagined" Dagger-App UI for the invocation
+    This mockup demonstrates the "reimagined" Dagger-App UI for the invoking
     phase. The core thesis: immersion comes from restraint, not decoration.
     See documentation/reimagine-ui.md for the full rationale.
 
@@ -23,7 +23,7 @@
     Color: No purple anywhere. The Daggerheart identity comes from gold
     accents on warm neutrals + the Sage's voice, not from surface color.
 
-    Invocation is a freeform conversational stage — no predefined card choices.
+    Invoking is a freeform conversational stage — no predefined card choices.
     The user shares their initial vision ("Spark") and optionally names the
     adventure. This mockup captures a mid-conversation snapshot: the user has
     just shared their vision and the Sage is thinking.
@@ -617,7 +617,7 @@
     }
 
     /* ---- Read-Only Summary Placeholder ----
-       Used in Invocation for Spark — a muted bordered area showing
+       Used in Invoking for Spark — a muted bordered area showing
        that the Sage will populate this once the conversation distills
        the answer.
     */
@@ -778,7 +778,7 @@
       <!-- Panel Header — Phase trigger with dropdown -->
       <div class="panel-header">
         <div class="app-header-phase" onclick="togglePhaseDropdown()" role="button" tabindex="0" aria-expanded="false" aria-haspopup="true">
-          <span class="phase-name">Invocation</span>
+          <span class="phase-name">Invoking</span>
           <span class="phase-progress">What shape will your adventure take?</span>
           <span class="phase-chevron" id="phase-chevron">&#9662;</span>
 
@@ -786,13 +786,13 @@
           <div class="phase-dropdown" id="phase-dropdown" role="menu">
             <div class="phase-dropdown-item current" role="menuitem" tabindex="0">
               <div class="phase-item-text">
-                <span>Invocation</span>
+                <span>Invoking</span>
                 <span class="phase-item-desc">What shape will your adventure take?</span>
               </div>
             </div>
             <div class="phase-dropdown-item future" role="menuitem" tabindex="-1">
               <div class="phase-item-text">
-                <span>Attunement</span>
+                <span>Attuning</span>
                 <span class="phase-item-desc">How should it feel?</span>
               </div>
               <span class="phase-item-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></span>
@@ -813,7 +813,7 @@
             </div>
             <div class="phase-dropdown-item future" role="menuitem" tabindex="-1">
               <div class="phase-item-text">
-                <span>Inscription</span>
+                <span>Inscribing</span>
                 <span class="phase-item-desc">What unfolds in each scene?</span>
               </div>
               <span class="phase-item-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></span>
@@ -863,7 +863,7 @@
 
       <!-- Fixed footer — always visible at bottom of panel -->
       <div class="panel-footer">
-        <button class="btn-continue-compact" style="width: 100%;" disabled>Continue to Attunement</button>
+        <button class="btn-continue-compact" style="width: 100%;" disabled>Continue to Attuning</button>
       </div>
 
     </div>

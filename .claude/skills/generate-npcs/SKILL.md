@@ -26,7 +26,7 @@ This skill generates **reference NPCs** stored in `daggerheart_npcs`. These are 
 - Created by this skill
 
 **Adventure NPCs** (`NPC` / `CompiledNPC` in `content.ts`):
-- Extracted from scene drafts during Inscription phase
+- Extracted from scene drafts during Inscribing phase
 - Tied to specific adventure scenes via `sceneAppearances`
 - Include `extractedFrom` context about which scenes reference them
 - Managed by the `compile_npcs` MCP tool

@@ -10,12 +10,12 @@
     STAGE 4: WEAVING — How does the plot unfold?
     ==========================================================================
     Panel pattern: SCENE TABS → FULL SCENE ARC CONTENT
-    Mirrors Inscription's scene-tab structure: numbered scene buttons across the
+    Mirrors Inscribing's scene-tab structure: numbered scene buttons across the
     top, full content below, sequential confirmation flow. This makes Weaving
-    feel like a natural precursor to Inscription — same spatial model, lighter
+    feel like a natural precursor to Inscribing — same spatial model, lighter
     content.
 
-    Scene tab states (matching Inscription):
+    Scene tab states (matching Inscribing):
       Active    — gold fill, highest visual weight (currently being woven)
       Confirmed — gold-dim wash, settled (sealed, locked)
       Inactive  — muted surface, upcoming (not yet reachable)
@@ -23,12 +23,12 @@
     Content area shows the full scene arc for the selected scene:
       - Scene title (serif header)
       - Full narrative arc description (multiple paragraphs)
-      - This is lighter than Inscription's 8-section accordion — just the
+      - This is lighter than Inscribing's 8-section accordion — just the
         outline of what happens in the scene
 
     Footer button:
       - Scenes 1–3: "Confirm Scene Summary" (disabled until Sage signals readiness)
-      - Scene 4 (last): "Continue to Inscription" (activates when user confirms
+      - Scene 4 (last): "Continue to Inscribing" (activates when user confirms
         in chat that the last scene looks good)
 
     Sequential flow — Scene 1 is active first. Each confirmation locks the
@@ -207,7 +207,7 @@
     .phase-item-desc { font-size: 11px; font-weight: 400; color: var(--text-muted); }
     .phase-dropdown-item.current .phase-item-desc { color: var(--accent-gold); opacity: 0.7; }
 
-    /* === SCENE TABS (matching Inscription) ===
+    /* === SCENE TABS (matching Inscribing) ===
        Three states: Active (gold fill), Confirmed (gold-dim wash), Inactive (muted).
        Sequential flow — Scene 1 is active first. Each confirmation locks the
        scene and advances to the next.
@@ -237,7 +237,7 @@
 
     /* === SCENE ARC CONTENT (Weaving-specific) ===
        Full scene arc description shown below the scene tabs.
-       Lighter than Inscription's 8-section accordion — just narrative outline.
+       Lighter than Inscribing's 8-section accordion — just narrative outline.
     */
     .panel-view {
       display: none; flex-direction: column; flex: 1; min-height: 0;
@@ -261,7 +261,7 @@
     }
     .scene-arc-body p + p { margin-top: 12px; }
 
-    /* === FIXED FOOTER (matching Inscription) === */
+    /* === FIXED FOOTER (matching Inscribing) === */
     .panel-footer {
       flex-shrink: 0;
       padding: 12px var(--panel-padding) 32px;
@@ -381,13 +381,13 @@
           <span class="phase-progress">How does the plot unfold?</span>
           <span class="phase-chevron" id="phase-chevron">&#9662;</span>
 
-          <!-- 6-stage dropdown (Conjuring/Summoning/Enchanting/Scrying absorbed into Inscription) -->
+          <!-- 6-stage dropdown (Conjuring/Summoning/Enchanting/Scrying absorbed into Inscribing) -->
           <div class="phase-dropdown" id="phase-dropdown" role="menu">
             <div class="phase-dropdown-item completed" role="menuitem" tabindex="0">
-              <div class="phase-item-text"><span>Invocation</span><span class="phase-item-desc">What shape will your adventure take?</span></div>
+              <div class="phase-item-text"><span>Invoking</span><span class="phase-item-desc">What shape will your adventure take?</span></div>
             </div>
             <div class="phase-dropdown-item completed" role="menuitem" tabindex="0">
-              <div class="phase-item-text"><span>Attunement</span><span class="phase-item-desc">How should it feel?</span></div>
+              <div class="phase-item-text"><span>Attuning</span><span class="phase-item-desc">How should it feel?</span></div>
             </div>
             <div class="phase-dropdown-item completed" role="menuitem" tabindex="0">
               <div class="phase-item-text"><span>Binding</span><span class="phase-item-desc">Which frame holds the story?</span></div>
@@ -396,7 +396,7 @@
               <div class="phase-item-text"><span>Weaving</span><span class="phase-item-desc">How does the plot unfold?</span></div>
             </div>
             <div class="phase-dropdown-item future" role="menuitem" tabindex="-1">
-              <div class="phase-item-text"><span>Inscription</span><span class="phase-item-desc">What unfolds in each scene?</span></div>
+              <div class="phase-item-text"><span>Inscribing</span><span class="phase-item-desc">What unfolds in each scene?</span></div>
               <span class="phase-item-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></span>
             </div>
             <div class="phase-dropdown-item future" role="menuitem" tabindex="-1">

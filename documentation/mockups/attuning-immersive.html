@@ -122,7 +122,7 @@
 
     /* ---- App Header Bar ----
        Simple flex row: home icon left, adventure title centered.
-       Attunement lives in the panel header, not the app header.
+       Attuning lives in the panel header, not the app header.
     */
     .app-header {
       flex-shrink: 0;
@@ -1140,7 +1140,7 @@
       <!-- Panel Header — Phase trigger with dropdown -->
       <div class="panel-header">
         <div class="app-header-phase" onclick="togglePhaseDropdown()" role="button" tabindex="0" aria-expanded="false" aria-haspopup="true">
-          <span class="phase-name">Attunement</span>
+          <span class="phase-name">Attuning</span>
           <span class="phase-progress">How should it feel?</span>
           <span class="phase-chevron" id="phase-chevron">▾</span>
 
@@ -1148,13 +1148,13 @@
           <div class="phase-dropdown" id="phase-dropdown" role="menu">
             <div class="phase-dropdown-item completed" role="menuitem" tabindex="0">
               <div class="phase-item-text">
-                <span>Invocation</span>
+                <span>Invoking</span>
                 <span class="phase-item-desc">What shape will your adventure take?</span>
               </div>
             </div>
             <div class="phase-dropdown-item current" role="menuitem" tabindex="0">
               <div class="phase-item-text">
-                <span>Attunement</span>
+                <span>Attuning</span>
                 <span class="phase-item-desc">How should it feel?</span>
               </div>
             </div>
@@ -1174,7 +1174,7 @@
             </div>
             <div class="phase-dropdown-item future" role="menuitem" tabindex="-1">
               <div class="phase-item-text">
-                <span>Inscription</span>
+                <span>Inscribing</span>
                 <span class="phase-item-desc">What unfolds in each scene?</span>
               </div>
               <span class="phase-item-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></span>
@@ -1293,7 +1293,7 @@
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="15 18 9 12 15 6"></polyline>
           </svg>
-          Return to Attunement
+          Return to Attuning
         </button>
         <div class="choice-component-name" id="choice-title">Lethality</div>
         <div class="choice-question" id="choice-question">How dangerous should this world feel? Pick what matches your table.</div>
@@ -1523,7 +1523,7 @@
       document.getElementById('choice-panel').classList.add('visible');
     }
 
-    // Return to Attunement — no active styling applied
+    // Return to Attuning — no active styling applied
     function showSummaryPanel() {
       document.getElementById('choice-panel').classList.remove('visible');
       document.getElementById('summary-panel').classList.remove('hidden');
