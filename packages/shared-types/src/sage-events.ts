@@ -81,6 +81,16 @@ export interface PanelSparkEvent {
   };
 }
 
+/** A component selection has been set by the set_component tool */
+export interface PanelComponentEvent {
+  type: 'panel:component';
+  data: {
+    componentId: string;
+    value: string | number | string[];
+    confirmed: boolean;
+  };
+}
+
 // =============================================================================
 // UI Events (stage readiness signals)
 // =============================================================================
@@ -132,6 +142,7 @@ export type SageEvent =
   | ToolStartEvent
   | ToolEndEvent
   | PanelSparkEvent
+  | PanelComponentEvent
   | UIReadyEvent
   | SessionStageEvent
   | SageErrorEvent;

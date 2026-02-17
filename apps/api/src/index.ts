@@ -17,13 +17,16 @@ import daggerheartRouter from './routes/daggerheart.js';
 import sessionRouter, { sessionsListRouter } from './routes/session.js';
 import chatRouter from './routes/chat.js';
 import undoRouter from './routes/undo.js';
+import componentRouter from './routes/component.js';
 import { requireAuth } from './middleware/auth.js';
 import { registerInvokingTools } from './tools/invoking.js';
+import { registerAttuningTools } from './tools/attuning.js';
 
 export const API_VERSION = '0.0.1';
 
 // Register tool handlers for all stages
 registerInvokingTools();
+registerAttuningTools();
 
 const app: Express = express();
 
@@ -40,6 +43,7 @@ app.use('/api/session', requireAuth, sessionRouter);
 app.use('/api/sessions', requireAuth, sessionsListRouter);
 app.use('/api/chat', requireAuth, chatRouter);
 app.use('/api/section', requireAuth, undoRouter);
+app.use('/api/component', requireAuth, componentRouter);
 
 /**
  * Export the app for testing (supertest) and the start function

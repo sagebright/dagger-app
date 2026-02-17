@@ -17,6 +17,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useAdventureStore } from '@/stores/adventureStore';
 import { useChatStore } from '@/stores/chatStore';
 import { InvokingPage } from './InvokingPage';
+import { AttuningPage } from './AttuningPage';
 import type { AdventureState, Stage } from '@dagger-app/shared-types';
 import { createEmptyAdventureState } from '@dagger-app/shared-types';
 
@@ -172,6 +173,8 @@ export function AdventurePage() {
   switch (stage) {
     case 'invoking':
       return <InvokingPage sessionId={sessionId} />;
+    case 'attuning':
+      return <AttuningPage sessionId={sessionId} />;
     default:
       // Placeholder for stages not yet implemented
       return (

@@ -271,6 +271,145 @@
 }
 
 /* =============================================================================
+ * Attuning — Component Summary & Choice Panels
+ *
+ * Component rows in the summary panel: confirmed (gold) vs unconfirmed.
+ * Choice cards in the selection panel: single-select and multi-select.
+ * ============================================================================= */
+
+@layer components {
+  /* Component group heading */
+  .component-group-label {
+    font-family: var(--font-serif);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 6px;
+    padding-left: 4px;
+  }
+
+  /* Component row — base */
+  .component-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    border-radius: var(--radius-sm);
+    border-left: 3px solid transparent;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+    gap: 12px;
+    border: 1px solid transparent;
+  }
+
+  .component-row:hover {
+    background: var(--bg-surface);
+  }
+
+  /* Confirmed: gold treatment */
+  .component-row--confirmed {
+    background: var(--accent-gold-dim);
+    border: 1px solid var(--accent-gold-border);
+    border-left: 3px solid var(--accent-gold);
+  }
+
+  .component-row--confirmed .component-label {
+    color: var(--accent-gold-hover);
+  }
+
+  .component-row--confirmed .component-value {
+    color: var(--text-primary);
+    font-weight: 500;
+  }
+
+  /* Unconfirmed: muted */
+  .component-row--unconfirmed {
+    opacity: 0.45;
+  }
+
+  .component-row--unconfirmed:hover {
+    opacity: 0.65;
+  }
+
+  .component-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+  }
+
+  .component-value {
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--text-muted);
+    text-align: right;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 55%;
+  }
+
+  /* Choice cards */
+  .choice-card {
+    padding: 14px 16px;
+    border: 1px solid var(--border-medium);
+    border-left: 3px solid transparent;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .choice-card:hover {
+    background: var(--bg-surface);
+    border-color: var(--border-hover);
+    border-left-color: var(--border-hover);
+  }
+
+  .choice-card--selected {
+    background: var(--accent-gold-dim);
+    border-color: var(--accent-gold-border);
+    border-left-color: var(--accent-gold);
+  }
+
+  .choice-card--selected .choice-card-title {
+    color: var(--accent-gold-hover);
+  }
+
+  .choice-card-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+  }
+
+  .choice-card-desc {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+  }
+
+  /* Back link */
+  .back-link {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-family: var(--font-sans);
+    font-size: 13px;
+    cursor: pointer;
+    padding: 4px 0;
+    transition: color 0.15s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .back-link:hover {
+    color: var(--accent-gold);
+  }
+}
+
+/* =============================================================================
  * Entity Label System
  *
  * Consistent color treatment for NPC roles, adversary types, and item types.
