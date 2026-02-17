@@ -463,6 +463,40 @@ export interface SageErrorEvent {
 }
 
 // =============================================================================
+// Cross-Section Propagation Events
+// =============================================================================
+
+/** A section in a propagation update (deterministic or semantic) */
+export interface PropagationSectionUpdate {
+  sectionId: string;
+  replacementCount: number;
+}
+
+/** Deterministic propagation completed (literal name replacements) */
+export interface PanelPropagationDeterministicEvent {
+  type: 'panel:propagation_deterministic';
+  data: {
+    sceneArcId: string;
+    oldName: string;
+    newName: string;
+    updatedSections: PropagationSectionUpdate[];
+    totalReplacements: number;
+  };
+}
+
+/** Semantic propagation hint queued for LLM review */
+export interface PanelPropagationSemanticEvent {
+  type: 'panel:propagation_semantic';
+  data: {
+    sceneArcId: string;
+    entityName: string;
+    changeType: string;
+    affectedSectionIds: string[];
+    suggestedAction: string;
+  };
+}
+
+// =============================================================================
 // Discriminated Union
 // =============================================================================
 
@@ -488,6 +522,8 @@ export type SageEvent =
   | PanelEntityAdversariesEvent
   | PanelEntityItemsEvent
   | PanelEntityPortentsEvent
+  | PanelPropagationDeterministicEvent
+  | PanelPropagationSemanticEvent
   | UIReadyEvent
   | SessionStageEvent
   | SageErrorEvent;

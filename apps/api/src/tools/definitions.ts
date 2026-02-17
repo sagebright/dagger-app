@@ -484,6 +484,79 @@ const QUERY_ITEMS: ToolDefinition = {
   },
 };
 
+const PROPAGATE_RENAME: ToolDefinition = {
+  name: 'propagate_rename',
+  description:
+    'Propagate an entity rename across all sections of the active scene. ' +
+    'Uses deterministic find-and-replace with word-boundary matching. ' +
+    'Call this after renaming an NPC, adversary, or item to keep all ' +
+    'sections consistent. Returns which sections were updated.',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      sceneArcId: {
+        type: 'string',
+        description: 'The scene arc ID to propagate within',
+      },
+      oldName: {
+        type: 'string',
+        description: 'The previous entity name',
+      },
+      newName: {
+        type: 'string',
+        description: 'The new entity name',
+      },
+      originSectionId: {
+        type: 'string',
+        description:
+          'The section where the rename originated (excluded from propagation)',
+        enum: [
+          'overview', 'setup', 'developments',
+          'npcs_present', 'adversaries', 'items',
+          'transitions', 'portents', 'gm_notes',
+        ],
+      },
+    },
+    required: ['sceneArcId', 'oldName', 'newName'],
+  },
+};
+
+const PROPAGATE_SEMANTIC: ToolDefinition = {
+  name: 'propagate_semantic',
+  description:
+    'Signal that a semantic entity change (motivation, role, description) ' +
+    'requires cross-section review. The system identifies which sections ' +
+    'reference the entity and returns a hint for updating them. ' +
+    'Call this when an NPC\'s role or motivation changes.',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      sceneArcId: {
+        type: 'string',
+        description: 'The scene arc ID to check',
+      },
+      entityName: {
+        type: 'string',
+        description: 'The entity name to search for',
+      },
+      changeType: {
+        type: 'string',
+        description: 'What aspect changed',
+        enum: ['motivation', 'role', 'description', 'backstory', 'voice', 'secret'],
+      },
+      oldValue: {
+        type: 'string',
+        description: 'The previous value',
+      },
+      newValue: {
+        type: 'string',
+        description: 'The new value',
+      },
+    },
+    required: ['sceneArcId', 'entityName', 'changeType', 'oldValue', 'newValue'],
+  },
+};
+
 const INSCRIBING_TOOLS: ToolDefinition[] = [
   UPDATE_SECTION,
   SET_WAVE,
@@ -492,6 +565,8 @@ const INSCRIBING_TOOLS: ToolDefinition[] = [
   CONFIRM_SCENE,
   QUERY_ADVERSARIES,
   QUERY_ITEMS,
+  PROPAGATE_RENAME,
+  PROPAGATE_SEMANTIC,
 ];
 
 // =============================================================================

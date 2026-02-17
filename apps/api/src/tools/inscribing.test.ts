@@ -7,12 +7,16 @@
  * - invalidate_wave3 marks wave 3 for regeneration and queues event
  * - warn_balance sends a balance warning event
  * - drainInscribingEvents returns and clears pending events
+ * - propagate_rename propagates name changes across cached sections
+ * - propagate_semantic produces LLM hints for semantic changes
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import {
   registerInscribingTools,
   drainInscribingEvents,
+  clearSectionCache,
+  seedSectionCache,
 } from './inscribing.js';
 import { clearToolHandlers, dispatchToolCalls } from '../services/tool-dispatcher.js';
 import type { CollectedToolUse } from '../services/stream-parser.js';
@@ -24,6 +28,7 @@ import type { CollectedToolUse } from '../services/stream-parser.js';
 beforeEach(() => {
   clearToolHandlers();
   drainInscribingEvents();
+  clearSectionCache();
   registerInscribingTools();
 });
 
@@ -670,5 +675,278 @@ describe('drainInscribingEvents', () => {
 
     const secondDrain = drainInscribingEvents();
     expect(secondDrain.length).toBe(0);
+  });
+});
+
+// =============================================================================
+// propagate_rename
+// =============================================================================
+
+describe('propagate_rename handler', () => {
+  it('replaces names across cached sections and emits events', async () => {
+    seedSectionCache('arc-1', [
+      { sectionId: 'setup', content: 'Aldric stands at the gate.' },
+      { sectionId: 'developments', content: 'Aldric reveals the secret.' },
+      { sectionId: 'transitions', content: 'The party moves on.' },
+    ]);
+
+    const result = await dispatchToolCalls([
+      {
+        id: 'tool-prop-1',
+        name: 'propagate_rename',
+        input: {
+          sceneArcId: 'arc-1',
+          oldName: 'Aldric',
+          newName: 'Theron',
+        },
+      } as CollectedToolUse,
+    ]);
+
+    const toolResult = result.toolResults[0];
+    expect(toolResult.is_error).toBeUndefined();
+
+    const parsed = JSON.parse(toolResult.content);
+    expect(parsed.status).toBe('rename_propagated');
+    expect(parsed.sectionsUpdated).toBe(2);
+    expect(parsed.totalReplacements).toBe(2);
+  });
+
+  it('emits panel:section events for each updated section', async () => {
+    seedSectionCache('arc-1', [
+      { sectionId: 'setup', content: 'Aldric greets the party.' },
+      { sectionId: 'overview', content: 'Aldric is the village elder.' },
+    ]);
+
+    await dispatchToolCalls([
+      {
+        id: 'tool-prop-2',
+        name: 'propagate_rename',
+        input: {
+          sceneArcId: 'arc-1',
+          oldName: 'Aldric',
+          newName: 'Theron',
+        },
+      } as CollectedToolUse,
+    ]);
+
+    const events = drainInscribingEvents();
+    const sectionEvents = events.filter((e) => e.type === 'panel:section');
+    const propEvent = events.find(
+      (e) => e.type === 'panel:propagation_deterministic'
+    );
+
+    expect(sectionEvents).toHaveLength(2);
+    expect(propEvent).toBeDefined();
+  });
+
+  it('excludes the originating section when originSectionId is set', async () => {
+    seedSectionCache('arc-1', [
+      { sectionId: 'setup', content: 'Aldric stands guard.' },
+      { sectionId: 'developments', content: 'Aldric fights bravely.' },
+    ]);
+
+    const result = await dispatchToolCalls([
+      {
+        id: 'tool-prop-3',
+        name: 'propagate_rename',
+        input: {
+          sceneArcId: 'arc-1',
+          oldName: 'Aldric',
+          newName: 'Theron',
+          originSectionId: 'setup',
+        },
+      } as CollectedToolUse,
+    ]);
+
+    const parsed = JSON.parse(result.toolResults[0].content);
+    expect(parsed.sectionsUpdated).toBe(1);
+    expect(parsed.totalReplacements).toBe(1);
+  });
+
+  it('returns no_propagation_needed when names are identical', async () => {
+    const result = await dispatchToolCalls([
+      {
+        id: 'tool-prop-4',
+        name: 'propagate_rename',
+        input: {
+          sceneArcId: 'arc-1',
+          oldName: 'Aldric',
+          newName: 'Aldric',
+        },
+      } as CollectedToolUse,
+    ]);
+
+    const parsed = JSON.parse(result.toolResults[0].content);
+    expect(parsed.status).toBe('no_propagation_needed');
+  });
+
+  it('returns error when sceneArcId is missing', async () => {
+    const result = await dispatchToolCalls([
+      {
+        id: 'tool-prop-5',
+        name: 'propagate_rename',
+        input: { oldName: 'Aldric', newName: 'Theron' },
+      } as CollectedToolUse,
+    ]);
+
+    const toolResult = result.toolResults[0];
+    expect(toolResult.is_error).toBe(true);
+    expect(toolResult.content).toContain('sceneArcId is required');
+  });
+
+  it('returns error when oldName is missing', async () => {
+    const result = await dispatchToolCalls([
+      {
+        id: 'tool-prop-6',
+        name: 'propagate_rename',
+        input: { sceneArcId: 'arc-1', newName: 'Theron' },
+      } as CollectedToolUse,
+    ]);
+
+    const toolResult = result.toolResults[0];
+    expect(toolResult.is_error).toBe(true);
+    expect(toolResult.content).toContain('oldName is required');
+  });
+
+  it('returns error when newName is missing', async () => {
+    const result = await dispatchToolCalls([
+      {
+        id: 'tool-prop-7',
+        name: 'propagate_rename',
+        input: { sceneArcId: 'arc-1', oldName: 'Aldric' },
+      } as CollectedToolUse,
+    ]);
+
+    const toolResult = result.toolResults[0];
+    expect(toolResult.is_error).toBe(true);
+    expect(toolResult.content).toContain('newName is required');
+  });
+});
+
+// =============================================================================
+// propagate_semantic
+// =============================================================================
+
+describe('propagate_semantic handler', () => {
+  it('produces a semantic hint for sections referencing the entity', async () => {
+    seedSectionCache('arc-1', [
+      { sectionId: 'setup', content: 'Aldric pledges loyalty to the crown.' },
+      { sectionId: 'developments', content: 'The merchant sells goods.' },
+    ]);
+
+    const result = await dispatchToolCalls([
+      {
+        id: 'tool-sem-1',
+        name: 'propagate_semantic',
+        input: {
+          sceneArcId: 'arc-1',
+          entityName: 'Aldric',
+          changeType: 'motivation',
+          oldValue: 'Protect the village',
+          newValue: 'Betray the village',
+        },
+      } as CollectedToolUse,
+    ]);
+
+    const toolResult = result.toolResults[0];
+    expect(toolResult.is_error).toBeUndefined();
+
+    const parsed = JSON.parse(toolResult.content);
+    expect(parsed.status).toBe('semantic_propagation_hint');
+    expect(parsed.affectedSections).toBe(1);
+  });
+
+  it('emits a panel:propagation_semantic event', async () => {
+    seedSectionCache('arc-1', [
+      { sectionId: 'setup', content: 'Aldric stands ready.' },
+    ]);
+
+    await dispatchToolCalls([
+      {
+        id: 'tool-sem-2',
+        name: 'propagate_semantic',
+        input: {
+          sceneArcId: 'arc-1',
+          entityName: 'Aldric',
+          changeType: 'role',
+          oldValue: 'ally',
+          newValue: 'antagonist',
+        },
+      } as CollectedToolUse,
+    ]);
+
+    const events = drainInscribingEvents();
+    const semanticEvent = events.find(
+      (e) => e.type === 'panel:propagation_semantic'
+    );
+
+    expect(semanticEvent).toBeDefined();
+
+    const data = semanticEvent!.data as {
+      sceneArcId: string;
+      entityName: string;
+      changeType: string;
+      affectedSectionIds: string[];
+    };
+    expect(data.sceneArcId).toBe('arc-1');
+    expect(data.entityName).toBe('Aldric');
+    expect(data.affectedSectionIds).toContain('setup');
+  });
+
+  it('returns error when sceneArcId is missing', async () => {
+    const result = await dispatchToolCalls([
+      {
+        id: 'tool-sem-3',
+        name: 'propagate_semantic',
+        input: {
+          entityName: 'Aldric',
+          changeType: 'motivation',
+          oldValue: 'old',
+          newValue: 'new',
+        },
+      } as CollectedToolUse,
+    ]);
+
+    const toolResult = result.toolResults[0];
+    expect(toolResult.is_error).toBe(true);
+    expect(toolResult.content).toContain('sceneArcId is required');
+  });
+
+  it('returns error when entityName is missing', async () => {
+    const result = await dispatchToolCalls([
+      {
+        id: 'tool-sem-4',
+        name: 'propagate_semantic',
+        input: {
+          sceneArcId: 'arc-1',
+          changeType: 'role',
+          oldValue: 'old',
+          newValue: 'new',
+        },
+      } as CollectedToolUse,
+    ]);
+
+    const toolResult = result.toolResults[0];
+    expect(toolResult.is_error).toBe(true);
+    expect(toolResult.content).toContain('entityName is required');
+  });
+
+  it('returns error when changeType is missing', async () => {
+    const result = await dispatchToolCalls([
+      {
+        id: 'tool-sem-5',
+        name: 'propagate_semantic',
+        input: {
+          sceneArcId: 'arc-1',
+          entityName: 'Aldric',
+          oldValue: 'old',
+          newValue: 'new',
+        },
+      } as CollectedToolUse,
+    ]);
+
+    const toolResult = result.toolResults[0];
+    expect(toolResult.is_error).toBe(true);
+    expect(toolResult.content).toContain('changeType is required');
   });
 });

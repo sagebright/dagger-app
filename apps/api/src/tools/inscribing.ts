@@ -1,11 +1,15 @@
 /**
  * Inscribing stage tool handlers
  *
- * Implements the tool handlers for the Inscribing stage:
+ * Implements the core tool handlers for the Inscribing stage:
  * - update_section: Update individual section content
  * - set_wave: Populate a wave of sections at once
  * - invalidate_wave3: Mark Wave 3 for regeneration
  * - warn_balance: Emit a game balance warning
+ * - Entity handlers: NPCs, adversaries, items, portents
+ *
+ * Cross-section propagation handlers (propagate_rename, propagate_semantic)
+ * live in ./inscribing-propagation.ts to keep file sizes manageable.
  *
  * Each handler queues panel SSE events so the frontend can
  * update the Inscribing panel in real-time.
@@ -23,6 +27,11 @@ import type {
   PortentCategoryData,
 } from '@dagger-app/shared-types';
 import { SECTION_LABELS } from '@dagger-app/shared-types';
+import { cacheSection } from '../services/section-cache.js';
+import { registerPropagationTools, drainPropagationEvents } from './inscribing-propagation.js';
+
+// Re-export section cache utilities for testing
+export { clearSectionCache, seedSectionCache } from '../services/section-cache.js';
 
 // =============================================================================
 // Types
@@ -84,11 +93,17 @@ let pendingEvents: SageEvent[] = [];
 
 /**
  * Get and clear all pending inscribing events.
+ *
+ * Includes events from both the core inscribing handlers
+ * and the propagation handlers.
  */
 export function drainInscribingEvents(): SageEvent[] {
-  const events = [...pendingEvents];
+  const coreEvents = [...pendingEvents];
   pendingEvents = [];
-  return events;
+
+  const propagationEvents = drainPropagationEvents();
+
+  return [...coreEvents, ...propagationEvents];
 }
 
 // =============================================================================
@@ -124,11 +139,14 @@ function toSectionData(
 }
 
 // =============================================================================
-// Tool Handlers
+// Tool Registration
 // =============================================================================
 
 /**
  * Register all Inscribing stage tool handlers.
+ *
+ * Registers core section/wave/entity handlers here, plus
+ * delegates propagation handler registration to the propagation module.
  */
 export function registerInscribingTools(): void {
   registerToolHandler('update_section', handleUpdateSection);
@@ -139,7 +157,12 @@ export function registerInscribingTools(): void {
   registerToolHandler('set_entity_adversaries', handleSetEntityAdversaries);
   registerToolHandler('set_entity_items', handleSetEntityItems);
   registerToolHandler('set_entity_portents', handleSetEntityPortents);
+  registerPropagationTools();
 }
+
+// =============================================================================
+// Core Section Handlers
+// =============================================================================
 
 /**
  * Handle the update_section tool call.
@@ -172,6 +195,13 @@ async function handleUpdateSection(
       isError: true,
     };
   }
+
+  // Cache the section content for cross-section propagation
+  cacheSection(
+    sectionInput.sceneArcId,
+    sectionInput.sectionId,
+    sectionInput.content
+  );
 
   pendingEvents.push({
     type: 'panel:section',
@@ -229,6 +259,11 @@ async function handleSetWave(
     toSectionData(entry, waveInput.wave)
   );
 
+  // Cache each section for cross-section propagation
+  for (const entry of waveInput.sections) {
+    cacheSection(waveInput.sceneArcId, entry.sectionId, entry.content);
+  }
+
   pendingEvents.push({
     type: 'panel:sections',
     data: {
@@ -249,12 +284,7 @@ async function handleSetWave(
   };
 }
 
-/**
- * Handle the invalidate_wave3 tool call.
- *
- * Marks Wave 3 sections for regeneration due to changes in
- * Waves 1 or 2. Queues a panel:wave3_invalidated event.
- */
+/** Handle the invalidate_wave3 tool call. */
 async function handleInvalidateWave3(
   input: Record<string, unknown>
 ): Promise<{ result: unknown; isError: boolean }> {
@@ -292,12 +322,7 @@ async function handleInvalidateWave3(
   };
 }
 
-/**
- * Handle the warn_balance tool call.
- *
- * Emits a game balance warning for a specific scene. Shown as
- * a warning banner in the panel and optionally in the chat.
- */
+/** Handle the warn_balance tool call. */
 async function handleWarnBalance(
   input: Record<string, unknown>
 ): Promise<{ result: unknown; isError: boolean }> {
@@ -336,16 +361,7 @@ async function handleWarnBalance(
   };
 }
 
-// =============================================================================
-// Entity Tool Handlers
-// =============================================================================
-
-/**
- * Handle the set_entity_npcs tool call.
- *
- * Populates NPCs for the npcs_present section. Queues a
- * panel:entity_npcs event for the frontend entity card rendering.
- */
+/** Handle the set_entity_npcs tool call. */
 async function handleSetEntityNPCs(
   input: Record<string, unknown>
 ): Promise<{ result: unknown; isError: boolean }> {
@@ -377,12 +393,7 @@ async function handleSetEntityNPCs(
   };
 }
 
-/**
- * Handle the set_entity_adversaries tool call.
- *
- * Populates adversaries for the adversaries section. Queues a
- * panel:entity_adversaries event for the frontend entity card rendering.
- */
+/** Handle the set_entity_adversaries tool call. */
 async function handleSetEntityAdversaries(
   input: Record<string, unknown>
 ): Promise<{ result: unknown; isError: boolean }> {
@@ -414,12 +425,7 @@ async function handleSetEntityAdversaries(
   };
 }
 
-/**
- * Handle the set_entity_items tool call.
- *
- * Populates items for the items section. Queues a
- * panel:entity_items event for the frontend entity card rendering.
- */
+/** Handle the set_entity_items tool call. */
 async function handleSetEntityItems(
   input: Record<string, unknown>
 ): Promise<{ result: unknown; isError: boolean }> {
@@ -451,12 +457,7 @@ async function handleSetEntityItems(
   };
 }
 
-/**
- * Handle the set_entity_portents tool call.
- *
- * Populates portent categories for the portents section. Queues a
- * panel:entity_portents event for the frontend entity card rendering.
- */
+/** Handle the set_entity_portents tool call. */
 async function handleSetEntityPortents(
   input: Record<string, unknown>
 ): Promise<{ result: unknown; isError: boolean }> {
