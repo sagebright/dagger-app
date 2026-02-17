@@ -7,6 +7,7 @@
  * Design reference: documentation/mockups/summoning-immersive.html
  */
 
+import { memo } from 'react';
 import type { AdversaryCardData, AdversaryCardType } from '@dagger-app/shared-types';
 
 // =============================================================================
@@ -44,7 +45,7 @@ export interface AdversaryCardProps {
 // Component
 // =============================================================================
 
-export function AdversaryCard({ adversary, onClick }: AdversaryCardProps) {
+export const AdversaryCard = memo(function AdversaryCard({ adversary, onClick }: AdversaryCardProps) {
   const typeCss = TYPE_CSS_CLASS[adversary.type];
   const showQuantity = adversary.quantity > 1;
 
@@ -87,7 +88,7 @@ export function AdversaryCard({ adversary, onClick }: AdversaryCardProps) {
       </span>
     </button>
   );
-}
+});
 
 // =============================================================================
 // Sub-components

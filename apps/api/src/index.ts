@@ -22,6 +22,8 @@ import frameRouter from './routes/frame.js';
 import sceneRouter from './routes/scene.js';
 import { requireAuth } from './middleware/auth.js';
 import { errorHandler } from './middleware/error-handler.js';
+import { sanitizeInput } from './middleware/validation.js';
+import { generalRateLimit, chatRateLimit, authRateLimit } from './middleware/rate-limit.js';
 import { registerInvokingTools } from './tools/invoking.js';
 import { registerAttuningTools } from './tools/attuning.js';
 import { registerBindingTools } from './tools/binding.js';
@@ -45,18 +47,19 @@ const app: Express = express();
 app.use(requestLogger());
 app.use(createCorsMiddleware());
 app.use(express.json());
+app.use(sanitizeInput);
 
 // Routes (all prefixed with /api)
 app.use('/api/health', healthRouter);
-app.use('/api/auth', authRouter);
-app.use('/api/daggerheart', requireAuth, daggerheartRouter);
-app.use('/api/session', requireAuth, sessionRouter);
-app.use('/api/sessions', requireAuth, sessionsListRouter);
-app.use('/api/chat', requireAuth, chatRouter);
-app.use('/api/section', requireAuth, undoRouter);
-app.use('/api/component', requireAuth, componentRouter);
-app.use('/api/frame', requireAuth, frameRouter);
-app.use('/api/scene', requireAuth, sceneRouter);
+app.use('/api/auth', authRateLimit, authRouter);
+app.use('/api/daggerheart', generalRateLimit, requireAuth, daggerheartRouter);
+app.use('/api/session', generalRateLimit, requireAuth, sessionRouter);
+app.use('/api/sessions', generalRateLimit, requireAuth, sessionsListRouter);
+app.use('/api/chat', chatRateLimit, requireAuth, chatRouter);
+app.use('/api/section', generalRateLimit, requireAuth, undoRouter);
+app.use('/api/component', generalRateLimit, requireAuth, componentRouter);
+app.use('/api/frame', generalRateLimit, requireAuth, frameRouter);
+app.use('/api/scene', generalRateLimit, requireAuth, sceneRouter);
 
 // Error handling middleware (must be registered after all routes)
 app.use(errorHandler);

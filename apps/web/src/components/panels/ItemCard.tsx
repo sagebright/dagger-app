@@ -7,6 +7,7 @@
  * Design reference: documentation/mockups/enchanting-immersive.html
  */
 
+import { memo } from 'react';
 import type { ItemCardData, ItemCardCategory } from '@dagger-app/shared-types';
 
 // =============================================================================
@@ -39,7 +40,7 @@ export interface ItemCardProps {
 // Component
 // =============================================================================
 
-export function ItemCard({ item }: ItemCardProps) {
+export const ItemCard = memo(function ItemCard({ item }: ItemCardProps) {
   const categoryCss = CATEGORY_CSS_CLASS[item.category];
   const isAssigned = item.sceneAppearances.length > 0;
   const cardClass = isAssigned
@@ -62,4 +63,4 @@ export function ItemCard({ item }: ItemCardProps) {
       ))}
     </div>
   );
-}
+});

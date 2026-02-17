@@ -82,7 +82,7 @@ describe('FrameGallery', () => {
       />
     );
 
-    const card = screen.getByLabelText('Explore frame: The Witherwild');
+    const card = screen.getByLabelText('The Witherwild');
     await user.click(card);
 
     expect(handleExplore).toHaveBeenCalledWith('frame-1');

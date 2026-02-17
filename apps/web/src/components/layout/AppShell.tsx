@@ -44,10 +44,10 @@ export function AppShell({
         adventureName={adventureName}
         onHomeClick={onHomeClick}
       />
-      <div className="app-layout flex-1 min-h-0" style={{ gridTemplateRows: '1fr' }}>
+      <main className="app-layout flex-1 min-h-0" style={{ gridTemplateRows: '1fr' }}>
         {chatSlot}
-        <div className="content-panel">{panelSlot}</div>
-      </div>
+        <aside className="content-panel" aria-label="Adventure panel">{panelSlot}</aside>
+      </main>
     </div>
   );
 }

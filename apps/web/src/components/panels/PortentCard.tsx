@@ -9,7 +9,7 @@
  * Design reference: documentation/mockups/scrying-immersive.html
  */
 
-import { useState, useCallback } from 'react';
+import { memo, useState, useCallback } from 'react';
 import type { PortentCategoryData, PortentEntry } from '@dagger-app/shared-types';
 
 // =============================================================================
@@ -25,7 +25,7 @@ export interface PortentCardProps {
 // Component
 // =============================================================================
 
-export function PortentCard({
+export const PortentCard = memo(function PortentCard({
   category,
   defaultExpanded = false,
 }: PortentCardProps) {
@@ -64,7 +64,7 @@ export function PortentCard({
       )}
     </div>
   );
-}
+});
 
 // =============================================================================
 // Sub-components

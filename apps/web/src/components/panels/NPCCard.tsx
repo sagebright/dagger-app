@@ -8,6 +8,7 @@
  * Design reference: documentation/mockups/conjuring-immersive.html
  */
 
+import { memo } from 'react';
 import type { NPCCardData, NPCCardRole } from '@dagger-app/shared-types';
 
 // =============================================================================
@@ -59,7 +60,7 @@ export interface NPCCardProps {
 // Component
 // =============================================================================
 
-export function NPCCard({ npc, onClick }: NPCCardProps) {
+export const NPCCard = memo(function NPCCard({ npc, onClick }: NPCCardProps) {
   const initials = extractInitials(npc.name);
   const roleCss = ROLE_CSS_CLASS[npc.role] ?? 'role-minor';
   const cardClass = npc.isEnriched ? 'npc-card npc-card--enriched' : 'npc-card';
@@ -101,4 +102,4 @@ export function NPCCard({ npc, onClick }: NPCCardProps) {
       </span>
     </button>
   );
-}
+});

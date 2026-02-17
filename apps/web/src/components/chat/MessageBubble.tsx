@@ -7,6 +7,7 @@
  * Shared across all stages — no stage-specific logic.
  */
 
+import { memo } from 'react';
 import { StreamingText } from './StreamingText';
 
 // =============================================================================
@@ -26,14 +27,18 @@ export interface MessageBubbleProps {
 // Component
 // =============================================================================
 
-export function MessageBubble({
+export const MessageBubble = memo(function MessageBubble({
   role,
   content,
   isStreaming = false,
 }: MessageBubbleProps) {
   if (role === 'user') {
     return (
-      <div className="max-w-[88%] self-end animate-message-appear">
+      <div
+        className="max-w-[88%] self-end animate-message-appear"
+        role="log"
+        aria-label="Your message"
+      >
         <div
           className="rounded-md px-4 py-3"
           style={{
@@ -49,9 +54,14 @@ export function MessageBubble({
 
   // Assistant (Sage) message
   return (
-    <div className="max-w-[88%] self-start animate-message-appear">
+    <div
+      className="max-w-[88%] self-start animate-message-appear"
+      role="log"
+      aria-label="Sage message"
+      aria-live={isStreaming ? 'polite' : undefined}
+    >
       <div className="sage-label mb-1.5">Sage</div>
       <StreamingText content={content} isStreaming={isStreaming} />
     </div>
   );
-}
+});
