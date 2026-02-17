@@ -3,7 +3,7 @@
  *
  * Entry point for the Express server that serves as the backend for
  * Daggerheart adventure generation. Provides REST endpoints for
- * health checks and Daggerheart content queries.
+ * health checks, Daggerheart content queries, and session management.
  */
 
 import 'dotenv/config';
@@ -14,6 +14,7 @@ import { requestLogger } from './middleware/logger.js';
 import healthRouter from './routes/health.js';
 import authRouter from './routes/auth.js';
 import daggerheartRouter from './routes/daggerheart.js';
+import sessionRouter, { sessionsListRouter } from './routes/session.js';
 import { requireAuth } from './middleware/auth.js';
 
 export const API_VERSION = '0.0.1';
@@ -29,6 +30,8 @@ app.use(express.json());
 app.use('/api/health', healthRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/daggerheart', requireAuth, daggerheartRouter);
+app.use('/api/session', requireAuth, sessionRouter);
+app.use('/api/sessions', requireAuth, sessionsListRouter);
 
 /**
  * Export the app for testing (supertest) and the start function

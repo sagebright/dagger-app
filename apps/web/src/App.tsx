@@ -3,7 +3,8 @@
  *
  * Sets up routing with authentication:
  * - /login route for unauthenticated users
- * - All other routes wrapped in ProtectedRoute
+ * - / route shows session picker (start new / resume existing)
+ * - /design-system route for design system verification
  * - AuthProvider wraps the entire app for auth state
  */
 
@@ -11,6 +12,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { AuthPage } from '@/pages/AuthPage';
+import { SessionPage } from '@/pages/SessionPage';
 import { DesignSystem } from '@/pages/DesignSystem';
 
 function App() {
@@ -26,7 +28,7 @@ function App() {
             path="/"
             element={
               <ProtectedRoute>
-                <DesignSystem />
+                <SessionPage />
               </ProtectedRoute>
             }
           />
