@@ -36,6 +36,10 @@ import type {
   PanelWave3InvalidatedEvent,
   PanelBalanceWarningEvent,
   PanelSceneConfirmedEvent,
+  PanelEntityNPCsEvent,
+  PanelEntityAdversariesEvent,
+  PanelEntityItemsEvent,
+  PanelEntityPortentsEvent,
   UIReadyEvent,
   SageErrorEvent,
 } from '@dagger-app/shared-types';
@@ -61,6 +65,10 @@ export interface SageStreamCallbacks {
   onPanelWave3Invalidated?: (data: PanelWave3InvalidatedEvent['data']) => void;
   onPanelBalanceWarning?: (data: PanelBalanceWarningEvent['data']) => void;
   onPanelSceneConfirmed?: (data: PanelSceneConfirmedEvent['data']) => void;
+  onPanelEntityNPCs?: (data: PanelEntityNPCsEvent['data']) => void;
+  onPanelEntityAdversaries?: (data: PanelEntityAdversariesEvent['data']) => void;
+  onPanelEntityItems?: (data: PanelEntityItemsEvent['data']) => void;
+  onPanelEntityPortents?: (data: PanelEntityPortentsEvent['data']) => void;
   onUIReady?: (data: UIReadyEvent['data']) => void;
   onError?: (data: SageErrorEvent['data']) => void;
 }
@@ -186,6 +194,18 @@ function dispatchEvent(
       break;
     case 'panel:scene_confirmed':
       callbacks.onPanelSceneConfirmed?.(data as PanelSceneConfirmedEvent['data']);
+      break;
+    case 'panel:entity_npcs':
+      callbacks.onPanelEntityNPCs?.(data as PanelEntityNPCsEvent['data']);
+      break;
+    case 'panel:entity_adversaries':
+      callbacks.onPanelEntityAdversaries?.(data as PanelEntityAdversariesEvent['data']);
+      break;
+    case 'panel:entity_items':
+      callbacks.onPanelEntityItems?.(data as PanelEntityItemsEvent['data']);
+      break;
+    case 'panel:entity_portents':
+      callbacks.onPanelEntityPortents?.(data as PanelEntityPortentsEvent['data']);
       break;
     case 'ui:ready':
       callbacks.onUIReady?.(data as UIReadyEvent['data']);

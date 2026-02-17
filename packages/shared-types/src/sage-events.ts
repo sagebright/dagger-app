@@ -181,6 +181,46 @@ export interface PanelSceneConfirmedEvent {
 }
 
 // =============================================================================
+// Entity Panel Events (Inscribing Wave 2 & 3 entity data)
+// =============================================================================
+
+/** NPCs populated for a scene section */
+export interface PanelEntityNPCsEvent {
+  type: 'panel:entity_npcs';
+  data: {
+    sceneArcId: string;
+    npcs: NPCCardData[];
+  };
+}
+
+/** Adversaries populated for a scene section */
+export interface PanelEntityAdversariesEvent {
+  type: 'panel:entity_adversaries';
+  data: {
+    sceneArcId: string;
+    adversaries: AdversaryCardData[];
+  };
+}
+
+/** Items populated for a scene section */
+export interface PanelEntityItemsEvent {
+  type: 'panel:entity_items';
+  data: {
+    sceneArcId: string;
+    items: ItemCardData[];
+  };
+}
+
+/** Portent categories populated for a scene section */
+export interface PanelEntityPortentsEvent {
+  type: 'panel:entity_portents';
+  data: {
+    sceneArcId: string;
+    categories: PortentCategoryData[];
+  };
+}
+
+// =============================================================================
 // Inscribing Data Types
 // =============================================================================
 
@@ -207,6 +247,11 @@ export interface InscribingSectionData {
   wave: WaveNumber;
   /** Whether this section has a drill-in detail view */
   hasDetail: boolean;
+  /** Optional entity data for Wave 2 / Wave 3 entity sections */
+  entityNPCs?: NPCCardData[];
+  entityAdversaries?: AdversaryCardData[];
+  entityItems?: ItemCardData[];
+  entityPortents?: PortentCategoryData[];
 }
 
 /** Wave groupings for the 9 sections */
@@ -235,6 +280,120 @@ export const NARRATIVE_SECTIONS: InscribingSectionId[] = [
   'developments',
   'transitions',
 ];
+
+// =============================================================================
+// Entity Card Data Types (Inscribing Wave 2 & 3)
+// =============================================================================
+
+/** NPC role for card color coding */
+export type NPCCardRole =
+  | 'ally'
+  | 'neutral'
+  | 'antagonist'
+  | 'quest-giver'
+  | 'bystander'
+  | 'leader'
+  | 'oracle'
+  | 'scout'
+  | 'informant';
+
+/** Lightweight NPC data for entity cards in the accordion */
+export interface NPCCardData {
+  id: string;
+  name: string;
+  role: NPCCardRole;
+  description: string;
+  sceneAppearances: string[];
+  isEnriched: boolean;
+}
+
+/** Full NPC detail data for drill-in view */
+export interface NPCDetailData extends NPCCardData {
+  backstory: string;
+  voice: string;
+  motivation: string;
+  secret: string;
+}
+
+/** Adversary type for badge color coding */
+export type AdversaryCardType =
+  | 'bruiser'
+  | 'minion'
+  | 'leader'
+  | 'solo'
+  | 'skulk'
+  | 'horde'
+  | 'environment';
+
+/** Lightweight adversary data for entity cards */
+export interface AdversaryCardData {
+  id: string;
+  name: string;
+  type: AdversaryCardType;
+  difficulty: number;
+  quantity: number;
+  sceneAppearances: string[];
+  stats: {
+    hp: number;
+    stress: number;
+    attack: string;
+    damage: string;
+  };
+}
+
+/** Full adversary detail data for drill-in view */
+export interface AdversaryDetailData extends AdversaryCardData {
+  description: string;
+  traits: string[];
+  moves: Array<{ name: string; description: string }>;
+}
+
+/** Item category for type labels */
+export type ItemCardCategory = 'weapon' | 'armor' | 'item' | 'consumable';
+
+/** Lightweight item data for entity cards */
+export interface ItemCardData {
+  id: string;
+  name: string;
+  category: ItemCardCategory;
+  tier: number;
+  statLine: string;
+  sceneAppearances: string[];
+}
+
+/** Portent category for accordion grouping */
+export type PortentCategoryId =
+  | 'items_clues'
+  | 'environmental'
+  | 'social'
+  | 'magical'
+  | 'future_threads';
+
+/** A single portent entry with trigger/benefit/complication */
+export interface PortentEntry {
+  id: string;
+  title: string;
+  sceneBadge: string;
+  trigger: string;
+  benefit: string;
+  complication: string;
+}
+
+/** Portent category card data for the accordion */
+export interface PortentCategoryData {
+  category: PortentCategoryId;
+  label: string;
+  entries: PortentEntry[];
+}
+
+/** Labels for portent categories */
+export const PORTENT_CATEGORY_LABELS: Record<PortentCategoryId, string> = {
+  items_clues: 'Items & Clues',
+  environmental: 'Environmental Shifts',
+  social: 'Social Openings',
+  magical: 'Magical Effects',
+  future_threads: 'Future Threads',
+};
 
 /** Lightweight scene arc data for the Weaving panel */
 export interface SceneArcData {
@@ -325,6 +484,10 @@ export type SageEvent =
   | PanelWave3InvalidatedEvent
   | PanelBalanceWarningEvent
   | PanelSceneConfirmedEvent
+  | PanelEntityNPCsEvent
+  | PanelEntityAdversariesEvent
+  | PanelEntityItemsEvent
+  | PanelEntityPortentsEvent
   | UIReadyEvent
   | SessionStageEvent
   | SageErrorEvent;

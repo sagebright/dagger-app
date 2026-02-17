@@ -374,6 +374,275 @@ describe('warn_balance handler', () => {
 });
 
 // =============================================================================
+// set_entity_npcs
+// =============================================================================
+
+describe('set_entity_npcs handler', () => {
+  const validNPCs = [
+    {
+      id: 'npc-1',
+      name: 'Elder Mira',
+      role: 'quest-giver',
+      description: 'A wise elder who guards the village secrets.',
+      sceneAppearances: ['Scene 1'],
+      isEnriched: true,
+    },
+  ];
+
+  it('returns entity_npcs_set on valid input', async () => {
+    const result = await dispatchToolCalls([
+      {
+        id: 'tool-5',
+        name: 'set_entity_npcs',
+        input: { sceneArcId: 'arc-1', npcs: validNPCs },
+      } as CollectedToolUse,
+    ]);
+
+    const toolResult = result.toolResults[0];
+    expect(toolResult.is_error).toBeUndefined();
+
+    const parsed = JSON.parse(toolResult.content);
+    expect(parsed.status).toBe('entity_npcs_set');
+    expect(parsed.count).toBe(1);
+  });
+
+  it('queues a panel:entity_npcs event', async () => {
+    await dispatchToolCalls([
+      {
+        id: 'tool-5',
+        name: 'set_entity_npcs',
+        input: { sceneArcId: 'arc-1', npcs: validNPCs },
+      } as CollectedToolUse,
+    ]);
+
+    const events = drainInscribingEvents();
+    expect(events.length).toBe(1);
+    expect(events[0].type).toBe('panel:entity_npcs');
+  });
+
+  it('returns error when sceneArcId is missing', async () => {
+    const result = await dispatchToolCalls([
+      {
+        id: 'tool-5',
+        name: 'set_entity_npcs',
+        input: { npcs: validNPCs },
+      } as CollectedToolUse,
+    ]);
+
+    const toolResult = result.toolResults[0];
+    expect(toolResult.is_error).toBe(true);
+    expect(toolResult.content).toContain('sceneArcId is required');
+  });
+
+  it('returns error when npcs is missing', async () => {
+    const result = await dispatchToolCalls([
+      {
+        id: 'tool-5',
+        name: 'set_entity_npcs',
+        input: { sceneArcId: 'arc-1' },
+      } as CollectedToolUse,
+    ]);
+
+    const toolResult = result.toolResults[0];
+    expect(toolResult.is_error).toBe(true);
+    expect(toolResult.content).toContain('npcs array is required');
+  });
+});
+
+// =============================================================================
+// set_entity_adversaries
+// =============================================================================
+
+describe('set_entity_adversaries handler', () => {
+  const validAdversaries = [
+    {
+      id: 'adv-1',
+      name: 'Shadow Creeper',
+      type: 'minion',
+      difficulty: 2,
+      quantity: 3,
+      sceneAppearances: ['Scene 1'],
+      stats: { hp: 4, stress: 2, attack: '+3', damage: '1d6' },
+    },
+  ];
+
+  it('returns entity_adversaries_set on valid input', async () => {
+    const result = await dispatchToolCalls([
+      {
+        id: 'tool-6',
+        name: 'set_entity_adversaries',
+        input: { sceneArcId: 'arc-1', adversaries: validAdversaries },
+      } as CollectedToolUse,
+    ]);
+
+    const toolResult = result.toolResults[0];
+    expect(toolResult.is_error).toBeUndefined();
+
+    const parsed = JSON.parse(toolResult.content);
+    expect(parsed.status).toBe('entity_adversaries_set');
+    expect(parsed.count).toBe(1);
+  });
+
+  it('queues a panel:entity_adversaries event', async () => {
+    await dispatchToolCalls([
+      {
+        id: 'tool-6',
+        name: 'set_entity_adversaries',
+        input: { sceneArcId: 'arc-1', adversaries: validAdversaries },
+      } as CollectedToolUse,
+    ]);
+
+    const events = drainInscribingEvents();
+    expect(events.length).toBe(1);
+    expect(events[0].type).toBe('panel:entity_adversaries');
+  });
+
+  it('returns error when sceneArcId is missing', async () => {
+    const result = await dispatchToolCalls([
+      {
+        id: 'tool-6',
+        name: 'set_entity_adversaries',
+        input: { adversaries: validAdversaries },
+      } as CollectedToolUse,
+    ]);
+
+    const toolResult = result.toolResults[0];
+    expect(toolResult.is_error).toBe(true);
+    expect(toolResult.content).toContain('sceneArcId is required');
+  });
+});
+
+// =============================================================================
+// set_entity_items
+// =============================================================================
+
+describe('set_entity_items handler', () => {
+  const validItems = [
+    {
+      id: 'item-1',
+      name: 'Flame Tongue Dagger',
+      category: 'weapon',
+      tier: 2,
+      statLine: '1d8+2 fire damage',
+      sceneAppearances: ['Scene 2'],
+    },
+  ];
+
+  it('returns entity_items_set on valid input', async () => {
+    const result = await dispatchToolCalls([
+      {
+        id: 'tool-7',
+        name: 'set_entity_items',
+        input: { sceneArcId: 'arc-1', items: validItems },
+      } as CollectedToolUse,
+    ]);
+
+    const toolResult = result.toolResults[0];
+    expect(toolResult.is_error).toBeUndefined();
+
+    const parsed = JSON.parse(toolResult.content);
+    expect(parsed.status).toBe('entity_items_set');
+    expect(parsed.count).toBe(1);
+  });
+
+  it('queues a panel:entity_items event', async () => {
+    await dispatchToolCalls([
+      {
+        id: 'tool-7',
+        name: 'set_entity_items',
+        input: { sceneArcId: 'arc-1', items: validItems },
+      } as CollectedToolUse,
+    ]);
+
+    const events = drainInscribingEvents();
+    expect(events.length).toBe(1);
+    expect(events[0].type).toBe('panel:entity_items');
+  });
+
+  it('returns error when items is missing', async () => {
+    const result = await dispatchToolCalls([
+      {
+        id: 'tool-7',
+        name: 'set_entity_items',
+        input: { sceneArcId: 'arc-1' },
+      } as CollectedToolUse,
+    ]);
+
+    const toolResult = result.toolResults[0];
+    expect(toolResult.is_error).toBe(true);
+    expect(toolResult.content).toContain('items array is required');
+  });
+});
+
+// =============================================================================
+// set_entity_portents
+// =============================================================================
+
+describe('set_entity_portents handler', () => {
+  const validPortents = [
+    {
+      category: 'items_clues',
+      label: 'Items & Clues',
+      entries: [
+        {
+          id: 'echo-1',
+          title: "The Merchant's Ledger",
+          sceneBadge: 'Scene 1',
+          trigger: 'Search the cart carefully',
+          benefit: 'Find a wax-sealed ledger',
+          complication: 'Coded messages inside',
+        },
+      ],
+    },
+  ];
+
+  it('returns entity_portents_set on valid input', async () => {
+    const result = await dispatchToolCalls([
+      {
+        id: 'tool-8',
+        name: 'set_entity_portents',
+        input: { sceneArcId: 'arc-1', categories: validPortents },
+      } as CollectedToolUse,
+    ]);
+
+    const toolResult = result.toolResults[0];
+    expect(toolResult.is_error).toBeUndefined();
+
+    const parsed = JSON.parse(toolResult.content);
+    expect(parsed.status).toBe('entity_portents_set');
+    expect(parsed.count).toBe(1);
+  });
+
+  it('queues a panel:entity_portents event', async () => {
+    await dispatchToolCalls([
+      {
+        id: 'tool-8',
+        name: 'set_entity_portents',
+        input: { sceneArcId: 'arc-1', categories: validPortents },
+      } as CollectedToolUse,
+    ]);
+
+    const events = drainInscribingEvents();
+    expect(events.length).toBe(1);
+    expect(events[0].type).toBe('panel:entity_portents');
+  });
+
+  it('returns error when categories is missing', async () => {
+    const result = await dispatchToolCalls([
+      {
+        id: 'tool-8',
+        name: 'set_entity_portents',
+        input: { sceneArcId: 'arc-1' },
+      } as CollectedToolUse,
+    ]);
+
+    const toolResult = result.toolResults[0];
+    expect(toolResult.is_error).toBe(true);
+    expect(toolResult.content).toContain('categories array is required');
+  });
+});
+
+// =============================================================================
 // drainInscribingEvents
 // =============================================================================
 

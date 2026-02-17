@@ -276,6 +276,46 @@ export function InscribingPage({ sessionId }: InscribingPageProps) {
         confirmed: true,
       }));
     },
+    onPanelEntityNPCs: (data) => {
+      updateSceneState(data.sceneArcId, (prev) => ({
+        ...prev,
+        sections: prev.sections.map((s) =>
+          s.id === 'npcs_present'
+            ? { ...s, entityNPCs: data.npcs, content: s.content || `${data.npcs.length} NPC(s)` }
+            : s
+        ),
+      }));
+    },
+    onPanelEntityAdversaries: (data) => {
+      updateSceneState(data.sceneArcId, (prev) => ({
+        ...prev,
+        sections: prev.sections.map((s) =>
+          s.id === 'adversaries'
+            ? { ...s, entityAdversaries: data.adversaries, content: s.content || `${data.adversaries.length} adversary(ies)` }
+            : s
+        ),
+      }));
+    },
+    onPanelEntityItems: (data) => {
+      updateSceneState(data.sceneArcId, (prev) => ({
+        ...prev,
+        sections: prev.sections.map((s) =>
+          s.id === 'items'
+            ? { ...s, entityItems: data.items, content: s.content || `${data.items.length} item(s)` }
+            : s
+        ),
+      }));
+    },
+    onPanelEntityPortents: (data) => {
+      updateSceneState(data.sceneArcId, (prev) => ({
+        ...prev,
+        sections: prev.sections.map((s) =>
+          s.id === 'portents'
+            ? { ...s, entityPortents: data.categories, content: s.content || `${data.categories.length} category(ies)` }
+            : s
+        ),
+      }));
+    },
     onUIReady: () => {
       setIsReady(true);
     },

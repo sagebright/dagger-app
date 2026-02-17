@@ -755,6 +755,459 @@
 }
 
 /* =============================================================================
+ * Entity Cards — NPC, Adversary, Item, Portent card patterns
+ *
+ * Shared card patterns for Wave 2 (NPCs, Adversaries, Items) and
+ * Wave 3 (Portents) entity content in the Inscribing accordion.
+ * ============================================================================= */
+
+@layer components {
+  /* ---- Entity Card List Container ---- */
+  .entity-card-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  /* ---- NPC Card ---- */
+  .npc-card {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    padding: 12px;
+    gap: 12px;
+    border-left: 3px solid transparent;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: background 0.15s ease, border-left-color 0.15s ease;
+    width: 100%;
+    background: none;
+    border-top: none;
+    border-right: none;
+    border-bottom: none;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+  }
+
+  .npc-card:hover {
+    background: var(--bg-surface);
+  }
+
+  .npc-card--enriched {
+    border-left: 3px solid var(--accent-gold);
+  }
+
+  .npc-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--bg-surface);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-serif);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    border: 1.5px solid var(--border-medium);
+  }
+
+  .npc-avatar--enriched {
+    border: 1.5px solid var(--accent-gold);
+    color: var(--accent-gold);
+  }
+
+  .npc-info {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+    gap: 4px;
+  }
+
+  .npc-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    line-height: 1.3;
+  }
+
+  .npc-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+
+  .npc-scene-badges {
+    display: flex;
+    flex-direction: row;
+    gap: 4px;
+  }
+
+  .npc-scene-pill {
+    display: inline-block;
+    font-family: var(--font-sans);
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-muted);
+    background: var(--bg-surface);
+    border: 1px solid var(--border-medium);
+    padding: 1px 10px;
+    border-radius: 12px;
+    white-space: nowrap;
+    line-height: 1.4;
+  }
+
+  .npc-enrichment {
+    font-size: 13px;
+    line-height: 1;
+  }
+
+  .npc-enrichment--enriched {
+    color: var(--accent-gold);
+  }
+
+  .npc-enrichment--basic {
+    color: var(--text-muted);
+  }
+
+  /* ---- NPC Detail ---- */
+  .npc-detail-label {
+    display: block;
+    font-family: var(--font-sans);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 4px;
+  }
+
+  .npc-detail-content {
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.65;
+  }
+
+  .npc-detail-scenes {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 4px;
+  }
+
+  /* ---- Adversary Card ---- */
+  .adversary-card {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    padding: 12px;
+    border-left: 3px solid transparent;
+    border-radius: var(--radius-sm);
+    gap: 12px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    margin-bottom: 4px;
+    width: 100%;
+    background: none;
+    border-top: none;
+    border-right: none;
+    border-bottom: none;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+  }
+
+  .adversary-card:hover {
+    background: var(--bg-surface);
+  }
+
+  .adversary-info {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+    gap: 4px;
+  }
+
+  .adversary-name-row {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+  }
+
+  .adversary-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    line-height: 1.4;
+  }
+
+  .adversary-quantity {
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--text-secondary);
+  }
+
+  .adversary-badges {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 2px;
+  }
+
+  .adversary-difficulty {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-muted);
+  }
+
+  .adversary-stats {
+    display: flex;
+    flex-direction: row;
+    gap: 12px;
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 4px;
+    flex-wrap: wrap;
+  }
+
+  .adversary-stat {
+    white-space: nowrap;
+  }
+
+  .adversary-stat-label {
+    font-weight: 500;
+    color: var(--text-secondary);
+  }
+
+  .adversary-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+
+  /* ---- Adversary Detail ---- */
+  .adversary-detail-statblock {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    padding: 12px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-medium);
+    border-radius: var(--radius-sm);
+  }
+
+  .adversary-detail-stat-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 8px;
+  }
+
+  .adversary-detail-stat-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .adversary-detail-stat-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .adversary-detail-traits {
+    list-style: disc;
+    padding-left: 16px;
+    margin-top: 4px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+  }
+
+  .adversary-detail-move {
+    margin-top: 8px;
+    padding: 8px 12px;
+    background: var(--bg-surface);
+    border-radius: var(--radius-sm);
+  }
+
+  .adversary-move-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .adversary-move-desc {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    margin-top: 2px;
+  }
+
+  /* ---- Item Card ---- */
+  .item-card {
+    padding: 12px;
+    border-left: 3px solid transparent;
+    border-radius: var(--radius-sm);
+    margin-bottom: 6px;
+    transition: background 0.12s ease, border-left-color 0.12s ease;
+  }
+
+  .item-card--assigned {
+    border-left-color: var(--accent-gold);
+  }
+
+  .item-card:hover {
+    background: var(--bg-surface);
+  }
+
+  .item-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .item-card-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .item-card-stat {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-top: 2px;
+  }
+
+  /* ---- Portent Card (Echo Category) ---- */
+  .portent-category {
+    margin-bottom: 2px;
+  }
+
+  .portent-category-header {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    padding: 10px 12px;
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    transition: background 0.12s ease;
+    border: none;
+    background: none;
+    width: 100%;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+  }
+
+  .portent-category-header:hover {
+    background: var(--bg-surface);
+  }
+
+  .portent-category-chevron {
+    transition: transform 0.2s ease;
+    margin-right: 8px;
+    color: var(--text-muted);
+    font-size: 12px;
+    flex-shrink: 0;
+  }
+
+  .portent-category--expanded .portent-category-chevron {
+    transform: rotate(90deg);
+  }
+
+  .portent-category-name {
+    font-family: var(--font-sans);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+    flex: 1;
+    text-align: left;
+  }
+
+  .portent-category-count {
+    font-family: var(--font-sans);
+    font-size: 11px;
+    color: var(--text-muted);
+    font-weight: 500;
+    flex-shrink: 0;
+  }
+
+  .portent-category-content {
+    padding: 0 12px 12px 28px;
+  }
+
+  .portent-entry {
+    margin-bottom: 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .portent-entry:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+  }
+
+  .portent-entry-title {
+    font-family: var(--font-serif);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+  }
+
+  .portent-field {
+    margin-bottom: 6px;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .portent-field:last-child {
+    margin-bottom: 0;
+  }
+
+  .portent-field-label {
+    font-family: var(--font-sans);
+    font-weight: 500;
+    font-size: 12px;
+    display: block;
+    margin-bottom: 2px;
+  }
+
+  .portent-label--trigger {
+    color: var(--text-muted);
+    font-style: italic;
+  }
+
+  .portent-label--benefit {
+    color: var(--accent-gold);
+  }
+
+  .portent-label--complication {
+    color: var(--text-secondary);
+  }
+
+  .portent-field-text {
+    color: var(--text-secondary);
+    font-size: 13px;
+    line-height: 1.5;
+  }
+}
+
+/* =============================================================================
  * Inscribing — Section Accordion, Wave Indicators, Read-Aloud Blocks
  *
  * 9-section accordion grouped in 3 waves. Narrative sections (Setup,

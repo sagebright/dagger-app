@@ -17,6 +17,10 @@ import type {
   InscribingSectionId,
   InscribingSectionData,
   WaveNumber,
+  NPCCardData,
+  AdversaryCardData,
+  ItemCardData,
+  PortentCategoryData,
 } from '@dagger-app/shared-types';
 import { SECTION_LABELS } from '@dagger-app/shared-types';
 
@@ -50,6 +54,26 @@ interface WarnBalanceInput {
   sceneArcId: string;
   message: string;
   sectionId?: InscribingSectionId;
+}
+
+interface SetEntityNPCsInput {
+  sceneArcId: string;
+  npcs: NPCCardData[];
+}
+
+interface SetEntityAdversariesInput {
+  sceneArcId: string;
+  adversaries: AdversaryCardData[];
+}
+
+interface SetEntityItemsInput {
+  sceneArcId: string;
+  items: ItemCardData[];
+}
+
+interface SetEntityPortentsInput {
+  sceneArcId: string;
+  categories: PortentCategoryData[];
 }
 
 // =============================================================================
@@ -111,6 +135,10 @@ export function registerInscribingTools(): void {
   registerToolHandler('set_wave', handleSetWave);
   registerToolHandler('invalidate_wave3', handleInvalidateWave3);
   registerToolHandler('warn_balance', handleWarnBalance);
+  registerToolHandler('set_entity_npcs', handleSetEntityNPCs);
+  registerToolHandler('set_entity_adversaries', handleSetEntityAdversaries);
+  registerToolHandler('set_entity_items', handleSetEntityItems);
+  registerToolHandler('set_entity_portents', handleSetEntityPortents);
 }
 
 /**
@@ -303,6 +331,158 @@ async function handleWarnBalance(
       status: 'balance_warning_sent',
       sceneArcId: warningInput.sceneArcId,
       message: warningInput.message,
+    },
+    isError: false,
+  };
+}
+
+// =============================================================================
+// Entity Tool Handlers
+// =============================================================================
+
+/**
+ * Handle the set_entity_npcs tool call.
+ *
+ * Populates NPCs for the npcs_present section. Queues a
+ * panel:entity_npcs event for the frontend entity card rendering.
+ */
+async function handleSetEntityNPCs(
+  input: Record<string, unknown>
+): Promise<{ result: unknown; isError: boolean }> {
+  const entityInput = input as unknown as SetEntityNPCsInput;
+
+  if (!entityInput.sceneArcId) {
+    return { result: 'sceneArcId is required for set_entity_npcs', isError: true };
+  }
+
+  if (!entityInput.npcs || !Array.isArray(entityInput.npcs)) {
+    return { result: 'npcs array is required for set_entity_npcs', isError: true };
+  }
+
+  pendingEvents.push({
+    type: 'panel:entity_npcs',
+    data: {
+      sceneArcId: entityInput.sceneArcId,
+      npcs: entityInput.npcs,
+    },
+  });
+
+  return {
+    result: {
+      status: 'entity_npcs_set',
+      sceneArcId: entityInput.sceneArcId,
+      count: entityInput.npcs.length,
+    },
+    isError: false,
+  };
+}
+
+/**
+ * Handle the set_entity_adversaries tool call.
+ *
+ * Populates adversaries for the adversaries section. Queues a
+ * panel:entity_adversaries event for the frontend entity card rendering.
+ */
+async function handleSetEntityAdversaries(
+  input: Record<string, unknown>
+): Promise<{ result: unknown; isError: boolean }> {
+  const entityInput = input as unknown as SetEntityAdversariesInput;
+
+  if (!entityInput.sceneArcId) {
+    return { result: 'sceneArcId is required for set_entity_adversaries', isError: true };
+  }
+
+  if (!entityInput.adversaries || !Array.isArray(entityInput.adversaries)) {
+    return { result: 'adversaries array is required for set_entity_adversaries', isError: true };
+  }
+
+  pendingEvents.push({
+    type: 'panel:entity_adversaries',
+    data: {
+      sceneArcId: entityInput.sceneArcId,
+      adversaries: entityInput.adversaries,
+    },
+  });
+
+  return {
+    result: {
+      status: 'entity_adversaries_set',
+      sceneArcId: entityInput.sceneArcId,
+      count: entityInput.adversaries.length,
+    },
+    isError: false,
+  };
+}
+
+/**
+ * Handle the set_entity_items tool call.
+ *
+ * Populates items for the items section. Queues a
+ * panel:entity_items event for the frontend entity card rendering.
+ */
+async function handleSetEntityItems(
+  input: Record<string, unknown>
+): Promise<{ result: unknown; isError: boolean }> {
+  const entityInput = input as unknown as SetEntityItemsInput;
+
+  if (!entityInput.sceneArcId) {
+    return { result: 'sceneArcId is required for set_entity_items', isError: true };
+  }
+
+  if (!entityInput.items || !Array.isArray(entityInput.items)) {
+    return { result: 'items array is required for set_entity_items', isError: true };
+  }
+
+  pendingEvents.push({
+    type: 'panel:entity_items',
+    data: {
+      sceneArcId: entityInput.sceneArcId,
+      items: entityInput.items,
+    },
+  });
+
+  return {
+    result: {
+      status: 'entity_items_set',
+      sceneArcId: entityInput.sceneArcId,
+      count: entityInput.items.length,
+    },
+    isError: false,
+  };
+}
+
+/**
+ * Handle the set_entity_portents tool call.
+ *
+ * Populates portent categories for the portents section. Queues a
+ * panel:entity_portents event for the frontend entity card rendering.
+ */
+async function handleSetEntityPortents(
+  input: Record<string, unknown>
+): Promise<{ result: unknown; isError: boolean }> {
+  const entityInput = input as unknown as SetEntityPortentsInput;
+
+  if (!entityInput.sceneArcId) {
+    return { result: 'sceneArcId is required for set_entity_portents', isError: true };
+  }
+
+  if (!entityInput.categories || !Array.isArray(entityInput.categories)) {
+    return { result: 'categories array is required for set_entity_portents', isError: true };
+  }
+
+  pendingEvents.push({
+    type: 'panel:entity_portents',
+    data: {
+      sceneArcId: entityInput.sceneArcId,
+      categories: entityInput.categories,
+    },
+  });
+
+  return {
+    result: {
+      status: 'entity_portents_set',
+      sceneArcId: entityInput.sceneArcId,
+      count: entityInput.categories.length,
     },
     isError: false,
   };

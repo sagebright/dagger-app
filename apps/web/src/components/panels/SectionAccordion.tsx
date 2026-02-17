@@ -19,6 +19,10 @@ import type {
   InscribingSectionData,
   WaveNumber,
 } from '@dagger-app/shared-types';
+import { NPCCard } from './NPCCard';
+import { AdversaryCard } from './AdversaryCard';
+import { ItemCard } from './ItemCard';
+import { PortentCard } from './PortentCard';
 
 // =============================================================================
 // Constants
@@ -47,6 +51,10 @@ export interface SectionAccordionProps {
   isWave3Dimmed: boolean;
   /** Called when a narrative section name is clicked for drill-in */
   onDrillIn: (sectionId: InscribingSectionId) => void;
+  /** Called when an NPC card is clicked for drill-in detail */
+  onNPCClick?: (npcId: string) => void;
+  /** Called when an adversary card is clicked for drill-in detail */
+  onAdversaryClick?: (adversaryId: string) => void;
   /** Whether section content is streaming */
   isStreaming?: boolean;
 }
@@ -81,6 +89,8 @@ export function SectionAccordion({
   sections,
   isWave3Dimmed,
   onDrillIn,
+  onNPCClick,
+  onAdversaryClick,
   isStreaming = false,
 }: SectionAccordionProps) {
   const [expandedSections, setExpandedSections] = useState<Set<InscribingSectionId>>(
@@ -129,6 +139,8 @@ export function SectionAccordion({
                 isStreaming={isStreaming}
                 onToggle={() => toggleSection(section.id)}
                 onDrillIn={() => onDrillIn(section.id)}
+                onNPCClick={onNPCClick}
+                onAdversaryClick={onAdversaryClick}
               />
             ))}
           </div>
@@ -157,12 +169,43 @@ function WaveDivider({ wave }: WaveDividerProps) {
   );
 }
 
+/** Entity section IDs that render card components instead of plain text */
+const ENTITY_SECTION_IDS: Set<InscribingSectionId> = new Set([
+  'npcs_present',
+  'adversaries',
+  'items',
+  'portents',
+]);
+
+/** Check if a section renders entity cards */
+function isEntitySection(sectionId: InscribingSectionId): boolean {
+  return ENTITY_SECTION_IDS.has(sectionId);
+}
+
+/** Check if a section has entity data populated */
+function hasEntityData(section: InscribingSectionData): boolean {
+  switch (section.id) {
+    case 'npcs_present':
+      return (section.entityNPCs?.length ?? 0) > 0;
+    case 'adversaries':
+      return (section.entityAdversaries?.length ?? 0) > 0;
+    case 'items':
+      return (section.entityItems?.length ?? 0) > 0;
+    case 'portents':
+      return (section.entityPortents?.length ?? 0) > 0;
+    default:
+      return false;
+  }
+}
+
 interface SectionItemProps {
   section: InscribingSectionData;
   isExpanded: boolean;
   isStreaming: boolean;
   onToggle: () => void;
   onDrillIn: () => void;
+  onNPCClick?: (npcId: string) => void;
+  onAdversaryClick?: (adversaryId: string) => void;
 }
 
 function SectionItem({
@@ -171,9 +214,12 @@ function SectionItem({
   isStreaming,
   onToggle,
   onDrillIn,
+  onNPCClick,
+  onAdversaryClick,
 }: SectionItemProps) {
   const hasDetail = isNarrativeSection(section.id);
   const hasContent = section.content.length > 0;
+  const hasEntities = isEntitySection(section.id) && hasEntityData(section);
 
   const itemClassNames = [
     'section-accordion-item',
@@ -211,7 +257,17 @@ function SectionItem({
         </span>
       </button>
 
-      {isExpanded && hasContent && (
+      {isExpanded && hasEntities && (
+        <div className="section-accordion-body">
+          <EntitySectionContent
+            section={section}
+            onNPCClick={onNPCClick}
+            onAdversaryClick={onAdversaryClick}
+          />
+        </div>
+      )}
+
+      {isExpanded && !hasEntities && hasContent && (
         <div className="section-accordion-body">
           <SectionContent
             content={section.content}
@@ -220,7 +276,7 @@ function SectionItem({
         </div>
       )}
 
-      {isExpanded && !hasContent && (
+      {isExpanded && !hasEntities && !hasContent && (
         <div className="section-accordion-body">
           <p
             className="font-serif text-[13px] italic"
@@ -262,4 +318,56 @@ function SectionContent({ content, isStreaming }: SectionContentProps) {
       })}
     </>
   );
+}
+
+interface EntitySectionContentProps {
+  section: InscribingSectionData;
+  onNPCClick?: (npcId: string) => void;
+  onAdversaryClick?: (adversaryId: string) => void;
+}
+
+function EntitySectionContent({
+  section,
+  onNPCClick,
+  onAdversaryClick,
+}: EntitySectionContentProps) {
+  const npcClickHandler = onNPCClick ?? (() => {});
+  const adversaryClickHandler = onAdversaryClick ?? (() => {});
+
+  switch (section.id) {
+    case 'npcs_present':
+      return (
+        <div className="entity-card-list">
+          {(section.entityNPCs ?? []).map((npc) => (
+            <NPCCard key={npc.id} npc={npc} onClick={npcClickHandler} />
+          ))}
+        </div>
+      );
+    case 'adversaries':
+      return (
+        <div className="entity-card-list">
+          {(section.entityAdversaries ?? []).map((adv) => (
+            <AdversaryCard key={adv.id} adversary={adv} onClick={adversaryClickHandler} />
+          ))}
+        </div>
+      );
+    case 'items':
+      return (
+        <div className="entity-card-list">
+          {(section.entityItems ?? []).map((item) => (
+            <ItemCard key={item.id} item={item} />
+          ))}
+        </div>
+      );
+    case 'portents':
+      return (
+        <div className="entity-card-list">
+          {(section.entityPortents ?? []).map((cat) => (
+            <PortentCard key={cat.category} category={cat} />
+          ))}
+        </div>
+      );
+    default:
+      return null;
+  }
 }
