@@ -54,8 +54,7 @@ jobs:
         with:
           path: |
             packages/shared-types/dist
-            apps/mcp-bridge/dist
-            apps/web/dist
+            apps/*/dist
           key: build-artifacts-${{ github.sha }}
 
   typecheck:
@@ -79,8 +78,7 @@ jobs:
         with:
           path: |
             packages/shared-types/dist
-            apps/mcp-bridge/dist
-            apps/web/dist
+            apps/*/dist
           key: build-artifacts-${{ github.sha }}
       - run: pnpm typecheck
 
@@ -105,8 +103,7 @@ jobs:
         with:
           path: |
             packages/shared-types/dist
-            apps/mcp-bridge/dist
-            apps/web/dist
+            apps/*/dist
           key: build-artifacts-${{ github.sha }}
       - run: pnpm lint:ci
 
@@ -117,7 +114,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        package: [shared-types, mcp-bridge, web]
+        package: [shared-types, mcp-bridge, web, api]
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -135,17 +132,54 @@ jobs:
         with:
           path: |
             packages/shared-types/dist
-            apps/mcp-bridge/dist
-            apps/web/dist
+            apps/*/dist
           key: build-artifacts-${{ github.sha }}
-      - run: pnpm --filter @dagger-app/${{ matrix.package }} test
+      - run: pnpm --filter @dagger-app/${{ matrix.package }} test:coverage
         env:
           NODE_ENV: test
+
+  e2e:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    needs: build
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - uses: actions/cache/restore@v4
+        with:
+          path: |
+            node_modules
+            apps/*/node_modules
+            packages/*/node_modules
+          key: node-modules-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+      - uses: actions/cache/restore@v4
+        with:
+          path: |
+            packages/shared-types/dist
+            apps/*/dist
+          key: build-artifacts-${{ github.sha }}
+      - name: Install Playwright browsers
+        run: pnpm --filter @dagger-app/web exec playwright install --with-deps chromium
+      - name: Run E2E tests
+        run: pnpm --filter @dagger-app/web test:e2e
+        env:
+          CI: true
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: apps/web/playwright-report/
+          retention-days: 14
 
   ci-success:
     name: CI Success
     runs-on: ubuntu-latest
-    needs: [typecheck, lint, test]
+    needs: [typecheck, lint, test, e2e]
     if: always()
     steps:
       - name: Check all jobs passed
