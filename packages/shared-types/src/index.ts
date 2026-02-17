@@ -29,6 +29,9 @@ export * from './export.js';
 // Re-export custom frame wizard types
 export * from './custom-frames.js';
 
+// Re-export Sage event types (SSE streaming, tool definitions)
+export * from './sage-events.js';
+
 /**
  * API health check response
  */
