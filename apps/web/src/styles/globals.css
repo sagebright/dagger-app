@@ -410,6 +410,247 @@
 }
 
 /* =============================================================================
+ * Binding — Frame Gallery & Detail Panel
+ *
+ * Frame card states: default, exploring (white border), active (gold treatment).
+ * Detail panel: collapsible accordion sections with fixed footer.
+ * ============================================================================= */
+
+@layer components {
+  /* Frame card — base */
+  .frame-card {
+    padding: 16px;
+    border: 1px solid var(--border-medium);
+    border-left: 3px solid transparent;
+    border-radius: var(--radius-sm);
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .frame-card:hover {
+    background: var(--bg-surface);
+    border-color: var(--border-hover);
+    border-left-color: var(--border-hover);
+  }
+
+  /* Exploring state — white/light border (viewing detail panel) */
+  .frame-card--exploring {
+    border-color: var(--border-hover);
+    border-left-color: var(--border-hover);
+  }
+
+  /* Active state — gold treatment (frame confirmed) */
+  .frame-card--active {
+    background: var(--accent-gold-dim);
+    border-color: var(--accent-gold-border);
+    border-left-color: var(--accent-gold);
+  }
+
+  .frame-card--active .frame-card-name {
+    color: var(--accent-gold-hover);
+  }
+
+  .frame-card-name {
+    font-family: var(--font-serif);
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .frame-card-pitch {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    margin-top: 4px;
+  }
+
+  /* Detail section — collapsible accordion */
+  .detail-section {
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .detail-section:last-of-type {
+    border-bottom: none;
+  }
+
+  .detail-section-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 0;
+    cursor: pointer;
+    transition: color 0.15s ease;
+    user-select: none;
+    background: none;
+    border: none;
+    width: 100%;
+    text-align: left;
+    color: inherit;
+    font: inherit;
+  }
+
+  .detail-section-header:hover {
+    color: var(--accent-gold);
+  }
+
+  .detail-section-header:hover .detail-section-label {
+    color: var(--accent-gold);
+  }
+
+  .detail-section-chevron {
+    font-size: 10px;
+    color: var(--text-muted);
+    transition: transform 0.2s ease;
+    flex-shrink: 0;
+    width: 14px;
+    text-align: center;
+  }
+
+  .detail-section--expanded .detail-section-chevron {
+    transform: rotate(90deg);
+  }
+
+  .detail-section-label {
+    font-family: var(--font-serif);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    transition: color 0.15s ease;
+  }
+
+  .detail-section--expanded .detail-section-label {
+    color: var(--accent-gold);
+  }
+
+  .detail-section-body {
+    padding: 0 0 12px 22px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+  }
+
+  /* Pill labels inside detail sections */
+  .detail-pill {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-muted);
+    border: 1px solid var(--border-medium);
+    border-radius: 12px;
+    padding: 2px 10px;
+    white-space: nowrap;
+    transition: color 0.15s ease, border-color 0.15s ease;
+    cursor: default;
+    margin-right: 6px;
+    margin-bottom: 6px;
+  }
+
+  .detail-pill:hover {
+    color: var(--accent-gold);
+    border-color: var(--accent-gold-border);
+  }
+
+  /* Select Frame button */
+  .btn-select-frame {
+    display: block;
+    width: 100%;
+    padding: 7px 16px;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: var(--accent-gold);
+    color: var(--bg-primary);
+    font-family: var(--font-sans);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease, box-shadow 0.2s ease;
+    letter-spacing: 0.01em;
+  }
+
+  .btn-select-frame:hover {
+    background: var(--accent-gold-hover);
+    box-shadow: 0 0 16px var(--accent-gold-glow);
+  }
+
+  /* Stage dropdown */
+  .stage-dropdown-trigger {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    padding: 4px 10px 4px 4px;
+    border-radius: var(--radius-sm);
+    border: none;
+    background: none;
+    transition: background 0.15s ease;
+    flex-shrink: 0;
+    color: inherit;
+    font: inherit;
+  }
+
+  .stage-dropdown-trigger:hover {
+    background: var(--bg-surface);
+  }
+
+  .stage-dropdown-menu {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    min-width: 260px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-medium);
+    border-radius: var(--radius-md);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    padding: 6px;
+    z-index: 100;
+  }
+
+  .stage-dropdown-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    border-radius: var(--radius-sm);
+    font-family: var(--font-sans);
+    font-size: 13px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: background 0.12s ease;
+    border: none;
+    background: none;
+    width: 100%;
+    text-align: left;
+  }
+
+  .stage-dropdown-item:hover {
+    background: var(--bg-surface-hover);
+  }
+
+  .stage-dropdown-item--current {
+    color: var(--accent-gold);
+    font-weight: 600;
+    background: var(--accent-gold-dim);
+  }
+
+  .stage-dropdown-item--completed {
+    color: var(--text-secondary);
+  }
+
+  .stage-dropdown-item--future {
+    color: var(--text-muted);
+    cursor: default;
+    opacity: 0.6;
+  }
+
+  .stage-dropdown-item--future:hover {
+    background: none;
+  }
+}
+
+/* =============================================================================
  * Entity Label System
  *
  * Consistent color treatment for NPC roles, adversary types, and item types.

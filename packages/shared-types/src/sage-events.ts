@@ -91,6 +91,33 @@ export interface PanelComponentEvent {
   };
 }
 
+/** Frame gallery data populated by the query_frames / select_frame tools */
+export interface PanelFramesEvent {
+  type: 'panel:frames';
+  data: {
+    frames: FrameCardData[];
+    activeFrameId: string | null;
+  };
+}
+
+/** Lightweight frame data for gallery cards */
+export interface FrameCardData {
+  id: string;
+  name: string;
+  pitch: string;
+  themes: string[];
+  sections: FrameDetailSection[];
+}
+
+/** A collapsible section within the frame detail panel */
+export interface FrameDetailSection {
+  key: string;
+  label: string;
+  content: string;
+  pills?: string[];
+  expandedByDefault?: boolean;
+}
+
 // =============================================================================
 // UI Events (stage readiness signals)
 // =============================================================================
@@ -143,6 +170,7 @@ export type SageEvent =
   | ToolEndEvent
   | PanelSparkEvent
   | PanelComponentEvent
+  | PanelFramesEvent
   | UIReadyEvent
   | SessionStageEvent
   | SageErrorEvent;

@@ -25,6 +25,7 @@ import { parseAnthropicStream, type StreamEvent } from '../services/stream-parse
 import { dispatchToolCalls } from '../services/tool-dispatcher.js';
 import { drainPendingEvents } from '../tools/invoking.js';
 import { drainAttuningEvents } from '../tools/attuning.js';
+import { drainBindingEvents } from '../tools/binding.js';
 import { logTokenUsage } from '../services/token-tracker.js';
 import { storeMessage, loadConversationHistory } from '../services/message-store.js';
 import type { AnthropicMessage, AnthropicContentBlock } from '../services/anthropic.js';
@@ -226,6 +227,10 @@ router.post('/', async (req: Request, res: Response) => {
       }
       const attuningEvents = drainAttuningEvents();
       for (const event of attuningEvents) {
+        sendSSEEvent(res, event);
+      }
+      const bindingEvents = drainBindingEvents();
+      for (const event of bindingEvents) {
         sendSSEEvent(res, event);
       }
 

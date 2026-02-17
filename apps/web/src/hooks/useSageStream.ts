@@ -27,6 +27,7 @@ import type {
   ToolEndEvent,
   PanelSparkEvent,
   PanelComponentEvent,
+  PanelFramesEvent,
   UIReadyEvent,
   SageErrorEvent,
 } from '@dagger-app/shared-types';
@@ -43,6 +44,7 @@ export interface SageStreamCallbacks {
   onToolEnd?: (data: ToolEndEvent['data']) => void;
   onPanelSpark?: (data: PanelSparkEvent['data']) => void;
   onPanelComponent?: (data: PanelComponentEvent['data']) => void;
+  onPanelFrames?: (data: PanelFramesEvent['data']) => void;
   onUIReady?: (data: UIReadyEvent['data']) => void;
   onError?: (data: SageErrorEvent['data']) => void;
 }
@@ -141,6 +143,9 @@ function dispatchEvent(
       break;
     case 'panel:component':
       callbacks.onPanelComponent?.(data as PanelComponentEvent['data']);
+      break;
+    case 'panel:frames':
+      callbacks.onPanelFrames?.(data as PanelFramesEvent['data']);
       break;
     case 'ui:ready':
       callbacks.onUIReady?.(data as UIReadyEvent['data']);

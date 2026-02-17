@@ -18,15 +18,18 @@ import sessionRouter, { sessionsListRouter } from './routes/session.js';
 import chatRouter from './routes/chat.js';
 import undoRouter from './routes/undo.js';
 import componentRouter from './routes/component.js';
+import frameRouter from './routes/frame.js';
 import { requireAuth } from './middleware/auth.js';
 import { registerInvokingTools } from './tools/invoking.js';
 import { registerAttuningTools } from './tools/attuning.js';
+import { registerBindingTools } from './tools/binding.js';
 
 export const API_VERSION = '0.0.1';
 
 // Register tool handlers for all stages
 registerInvokingTools();
 registerAttuningTools();
+registerBindingTools();
 
 const app: Express = express();
 
@@ -44,6 +47,7 @@ app.use('/api/sessions', requireAuth, sessionsListRouter);
 app.use('/api/chat', requireAuth, chatRouter);
 app.use('/api/section', requireAuth, undoRouter);
 app.use('/api/component', requireAuth, componentRouter);
+app.use('/api/frame', requireAuth, frameRouter);
 
 /**
  * Export the app for testing (supertest) and the start function
