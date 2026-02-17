@@ -12,7 +12,9 @@ import { config } from './config.js';
 import { createCorsMiddleware } from './middleware/cors.js';
 import { requestLogger } from './middleware/logger.js';
 import healthRouter from './routes/health.js';
+import authRouter from './routes/auth.js';
 import daggerheartRouter from './routes/daggerheart.js';
+import { requireAuth } from './middleware/auth.js';
 
 export const API_VERSION = '0.0.1';
 
@@ -25,7 +27,8 @@ app.use(express.json());
 
 // Routes (all prefixed with /api)
 app.use('/api/health', healthRouter);
-app.use('/api/daggerheart', daggerheartRouter);
+app.use('/api/auth', authRouter);
+app.use('/api/daggerheart', requireAuth, daggerheartRouter);
 
 /**
  * Export the app for testing (supertest) and the start function
