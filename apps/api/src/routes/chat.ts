@@ -1,25 +1,24 @@
 /**
  * SSE chat endpoint for Sage Codex
  *
- * POST /api/chat
- *
- * Receives a user message, streams the Anthropic response as SSE events,
- * handles tool calls, stores messages, and tracks token usage.
+ * POST /api/chat       — User message → streamed Sage response
+ * POST /api/chat/greet — Sage speaks first when a stage loads
  *
  * Flow:
  * 1. Validate request (message, sessionId, auth)
  * 2. Store the user message
- * 3. Load conversation history
- * 4. Open SSE response
- * 5. Stream Anthropic response, emitting events as they arrive
- * 6. If tool calls: dispatch, send follow-up turn, stream again
- * 7. Store assistant message + log token usage
- * 8. Close SSE stream
+ * 3. Load conversation history + adventure state
+ * 4. Assemble full context via context-assembler (system prompt + state + compressed history)
+ * 5. Open SSE response
+ * 6. Stream Anthropic response, emitting events as they arrive
+ * 7. If tool calls: dispatch, send follow-up turn, stream again
+ * 8. Store assistant message + log token usage
+ * 9. Close SSE stream
  */
 
 import { Router } from 'express';
 import type { Request, Response, Router as RouterType } from 'express';
-import type { SageEvent, SageChatRequest } from '@dagger-app/shared-types';
+import type { SageEvent, SageChatRequest, ToolDefinition } from '@dagger-app/shared-types';
 import { createStreamingMessage } from '../services/anthropic.js';
 import { parseAnthropicStream, type StreamEvent } from '../services/stream-parser.js';
 import { dispatchToolCalls } from '../services/tool-dispatcher.js';
@@ -31,8 +30,8 @@ import { drainInscribingEvents } from '../tools/inscribing.js';
 import { logTokenUsage } from '../services/token-tracker.js';
 import { storeMessage, loadConversationHistory } from '../services/message-store.js';
 import { loadSession } from '../services/session-state.js';
-import { buildSystemPrompt } from '../services/system-prompt.js';
-import { getToolsForStage } from '../tools/definitions.js';
+import { assembleAnthropicPayload } from '../services/context-assembler.js';
+import { loadAdventureState } from '../services/state-mapper.js';
 import { classifyApiError } from '../middleware/error-handler.js';
 import type { AnthropicMessage, AnthropicContentBlock } from '../services/anthropic.js';
 import type { CollectedToolUse } from '../services/stream-parser.js';
@@ -95,23 +94,6 @@ function validateChatRequest(
 // =============================================================================
 
 /**
- * Convert stored messages to Anthropic Messages API format.
- */
-function formatMessagesForApi(
-  history: Array<{ role: string; content: string }>,
-  currentMessage: string
-): AnthropicMessage[] {
-  const messages: AnthropicMessage[] = history.map((msg) => ({
-    role: msg.role as 'user' | 'assistant',
-    content: msg.content,
-  }));
-
-  messages.push({ role: 'user', content: currentMessage });
-
-  return messages;
-}
-
-/**
  * Build tool_result + assistant messages for a follow-up API turn.
  */
 function buildToolResultMessages(
@@ -150,7 +132,131 @@ function buildToolResultMessages(
 }
 
 // =============================================================================
-// Route
+// Streaming Loop (shared by /chat and /chat/greet)
+// =============================================================================
+
+interface StreamResult {
+  finalText: string;
+  finalToolCalls: Record<string, unknown>[];
+  totalInputTokens: number;
+  totalOutputTokens: number;
+  model: string;
+}
+
+/**
+ * Run the streaming conversation loop: send to Anthropic, stream SSE events,
+ * handle tool calls with follow-up turns.
+ *
+ * Shared between the regular chat endpoint and the greet endpoint.
+ */
+async function runStreamingLoop(
+  res: Response,
+  initialMessages: AnthropicMessage[],
+  systemPrompt: string | undefined,
+  tools: ToolDefinition[] | undefined
+): Promise<StreamResult> {
+  let apiMessages = initialMessages;
+  let totalInputTokens = 0;
+  let totalOutputTokens = 0;
+  let finalText = '';
+  let finalToolCalls: Record<string, unknown>[] = [];
+  let model = '';
+
+  for (let turn = 0; turn < MAX_TOOL_TURNS; turn++) {
+    const stream = await createStreamingMessage({ messages: apiMessages, systemPrompt, tools });
+    const parsed = await parseAnthropicStream(
+      stream as unknown as AsyncIterable<StreamEvent>
+    );
+
+    model = parsed.model || model;
+    totalInputTokens += parsed.inputTokens;
+    totalOutputTokens += parsed.outputTokens;
+
+    // Send all parsed events to the client
+    for (const event of parsed.events) {
+      sendSSEEvent(res, event);
+    }
+
+    // If no tool calls, we're done
+    if (parsed.toolUseBlocks.length === 0) {
+      finalText = parsed.fullText;
+      break;
+    }
+
+    // Dispatch tool calls and send tool events
+    const dispatch = await dispatchToolCalls(parsed.toolUseBlocks);
+    for (const event of dispatch.events) {
+      sendSSEEvent(res, event);
+    }
+
+    // Send any panel/UI events generated by tool handlers
+    for (const event of drainPendingEvents()) sendSSEEvent(res, event);
+    for (const event of drainAttuningEvents()) sendSSEEvent(res, event);
+    for (const event of drainBindingEvents()) sendSSEEvent(res, event);
+    for (const event of drainWeavingEvents()) sendSSEEvent(res, event);
+    for (const event of drainInscribingEvents()) sendSSEEvent(res, event);
+
+    // Track tool calls for storage
+    finalToolCalls = [
+      ...finalToolCalls,
+      ...parsed.toolUseBlocks.map((t) => ({
+        id: t.id,
+        name: t.name,
+        input: t.input,
+      })),
+    ];
+
+    // Build messages for the next turn
+    apiMessages = buildToolResultMessages(
+      apiMessages,
+      parsed.fullText,
+      parsed.toolUseBlocks,
+      dispatch.toolResults
+    );
+
+    finalText = parsed.fullText;
+  }
+
+  return { finalText, finalToolCalls, totalInputTokens, totalOutputTokens, model };
+}
+
+/**
+ * Handle SSE errors consistently across endpoints.
+ */
+function handleStreamError(res: Response, err: unknown): void {
+  const classified = classifyApiError(err);
+
+  if (res.headersSent) {
+    const errorEvent: SageEvent = {
+      type: 'error',
+      data: { code: classified.code, message: classified.message },
+    };
+    sendSSEEvent(res, errorEvent);
+    res.end();
+  } else {
+    res.status(classified.httpStatus).json({
+      error: classified.message,
+      code: classified.code,
+      retryable: classified.retryable,
+      ...(classified.retryAfterMs && { retryAfterMs: classified.retryAfterMs }),
+    });
+  }
+}
+
+// =============================================================================
+// Synthetic Greeting Message
+// =============================================================================
+
+/**
+ * The synthetic user message sent to trigger the Sage's opening greeting.
+ *
+ * This is never stored in the database — it only exists for the Anthropic API
+ * request so the Sage has a user message to respond to (API requirement).
+ */
+const GREETING_TRIGGER = '[The storyteller has opened the Codex and is ready to begin.]';
+
+// =============================================================================
+// Routes
 // =============================================================================
 
 const router: RouterType = Router();
@@ -186,140 +292,131 @@ router.post('/', async (req: Request, res: Response) => {
     const { session } = sessionResult.data;
     const stage = session.stage;
 
-    // Build stage-aware system prompt and tools
-    const systemPrompt = buildSystemPrompt(stage);
-    const tools = getToolsForStage(stage);
-
     // Store the user's message
     await storeMessage({ sessionId, role: 'user', content: message });
 
-    // Load conversation history
+    // Load conversation history + adventure state
     const historyResult = await loadConversationHistory(sessionId);
     const history = historyResult.data ?? [];
+    const adventureState = await loadAdventureState(sessionId, stage);
 
-    // Format messages for Anthropic API (exclude the one we just stored -
-    // it will be added as the current message)
-    const previousMessages = history.slice(0, -1);
-    let apiMessages = formatMessagesForApi(previousMessages, message);
+    // Assemble full context: system prompt + adventure state + compressed history + tools
+    // Excludes the just-stored message from history (it's passed as userMessage)
+    const { streamOptions } = assembleAnthropicPayload({
+      state: adventureState,
+      stage,
+      conversationHistory: history.slice(0, -1),
+      userMessage: message,
+    });
 
-    // Initialize SSE response
+    // Initialize SSE response and run streaming loop
     initializeSSEResponse(res);
-
-    // Handle the streaming conversation (with potential tool turns)
-    let totalInputTokens = 0;
-    let totalOutputTokens = 0;
-    let finalText = '';
-    let finalToolCalls: Record<string, unknown>[] = [];
-    let model = '';
-
-    for (let turn = 0; turn < MAX_TOOL_TURNS; turn++) {
-      const stream = await createStreamingMessage({ messages: apiMessages, systemPrompt, tools });
-      const parsed = await parseAnthropicStream(
-        stream as unknown as AsyncIterable<StreamEvent>
-      );
-
-      model = parsed.model || model;
-      totalInputTokens += parsed.inputTokens;
-      totalOutputTokens += parsed.outputTokens;
-
-      // Send all parsed events to the client
-      for (const event of parsed.events) {
-        sendSSEEvent(res, event);
-      }
-
-      // If no tool calls, we're done
-      if (parsed.toolUseBlocks.length === 0) {
-        finalText = parsed.fullText;
-        break;
-      }
-
-      // Dispatch tool calls and send tool events
-      const dispatch = await dispatchToolCalls(parsed.toolUseBlocks);
-      for (const event of dispatch.events) {
-        sendSSEEvent(res, event);
-      }
-
-      // Send any panel/UI events generated by tool handlers
-      const panelEvents = drainPendingEvents();
-      for (const event of panelEvents) {
-        sendSSEEvent(res, event);
-      }
-      const attuningEvents = drainAttuningEvents();
-      for (const event of attuningEvents) {
-        sendSSEEvent(res, event);
-      }
-      const bindingEvents = drainBindingEvents();
-      for (const event of bindingEvents) {
-        sendSSEEvent(res, event);
-      }
-      const weavingEvents = drainWeavingEvents();
-      for (const event of weavingEvents) {
-        sendSSEEvent(res, event);
-      }
-      const inscribingEvents = drainInscribingEvents();
-      for (const event of inscribingEvents) {
-        sendSSEEvent(res, event);
-      }
-
-      // Track tool calls for storage
-      finalToolCalls = [
-        ...finalToolCalls,
-        ...parsed.toolUseBlocks.map((t) => ({
-          id: t.id,
-          name: t.name,
-          input: t.input,
-        })),
-      ];
-
-      // Build messages for the next turn
-      apiMessages = buildToolResultMessages(
-        apiMessages,
-        parsed.fullText,
-        parsed.toolUseBlocks,
-        dispatch.toolResults
-      );
-
-      finalText = parsed.fullText;
-    }
+    const result = await runStreamingLoop(
+      res, streamOptions.messages, streamOptions.systemPrompt, streamOptions.tools
+    );
 
     // Store the assistant's response
     await storeMessage({
       sessionId,
       role: 'assistant',
-      content: finalText,
-      toolCalls: finalToolCalls.length > 0 ? finalToolCalls : null,
-      tokenCount: totalInputTokens + totalOutputTokens,
+      content: result.finalText,
+      toolCalls: result.finalToolCalls.length > 0 ? result.finalToolCalls : null,
+      tokenCount: result.totalInputTokens + result.totalOutputTokens,
     });
 
     // Log token usage (non-fatal)
     await logTokenUsage({
       sessionId,
       messageId: 'aggregated',
-      inputTokens: totalInputTokens,
-      outputTokens: totalOutputTokens,
-      model,
+      inputTokens: result.totalInputTokens,
+      outputTokens: result.totalOutputTokens,
+      model: result.model,
     });
 
     res.end();
   } catch (err) {
-    const classified = classifyApiError(err);
+    handleStreamError(res, err);
+  }
+});
 
-    // If headers already sent (streaming started), send error as SSE
-    if (res.headersSent) {
-      const errorEvent: SageEvent = {
-        type: 'error',
-        data: { code: classified.code, message: classified.message },
-      };
-      sendSSEEvent(res, errorEvent);
-      res.end();
-    } else {
-      res.status(classified.httpStatus).json({
-        error: classified.message,
-        code: classified.code,
-        retryable: classified.retryable,
-        ...(classified.retryAfterMs && { retryAfterMs: classified.retryAfterMs }),
-      });
+/**
+ * POST /api/chat/greet
+ *
+ * Triggers the Sage's opening greeting when a stage loads.
+ * Accepts { sessionId: string } in the request body.
+ *
+ * Uses a synthetic user message to satisfy the Anthropic API requirement
+ * that the first message must be role: 'user'. The synthetic message is
+ * NOT stored in the database — only the Sage's response is persisted.
+ */
+router.post('/greet', async (req: Request, res: Response) => {
+  const userId = req.user?.id;
+  if (!userId) {
+    res.status(401).json({ error: 'User not authenticated' });
+    return;
+  }
+
+  const { sessionId } = req.body as { sessionId?: string };
+  if (!sessionId || typeof sessionId !== 'string') {
+    res.status(400).json({ error: 'sessionId is required' });
+    return;
+  }
+
+  try {
+    // Load session to get the current stage
+    const sessionResult = await loadSession(sessionId, userId);
+    if (sessionResult.error || !sessionResult.data) {
+      res.status(404).json({ error: sessionResult.error ?? 'Session not found' });
+      return;
     }
+    const { session } = sessionResult.data;
+    const stage = session.stage;
+
+    // Load existing conversation history + adventure state
+    const historyResult = await loadConversationHistory(sessionId);
+    const history = historyResult.data ?? [];
+    const adventureState = await loadAdventureState(sessionId, stage);
+
+    // If there are already messages, skip the greeting — the Sage already spoke
+    if (history.length > 0) {
+      res.status(200).json({ status: 'already_greeted' });
+      return;
+    }
+
+    // Assemble context with the synthetic greeting trigger
+    const { streamOptions } = assembleAnthropicPayload({
+      state: adventureState,
+      stage,
+      conversationHistory: [],
+      userMessage: GREETING_TRIGGER,
+    });
+
+    // Initialize SSE response and run streaming loop
+    initializeSSEResponse(res);
+    const result = await runStreamingLoop(
+      res, streamOptions.messages, streamOptions.systemPrompt, streamOptions.tools
+    );
+
+    // Store only the assistant's response (NOT the synthetic trigger)
+    await storeMessage({
+      sessionId,
+      role: 'assistant',
+      content: result.finalText,
+      toolCalls: result.finalToolCalls.length > 0 ? result.finalToolCalls : null,
+      tokenCount: result.totalInputTokens + result.totalOutputTokens,
+    });
+
+    await logTokenUsage({
+      sessionId,
+      messageId: 'aggregated',
+      inputTokens: result.totalInputTokens,
+      outputTokens: result.totalOutputTokens,
+      model: result.model,
+    });
+
+    res.end();
+  } catch (err) {
+    handleStreamError(res, err);
   }
 });
 

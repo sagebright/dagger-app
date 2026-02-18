@@ -105,6 +105,7 @@ export interface UseSageStreamOptions extends SageStreamCallbacks {
 
 export interface UseSageStreamReturn {
   sendMessage: (message: string) => Promise<void>;
+  requestGreeting: () => Promise<void>;
   isStreaming: boolean;
   error: StreamError | null;
   abort: () => void;
@@ -281,7 +282,64 @@ export function useSageStream(
     await sendMessage(lastMessage);
   }, [sendMessage]);
 
-  return { sendMessage, isStreaming, error, abort, retry };
+  /**
+   * Request the Sage's opening greeting for the current stage.
+   *
+   * Calls POST /api/chat/greet which sends a synthetic trigger message
+   * to Claude and streams back the Sage's opening. Only fires if no
+   * messages exist yet (the backend enforces this too).
+   */
+  const requestGreeting = useCallback(async (): Promise<void> => {
+    if (isStreaming) return;
+
+    setIsStreaming(true);
+    setError(null);
+
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+    const timeoutMs = options.requestTimeoutMs ?? DEFAULT_REQUEST_TIMEOUT_MS;
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+    try {
+      const response = await fetch('/api/chat/greet', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${options.accessToken}`,
+        },
+        body: JSON.stringify({ sessionId: options.sessionId }),
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        const serverMessage = (body as { error?: string }).error;
+        throw new Error(serverMessage ?? `HTTP ${response.status}`);
+      }
+
+      // If already greeted, the backend returns JSON (not SSE)
+      const contentType = response.headers.get('content-type') ?? '';
+      if (contentType.includes('application/json')) {
+        return;
+      }
+
+      if (!response.body) return;
+      await readSSEStream(response.body, options, controller.signal);
+    } catch (err) {
+      if ((err as Error).name === 'AbortError') return;
+      const classified = classifyError(err);
+      setError(classified);
+      options.onError?.({ code: classified.code, message: classified.message });
+    } finally {
+      clearTimeout(timeoutId);
+      abortControllerRef.current = null;
+      setIsStreaming(false);
+    }
+  }, [isStreaming, options]);
+
+  return { sendMessage, requestGreeting, isStreaming, error, abort, retry };
 }
 
 // =============================================================================
