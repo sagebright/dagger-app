@@ -117,8 +117,8 @@ router.post('/checkout', async (req: Request, res: Response) => {
       email: email ?? '',
       priceId: selectedPackage.priceId,
       credits: selectedPackage.credits,
-      successUrl: `${FRONTEND_BASE_URL}/credits?status=success`,
-      cancelUrl: `${FRONTEND_BASE_URL}/credits?status=cancelled`,
+      successUrl: `${FRONTEND_BASE_URL}/settings?checkout=success`,
+      cancelUrl: `${FRONTEND_BASE_URL}/settings?checkout=cancelled`,
     });
 
     res.json({ url: session.url });
@@ -173,7 +173,7 @@ router.post('/portal', async (req: Request, res: Response) => {
     const session = await createPortalSession(
       userId,
       email ?? '',
-      `${FRONTEND_BASE_URL}/credits`
+      `${FRONTEND_BASE_URL}/settings`
     );
 
     res.json({ url: session.url });
