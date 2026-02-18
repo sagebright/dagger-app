@@ -22,6 +22,7 @@ import {
   abandonSession,
   advanceStage,
   completeSession,
+  resumeSession,
 } from '../services/session-state.js';
 
 const router: RouterType = Router();
@@ -135,6 +136,30 @@ router.post('/:id/advance', async (req: Request, res: Response) => {
 
   if (result.error) {
     const status = result.error.includes('not found') ? 404 : 400;
+    res.status(status).json({ error: result.error });
+    return;
+  }
+
+  res.json(result.data);
+});
+
+/**
+ * POST /api/session/:id/resume
+ *
+ * Resume a past (inactive) session. Deactivates any currently active
+ * session and reactivates the target session.
+ */
+router.post('/:id/resume', async (req: Request, res: Response) => {
+  const userId = req.user?.id;
+  if (!userId) {
+    res.status(401).json({ error: 'User not authenticated' });
+    return;
+  }
+
+  const result = await resumeSession(extractParamId(req), userId);
+
+  if (result.error) {
+    const status = result.error.includes('not found') ? 404 : 500;
     res.status(status).json({ error: result.error });
     return;
   }

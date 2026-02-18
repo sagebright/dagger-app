@@ -301,6 +301,60 @@ export async function abandonSession(
 }
 
 /**
+ * Resume (reactivate) a past session.
+ *
+ * Deactivates any currently active session for the user, then sets
+ * the target session to active. Returns the session with adventure state.
+ */
+export async function resumeSession(
+  sessionId: string,
+  userId: string
+): Promise<ServiceResult<CreateSessionResult>> {
+  const supabase = getSupabase();
+
+  // Verify the target session exists and belongs to the user
+  const loadResult = await loadSession(sessionId, userId);
+  if (loadResult.error || !loadResult.data) {
+    return { data: null, error: loadResult.error ?? 'Session not found' };
+  }
+
+  // Deactivate any currently active session for this user
+  const { error: deactivateError } = await supabase
+    .from('sage_sessions')
+    .update({ is_active: false })
+    .eq('user_id', userId)
+    .eq('is_active', true);
+
+  if (deactivateError) {
+    return { data: null, error: deactivateError.message };
+  }
+
+  // Activate the target session
+  const { data: activated, error: activateError } = await supabase
+    .from('sage_sessions')
+    .update({ is_active: true })
+    .eq('id', sessionId)
+    .eq('user_id', userId)
+    .select()
+    .single();
+
+  if (activateError || !activated) {
+    return {
+      data: null,
+      error: activateError?.message ?? 'Failed to activate session',
+    };
+  }
+
+  return {
+    data: {
+      session: activated as SageSession,
+      adventureState: loadResult.data.adventureState,
+    },
+    error: null,
+  };
+}
+
+/**
  * Advance a session to the next stage in the Unfolding.
  *
  * Validates that:

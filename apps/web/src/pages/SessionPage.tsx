@@ -267,7 +267,7 @@ export function SessionPage() {
     setResumeTarget(null);
   };
 
-  /** Confirm resume: load session via API, update stores, navigate */
+  /** Confirm resume: reactivate session via API, update stores, navigate */
   const handleResumeConfirm = async () => {
     if (!resumeTarget) return;
 
@@ -275,8 +275,9 @@ export function SessionPage() {
     setError(null);
 
     const result = await apiFetch<SessionDetail>(
-      `/api/session/${resumeTarget.id}`,
-      token
+      `/api/session/${resumeTarget.id}/resume`,
+      token,
+      { method: 'POST' }
     );
 
     if (result.error) {

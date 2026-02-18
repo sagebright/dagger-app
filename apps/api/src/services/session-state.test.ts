@@ -15,6 +15,7 @@ import {
   abandonSession,
   advanceStage,
   findActiveSession,
+  resumeSession,
 } from './session-state.js';
 
 // Mock the supabase service
@@ -602,5 +603,118 @@ describe('advanceStage', () => {
     const result = await advanceStage('nonexistent', 'user-1');
     expect(result.data).toBeNull();
     expect(result.error).toBe('Session not found');
+  });
+});
+
+// =============================================================================
+// resumeSession Tests
+// =============================================================================
+
+describe('resumeSession', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('activates session and returns session with adventure state', async () => {
+    const session = {
+      id: 'session-past',
+      user_id: 'user-1',
+      title: 'Past Adventure',
+      stage: 'attuning',
+      is_active: false,
+    };
+
+    const activatedSession = { ...session, is_active: true };
+
+    const state = {
+      id: 'state-1',
+      session_id: 'session-past',
+      components: { span: '3-4 hours' },
+      frame: null,
+      outline: null,
+      scenes: [],
+    };
+
+    let callCount = 0;
+    // Call 1: loadSession -> sage_sessions select (session lookup)
+    const sessionChain = createChainableMock({ data: session, error: null });
+    // Call 2: loadSession -> sage_adventure_state select
+    const stateChain = createChainableMock({ data: state, error: null });
+    // Call 3: deactivate active sessions (update, no select/single)
+    const deactivateChain = createChainableMock({ data: null, error: null });
+    deactivateChain.eq.mockReturnThis();
+    // Call 4: activate target session (update + select + single)
+    const activateChain = createChainableMock({ data: activatedSession, error: null });
+
+    vi.mocked(getSupabase).mockReturnValue({
+      from: vi.fn().mockImplementation(() => {
+        callCount++;
+        if (callCount === 1) return sessionChain;
+        if (callCount === 2) return stateChain;
+        if (callCount === 3) return deactivateChain;
+        return activateChain;
+      }),
+    } as never);
+
+    const result = await resumeSession('session-past', 'user-1');
+    expect(result.error).toBeNull();
+    expect(result.data?.session.is_active).toBe(true);
+    expect(result.data?.adventureState).toEqual(state);
+  });
+
+  it('returns error when session not found', async () => {
+    const chain = createChainableMock({
+      data: null,
+      error: { message: 'No rows found' },
+    });
+    vi.mocked(getSupabase).mockReturnValue({
+      from: vi.fn().mockReturnValue(chain),
+    } as never);
+
+    const result = await resumeSession('nonexistent', 'user-1');
+    expect(result.data).toBeNull();
+    expect(result.error).toBe('Session not found');
+  });
+
+  it('returns error when deactivation fails', async () => {
+    const session = {
+      id: 'session-past',
+      user_id: 'user-1',
+      title: 'Past Adventure',
+      stage: 'attuning',
+      is_active: false,
+    };
+
+    const state = {
+      id: 'state-1',
+      session_id: 'session-past',
+      components: {},
+      frame: null,
+      outline: null,
+      scenes: [],
+    };
+
+    let callCount = 0;
+    const sessionChain = createChainableMock({ data: session, error: null });
+    const stateChain = createChainableMock({ data: state, error: null });
+    // Deactivation fails
+    const deactivateChain = createChainableMock({
+      data: null,
+      error: { message: 'Database connection lost' },
+    });
+    deactivateChain.eq.mockReturnThis();
+
+    vi.mocked(getSupabase).mockReturnValue({
+      from: vi.fn().mockImplementation(() => {
+        callCount++;
+        if (callCount === 1) return sessionChain;
+        if (callCount === 2) return stateChain;
+        return deactivateChain;
+      }),
+    } as never);
+
+    const result = await resumeSession('session-past', 'user-1');
+    expect(result.data).toBeNull();
+    expect(result.error).toBe('Database connection lost');
   });
 });
