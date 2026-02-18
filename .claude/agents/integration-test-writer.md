@@ -22,7 +22,7 @@ Write comprehensive integration tests that verify workflows, store interactions,
 ## Test Location
 
 - Frontend: `apps/web/src/**/*.test.tsx`
-- Backend: `apps/mcp-bridge/src/**/*.test.ts`
+- Backend: `apps/api/src/**/*.test.ts`
 - Colocated with implementation files
 
 ## Existing Test Patterns

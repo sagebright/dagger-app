@@ -61,11 +61,11 @@ All achievable with CSS animations + requestAnimationFrame streaming. No externa
 
 ### Architectural Direction
 
-The current codebase uses an MCP bridge server (Node.js/Express on port 3001) as an intermediary between the frontend and Claude. This is being replaced:
+The backend uses an Express API server (`apps/api/`, port 3001) that calls the Anthropic API directly via the Anthropic SDK.
 
-- **New**: Direct Anthropic API calls from the frontend/backend — no MCP bridge intermediary.
-- **Why**: Speed, simplicity, and the LLM-driven panel update model (see below) requires tighter integration than a bridge allows.
-- **Implication**: The `apps/mcp-bridge/` directory and its Express/WebSocket infrastructure will be replaced. The Supabase integration (content queries) will be restructured as part of this change.
+- **Architecture**: Direct Anthropic SDK calls from the API server — no intermediary bridge.
+- **Why**: Speed, simplicity, and the LLM-driven panel update model (see below) requires tight integration.
+- **Supabase**: Content queries are served by the API server's service layer (`apps/api/src/services/`).
 
 ### 6-Stage Dropdown Navigation
 

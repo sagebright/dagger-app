@@ -471,9 +471,9 @@ pnpm lint
 
 ### Targeted tests (during development iteration):
 
-#### For apps/mcp-bridge changes:
+#### For apps/api changes:
 ```bash
-pnpm --filter mcp-bridge test "[affected-area]"
+pnpm --filter api test "[affected-area]"
 ```
 
 #### For apps/web changes:

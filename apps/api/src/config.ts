@@ -2,7 +2,6 @@
  * Configuration module for Sage Codex API Server
  *
  * Centralizes environment variable access with type-safe defaults.
- * References the pattern from apps/mcp-bridge/src/config.ts.
  */
 
 export const config = {

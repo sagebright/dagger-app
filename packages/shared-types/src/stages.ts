@@ -1,9 +1,9 @@
 /**
  * Sage Codex — Stage & Component Type Definitions
  *
- * New type system for the Sage Codex reboot. Stages replace Phases,
- * Components replace Dials. Old types in dials.ts are preserved for
- * mcp-bridge backward compatibility until Phase 5 removal.
+ * Type system for the Sage Codex. Stages replace Phases,
+ * Components replace Dials. Old types in dials.ts are preserved
+ * for backward compatibility.
  */
 
 // =============================================================================

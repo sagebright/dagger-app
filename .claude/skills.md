@@ -131,16 +131,16 @@ Before Section 7.3 (commit), this skill triggers:
 ## new-mcp-tool
 
 **Trigger:** Auto-activates when:
-- Creating files in `apps/mcp-bridge/src/mcp/tools/`
-- User mentions "MCP tool", "create tool", or "new tool"
+- Creating files in `apps/api/src/tools/`
+- User mentions "tool", "create tool", or "new tool"
 
-**Purpose:** Scaffold MCP tools with consistent structure, schema, handler, and tests.
+**Purpose:** Scaffold tools with consistent structure, schema, handler, and tests.
 
 ### File Structure
 
 Create two files:
-- `apps/mcp-bridge/src/mcp/tools/{toolName}.ts`
-- `apps/mcp-bridge/src/mcp/tools/{toolName}.test.ts`
+- `apps/api/src/tools/{toolName}.ts`
+- `apps/api/src/tools/{toolName}.test.ts`
 
 ### Tool File Template
 
@@ -654,6 +654,6 @@ describe('{storeName}', () => {
 | Skill | Trigger | Purpose |
 |-------|---------|---------|
 | `code-quality` | File edits, pre-commit | Clean Code enforcement |
-| `new-mcp-tool` | Creating MCP tools | Consistent tool + test structure |
+| `new-tool` | Creating API tools | Consistent tool + test structure |
 | `new-component` | Creating React components | Props, ARIA, fantasy theme, tests |
 | `new-store` | Creating Zustand stores | Middleware, serialization, tests |

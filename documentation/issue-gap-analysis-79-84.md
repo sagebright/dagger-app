@@ -534,7 +534,7 @@ This creates a non-functional stub. Issue #[functional-ai] will wire up actual A
 |------|--------|
 | `apps/web/src/components/dials/ToneSelect.tsx` | Modify |
 | `apps/web/src/components/dials/EmotionalRegisterSelect.tsx` | Modify |
-| `apps/mcp-bridge/src/routes/` | Modify or Create (if new endpoint needed) |
+| `apps/api/src/routes/` | Modify or Create (if new endpoint needed) |
 
 ## Acceptance Criteria
 
@@ -552,7 +552,7 @@ This creates a non-functional stub. Issue #[functional-ai] will wire up actual A
 
 ## Notes
 
-May require MCP bridge changes to expose generation capability. Coordinate with backend work.
+May require API server changes to expose generation capability. Coordinate with backend work.
 ```
 
 ---

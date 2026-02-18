@@ -2,7 +2,7 @@
  * Database types for Supabase Daggerheart tables
  *
  * Generated from Supabase schema and customized for dagger-app.
- * These types are shared between the mcp-bridge backend and web frontend.
+ * These types are shared between the API backend and web frontend.
  */
 
 export type Json =

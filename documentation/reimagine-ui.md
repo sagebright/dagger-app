@@ -197,5 +197,5 @@ First used in: Binding (frame detail). Extended in: Inscribing (narrative detail
 ## Strategic Path
 
 1. **Lock the atmosphere** — HTML mockup iteration on component tuning page
-2. **Bring the engine to life** — Replace MCP bridge with direct Anthropic API calls for speed
+2. **Bring the engine to life** — Direct Anthropic API calls from the API server for speed
 3. **Marry them** — Port locked design into React components, wire to fast API layer

@@ -265,7 +265,7 @@ describe('MCP Types', () => {
       const event: ServerEvent = {
         type: 'connected',
         payload: {
-          message: 'MCP Bridge connected',
+          message: 'API server connected',
         },
       };
       expect(event.type).toBe('connected');

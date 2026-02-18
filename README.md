@@ -35,10 +35,10 @@ A local web application for generating Daggerheart TTRPG adventures. Converts a 
 3. Configure environment variables:
 
    ```bash
-   cp apps/mcp-bridge/.env.example apps/mcp-bridge/.env
+   cp apps/api/.env.example apps/api/.env
    ```
 
-   Edit `apps/mcp-bridge/.env` and add your Supabase credentials:
+   Edit `apps/api/.env` and add your credentials:
 
    ```bash
    # Server
@@ -46,9 +46,12 @@ A local web application for generating Daggerheart TTRPG adventures. Converts a 
    NODE_ENV=development
    ALLOWED_ORIGINS=http://localhost:5173
 
-   # Supabase (bridge uses service_role key - never expose to clients)
+   # Supabase (API uses service_role key - never expose to clients)
    SUPABASE_URL=https://your-project.supabase.co
    SUPABASE_SERVICE_ROLE_KEY=your_service_role_key_here
+
+   # Anthropic
+   ANTHROPIC_API_KEY=your_anthropic_key_here
    ```
 
 4. Start the development servers:
@@ -67,15 +70,15 @@ Check that both servers are running:
 # Frontend should respond at:
 curl http://localhost:5173
 
-# Bridge health check:
-curl http://localhost:3001/health
+# API health check:
+curl http://localhost:3001/api/health
 ```
 
 ## Environment Variables
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `PORT` | MCP Bridge server port | `3001` |
+| `PORT` | API server port | `3001` |
 | `NODE_ENV` | Environment mode | `development` |
 | `ALLOWED_ORIGINS` | CORS allowed origins | `http://localhost:5173` |
 | `SUPABASE_URL` | Supabase project URL | Required |
@@ -104,7 +107,7 @@ curl http://localhost:3001/health
 dagger-app/
 ├── apps/
 │   ├── web/                    # React frontend (port 5173)
-│   └── mcp-bridge/             # Node.js bridge server (port 3001)
+│   └── api/                    # Express API server (port 3001)
 ├── packages/
 │   └── shared-types/           # Shared TypeScript types
 └── documentation/
@@ -117,7 +120,7 @@ dagger-app/
 # Development
 pnpm dev                        # Start all apps in parallel
 pnpm --filter web dev           # Start frontend only
-pnpm --filter mcp-bridge dev    # Start bridge only
+pnpm --filter api dev           # Start API server only
 
 # Build & Quality
 pnpm build                      # Build all packages

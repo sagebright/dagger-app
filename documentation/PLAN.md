@@ -7,7 +7,7 @@ Convert the CLI-based Daggerheart TTRPG adventure generator into a local web app
 | Aspect | Decision |
 |--------|----------|
 | **Frontend** | React + Vite + TypeScript + Tailwind |
-| **LLM Backend** | MCP Server Bridge (uses Claude Code subscription) |
+| **LLM Backend** | API Server with Anthropic SDK |
 | **Data Source** | Existing Supabase JMK project (12 Daggerheart tables) |
 | **Storage** | Supabase + local filesystem export |
 | **UI Style** | Clean modern with fantasy accents |
@@ -16,10 +16,10 @@ Convert the CLI-based Daggerheart TTRPG adventure generator into a local web app
 ## Architecture
 
 ```
-┌─────────────────┐     HTTP/WS      ┌─────────────────┐     MCP      ┌─────────────────┐
-│  React Frontend │ ◄──────────────► │  MCP Bridge     │ ◄──────────► │  Claude Code    │
-│  (Vite + TS)    │                  │  Server (Node)  │              │  (Your sub)     │
-└────────┬────────┘                  └────────┬────────┘              └─────────────────┘
+┌─────────────────┐     HTTP/WS      ┌─────────────────┐     Anthropic  ┌─────────────────┐
+│  React Frontend │ ◄──────────────► │  API Server     │ ◄───── SDK ──► │  Claude         │
+│  (Vite + TS)    │                  │  (Express/Node) │                │  (Anthropic API)│
+└────────┬────────┘                  └────────┬────────┘                └─────────────────┘
          │                                    │
          │                                    │
          ▼                                    ▼
@@ -46,13 +46,12 @@ dagger-app/
 │   │   │   └── services/       # mcpClient, supabaseClient
 │   │   └── package.json
 │   │
-│   └── mcp-bridge/             # MCP Server Bridge
+│   └── api/                    # Express API Server
 │       ├── src/
-│       │   ├── mcp/
-│       │   │   ├── mcpServer.ts
-│       │   │   └── tools/      # dialTuning, sceneGeneration, etc.
 │       │   ├── routes/         # REST endpoints
-│       │   └── websocket/      # Real-time communication
+│       │   ├── services/       # supabase, stripe, credits, daggerheart-queries
+│       │   ├── tools/          # Stage-specific tool handlers
+│       │   └── middleware/     # cors, logger, auth, rate-limit
 │       └── package.json
 │
 ├── packages/
@@ -106,7 +105,7 @@ Chat-based interface with split panel:
 - [ ] Create root `package.json` with workspace scripts (`dev`, `build`, `test`, `lint`)
 - [ ] Create `pnpm-workspace.yaml` with `apps/*` and `packages/*` patterns
 - [ ] Create `apps/web/package.json` with React 18, Vite 5, TypeScript 5.3+
-- [ ] Create `apps/mcp-bridge/package.json` with Express 4, ws 8, TypeScript
+- [ ] Create `apps/api/package.json` with Express 4, ws 8, TypeScript
 - [ ] Create `packages/shared-types/package.json` for shared TypeScript types
 - [ ] Configure root `tsconfig.json` with project references
 - [ ] Add `.nvmrc` specifying Node 20 LTS
@@ -119,8 +118,8 @@ Chat-based interface with split panel:
 | `tsconfig.json` | Create |
 | `apps/web/package.json` | Create |
 | `apps/web/tsconfig.json` | Create |
-| `apps/mcp-bridge/package.json` | Create |
-| `apps/mcp-bridge/tsconfig.json` | Create |
+| `apps/api/package.json` | Create |
+| `apps/api/tsconfig.json` | Create |
 | `packages/shared-types/package.json` | Create |
 | `packages/shared-types/src/index.ts` | Create |
 | `.nvmrc` | Create |
@@ -138,7 +137,7 @@ Chat-based interface with split panel:
 
 **Tasks:**
 - [ ] Initialize Vite with React-TS template structure in `apps/web`
-- [ ] Configure `vite.config.ts` with proxy to MCP bridge (localhost:3001)
+- [ ] Configure `vite.config.ts` with proxy to API server (localhost:3001)
 - [ ] Set up path aliases (`@/` maps to `src/`)
 - [ ] Enable TypeScript strict mode
 - [ ] Create basic `App.tsx` with React Router placeholder
@@ -192,7 +191,7 @@ Chat-based interface with split panel:
 
 ---
 
-#### 1.4 Set up MCP Bridge Server Skeleton
+#### 1.4 Set up API Server Skeleton
 **Label:** `enhancement`
 
 **Tasks:**
@@ -206,18 +205,16 @@ Chat-based interface with split panel:
 **Files:**
 | File | Action |
 |------|--------|
-| `apps/mcp-bridge/src/index.ts` | Create |
-| `apps/mcp-bridge/src/config.ts` | Create |
-| `apps/mcp-bridge/src/routes/health.ts` | Create |
-| `apps/mcp-bridge/src/middleware/cors.ts` | Create |
-| `apps/mcp-bridge/src/middleware/logger.ts` | Create |
-| `apps/mcp-bridge/src/websocket/handler.ts` | Create |
-| `apps/mcp-bridge/.env.example` | Create |
+| `apps/api/src/index.ts` | Create |
+| `apps/api/src/config.ts` | Create |
+| `apps/api/src/routes/health.ts` | Create |
+| `apps/api/src/middleware/cors.ts` | Create |
+| `apps/api/src/middleware/logger.ts` | Create |
+| `apps/api/.env.example` | Create |
 
 **Acceptance Criteria:**
-- [ ] `pnpm --filter mcp-bridge dev` starts server on port 3001
+- [ ] `pnpm --filter api dev` starts server on port 3001
 - [ ] `GET /health` returns `{ status: "ok" }`
-- [ ] WebSocket connections accepted at `ws://localhost:3001`
 - [ ] Server shuts down gracefully on SIGTERM
 - [ ] CORS allows requests from localhost:5173
 
@@ -229,8 +226,8 @@ Chat-based interface with split panel:
 **Label:** `enhancement`
 
 **Tasks:**
-- [ ] Install `@supabase/supabase-js` in mcp-bridge
-- [ ] Create Supabase client singleton with env vars (URL, anon key)
+- [ ] Install `@supabase/supabase-js` in api
+- [ ] Create Supabase client singleton with env vars (URL, service role key)
 - [ ] Create type definitions for Daggerheart tables (from existing schema)
 - [ ] Add health check that verifies Supabase connection
 - [ ] Create basic query helper for table access
@@ -238,10 +235,10 @@ Chat-based interface with split panel:
 **Files:**
 | File | Action |
 |------|--------|
-| `apps/mcp-bridge/src/services/supabase.ts` | Create |
+| `apps/api/src/services/supabase.ts` | Create |
 | `packages/shared-types/src/database.ts` | Create |
-| `apps/mcp-bridge/src/routes/health.ts` | Modify (add DB check) |
-| `apps/mcp-bridge/.env.example` | Modify (add Supabase vars) |
+| `apps/api/src/routes/health.ts` | Modify (add DB check) |
+| `apps/api/.env.example` | Modify (add Supabase vars) |
 
 **Acceptance Criteria:**
 - [ ] Supabase client initializes without errors
@@ -443,9 +440,9 @@ Chat-based interface with split panel:
 | `~/Repos/dagger-gen/the-hollow-vigil/.claude/create-project-state.json` | Example state structure |
 | Supabase JMK (`ogvbbfzfljglfanceest`) | 12 content tables + adventures table |
 
-## MCP Bridge Design
+## API Server Design
 
-The bridge exposes tools that Claude Code can invoke:
+The API server exposes tools and endpoints for adventure generation:
 
 ```typescript
 // Example tools
@@ -479,7 +476,7 @@ ALTER TABLE daggerheart_adventures ADD COLUMN IF NOT EXISTS
 
 ## Verification Plan
 
-1. **Local dev server**: `pnpm dev` runs both web and mcp-bridge
+1. **Local dev server**: `pnpm dev` runs both web and api
 2. **Dial tuning flow**: Complete all 14 dials via chat, verify state persistence
 3. **Content generation**: Generate a full adventure, compare output to CLI
 4. **Export**: Download markdown files, verify structure matches `~/Repos/dagger-gen/`

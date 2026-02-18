@@ -40,16 +40,16 @@ Read `documentation/user-and-system-actions.md` first. It's the most complete si
 
 ### Existing Codebase
 
-The current app is at `apps/web/` (React/Vite frontend) and `apps/mcp-bridge/` (Node.js Express bridge server). Shared types live in `packages/shared-types/`. The database is Supabase with 14 Daggerheart content tables.
+The current app is at `apps/web/` (React/Vite frontend) and `apps/api/` (Express API server). Shared types live in `packages/shared-types/`. The database is Supabase with 14 Daggerheart content tables.
 
-Evaluate what exists against what the mockups and docs describe. Some things may be salvageable (Supabase queries, shared types, Tailwind config, some React components). Some things are definitely going away (the MCP bridge architecture). Make your assessment honestly — don't stretch to reuse code that will fight the new design.
+Evaluate what exists against what the mockups and docs describe. Some things may be salvageable (Supabase queries, shared types, Tailwind config, some React components). Make your assessment honestly — don't stretch to reuse code that will fight the new design.
 
 ## What's Changing (End to End)
 
 This isn't a UI refresh. It's a full-stack reboot across three layers:
 
 ### Architecture
-- **The MCP bridge is gone.** The app will call the Anthropic API directly instead of routing through an Express/WebSocket intermediary. This is the biggest structural change.
+- **Direct Anthropic API integration.** The app calls the Anthropic API directly from the API server using the Anthropic SDK.
 - **The LLM drives panel content.** The Sage doesn't just chat — it programmatically updates the right panel (scene arcs, narrative sections, NPC details, etc.) in response to user feedback. This is the most architecturally significant behavior in the app and the hardest to get right. See the "LLM-Driven Panel Content Updates" section in `documentation/user-and-system-actions.md`.
 
 ### UI/UX

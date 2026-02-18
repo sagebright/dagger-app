@@ -189,7 +189,7 @@ EOF
 ### For grouped issues (multiple related issues):
 Add prefix to title: `[Group Name 1/N]`
 
-Example: `[MCP Bridge 1/3] Set up server skeleton`
+Example: `[API Server 1/3] Set up server skeleton`
 
 ### Branch Naming for Grouped Issues
 

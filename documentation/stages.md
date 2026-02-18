@@ -232,7 +232,7 @@ The current database has two frame tables:
 - Migrate existing official frame data into the rich schema fields (content authoring required)
 - Drop the `daggerheart_custom_frames` table after migration
 - Update `packages/shared-types/src/database.ts` to reflect the unified schema
-- Update `apps/mcp-bridge/src/routes/custom-frames.ts` and `apps/mcp-bridge/src/services/daggerheart-queries.ts` to query the unified table
+- Update `apps/api/src/services/daggerheart-queries.ts` to query the unified table
 - Update `apps/web/src/components/content/FramePanel.tsx` to use the unified type
 
 This migration is **not part of the current mockup iteration** — it is documented here for when the Binding stage is implemented as a React component.

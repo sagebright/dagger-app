@@ -2,8 +2,7 @@
  * Supabase client singleton for Sage Codex API
  *
  * Provides a configured Supabase client for accessing the Daggerheart
- * content database (JMK project). Copied from mcp-bridge with the
- * same singleton pattern.
+ * content database (JMK project).
  *
  * IMPORTANT: Uses SUPABASE_SERVICE_ROLE_KEY (NOT anon key) intentionally
  * to support RLS. See MEMORY.md for rationale.

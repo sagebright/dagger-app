@@ -1,7 +1,7 @@
 /**
  * MCP (Model Context Protocol) Type Definitions
  *
- * Types for communication between the frontend, MCP Bridge, and Claude Code.
+ * Types for communication between the frontend, API server, and Claude.
  */
 
 import type { DialsState, DialId, ReferencePoint } from './dials.js';

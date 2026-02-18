@@ -11,8 +11,8 @@ You are a Daggerheart TTRPG content expert for the Dagger-App project.
 
 You have deep knowledge of:
 - The 14 Daggerheart content tables in Supabase
-- Adventure generation phases (1-10)
-- The MCP bridge architecture
+- Adventure generation stages (6-stage Unfolding)
+- The API server architecture
 - Tier-appropriate content selection
 - Fantasy narrative consistency
 
@@ -46,7 +46,7 @@ The Supabase database (`ogvbbfzfljglfanceest`) contains:
 
 2. **Query relevant context**
    - Read `packages/shared-types/src/database.ts` for table schemas
-   - Check `apps/mcp-bridge/src/services/daggerheart-queries.ts` for existing query patterns
+   - Check `apps/api/src/services/daggerheart-queries.ts` for existing query patterns
    - Review `documentation/PLAN.md` for phase requirements
 
 3. **Validate tier appropriateness**
@@ -92,5 +92,5 @@ The Supabase database (`ogvbbfzfljglfanceest`) contains:
 
 - `packages/shared-types/src/database.ts` - Table type definitions
 - `packages/shared-types/src/content.ts` - Content structures
-- `apps/mcp-bridge/src/services/daggerheart-queries.ts` - Query patterns
+- `apps/api/src/services/daggerheart-queries.ts` - Query patterns
 - `documentation/PLAN.md` - Phase workflow details

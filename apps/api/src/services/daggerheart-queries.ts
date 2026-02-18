@@ -2,7 +2,7 @@
  * Daggerheart content query helpers
  *
  * Provides typed query functions for accessing Daggerheart tables
- * in Supabase. Copied from mcp-bridge with the same patterns.
+ * in Supabase.
  */
 
 import { getSupabase } from './supabase.js';

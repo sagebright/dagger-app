@@ -2,13 +2,13 @@
  * Shared types for dagger-app
  *
  * This package contains TypeScript type definitions shared between
- * the web frontend and mcp-bridge backend.
+ * the web frontend and API backend.
  */
 
 // Re-export database types
 export * from './database.js';
 
-// Re-export dial types (legacy, kept for mcp-bridge compat)
+// Re-export dial types (legacy)
 export * from './dials.js';
 
 // Re-export stage & component types (new Sage Codex model)
