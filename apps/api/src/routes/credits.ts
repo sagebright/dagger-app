@@ -32,6 +32,7 @@ const router: RouterType = Router();
 // Constants
 // =============================================================================
 
+// Derive frontend URL from the first allowed origin (single-origin in this project)
 const FRONTEND_BASE_URL = config.allowedOrigins.split(',')[0].trim();
 
 // =============================================================================
@@ -94,6 +95,11 @@ router.post('/checkout', async (req: Request, res: Response) => {
     return;
   }
 
+  if (!email) {
+    res.status(400).json({ error: 'User email is required for checkout' });
+    return;
+  }
+
   const { packageId } = req.body;
   if (!packageId || typeof packageId !== 'string') {
     res
@@ -114,7 +120,7 @@ router.post('/checkout', async (req: Request, res: Response) => {
   try {
     const session = await createCheckoutSession({
       userId,
-      email: email ?? '',
+      email,
       priceId: selectedPackage.priceId,
       credits: selectedPackage.credits,
       successUrl: `${FRONTEND_BASE_URL}/settings?checkout=success`,
@@ -169,10 +175,15 @@ router.post('/portal', async (req: Request, res: Response) => {
     return;
   }
 
+  if (!email) {
+    res.status(400).json({ error: 'User email is required for portal access' });
+    return;
+  }
+
   try {
     const session = await createPortalSession(
       userId,
-      email ?? '',
+      email,
       `${FRONTEND_BASE_URL}/settings`
     );
 

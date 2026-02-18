@@ -81,6 +81,7 @@ function PackageCard({
         onClick={onBuy}
         disabled={isProcessing}
         type="button"
+        aria-label={`Purchase ${name} for ${priceDisplay}`}
       >
         {isProcessing ? 'Redirecting...' : 'Buy'}
       </button>
@@ -109,7 +110,7 @@ function TransactionRow({
       <span
         style={{
           ...styles.transactionAmount,
-          color: isPositive ? 'var(--accent-gold)' : '#db7e7e',
+          color: isPositive ? 'var(--accent-gold)' : 'var(--accent-error)',
         }}
       >
         {isPositive ? '+' : ''}{amount}
@@ -401,7 +402,7 @@ const styles: Record<string, React.CSSProperties> = {
   logoutButton: { background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: 13, cursor: 'pointer', fontFamily: 'var(--font-sans)', padding: '6px 12px' },
   content: { maxWidth: 640, margin: '0 auto', padding: '32px 24px' },
   pageTitle: { fontFamily: 'var(--font-serif)', fontSize: 24, fontWeight: 600, color: 'var(--accent-gold)', marginBottom: 24, marginTop: 0 },
-  errorBanner: { padding: '10px 14px', marginBottom: 20, background: 'rgba(219, 126, 126, 0.1)', border: '1px solid rgba(219, 126, 126, 0.3)', borderRadius: 'var(--radius-sm)', color: '#db7e7e', fontSize: 13, lineHeight: 1.5 },
+  errorBanner: { padding: '10px 14px', marginBottom: 20, background: 'rgba(219, 126, 126, 0.1)', border: '1px solid rgba(219, 126, 126, 0.3)', borderRadius: 'var(--radius-sm)', color: 'var(--accent-error)', fontSize: 13, lineHeight: 1.5 },
   successBanner: { padding: '10px 14px', marginBottom: 20, background: 'rgba(180, 162, 110, 0.1)', border: '1px solid rgba(180, 162, 110, 0.3)', borderRadius: 'var(--radius-sm)', color: 'var(--accent-gold)', fontSize: 13, lineHeight: 1.5, display: 'flex', alignItems: 'center' },
   infoBanner: { padding: '10px 14px', marginBottom: 20, background: 'rgba(180, 162, 110, 0.08)', border: '1px solid rgba(180, 162, 110, 0.2)', borderRadius: 'var(--radius-sm)', color: 'var(--text-secondary)', fontSize: 13, lineHeight: 1.5 },
   section: { marginBottom: 32 },

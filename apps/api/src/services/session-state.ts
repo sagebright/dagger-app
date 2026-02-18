@@ -170,10 +170,13 @@ export async function createSession(
   const deduction = await deductCredit(userId, session.id, title.trim());
   if (deduction.error || !deduction.data?.success) {
     // Rollback: delete the session row since credit deduction failed
-    await supabase
+    const { error: deleteError } = await supabase
       .from('sage_sessions')
       .delete()
       .eq('id', session.id);
+    if (deleteError) {
+      console.error(`[session-state] Failed to rollback session ${session.id}: ${deleteError.message}`);
+    }
     return {
       data: null,
       error: 'Insufficient credits. Purchase credits to start a new adventure.',

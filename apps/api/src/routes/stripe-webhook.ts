@@ -24,7 +24,7 @@ const router: RouterType = Router();
 
 interface CheckoutMetadata {
   userId: string;
-  credits: string;
+  credits: number;
 }
 
 // =============================================================================
@@ -56,7 +56,7 @@ function validateCheckoutMetadata(
 
   return {
     valid: true,
-    data: { userId: metadata.userId, credits: metadata.credits },
+    data: { userId: metadata.userId, credits },
   };
 }
 
@@ -133,11 +133,10 @@ router.post('/', async (req: Request, res: Response) => {
       return;
     }
 
-    const credits = parseInt(validation.data.credits, 10);
     const fulfillment = await fulfillCheckoutCredits(
       session.id,
       validation.data.userId,
-      credits
+      validation.data.credits
     );
 
     if (!fulfillment.success) {
@@ -146,6 +145,11 @@ router.post('/', async (req: Request, res: Response) => {
         .json({ error: `Credit fulfillment failed: ${fulfillment.error}` });
       return;
     }
+  }
+
+  // Log unhandled event types for debugging
+  if (event.type !== 'checkout.session.completed') {
+    console.warn(`[stripe-webhook] Unhandled event type: ${event.type}`);
   }
 
   // Acknowledge receipt for all events (including unhandled types)
