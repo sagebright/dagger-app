@@ -47,7 +47,7 @@ dagger-app/
 │   │   │   ├── hooks/          # Custom hooks (future: useAdventure, useMCPConnection)
 │   │   │   ├── services/       # API clients (future: mcpClient, supabaseClient)
 │   │   │   └── styles/         # Global CSS with Tailwind
-│   │   ├── vite.config.ts      # Vite config with proxy to bridge
+│   │   ├── vite.config.ts      # Vite config with proxy to API server
 │   │   └── tailwind.config.ts  # Fantasy theme colors
 │   │
 │   └── api/                    # Express API server (port 3001)
