@@ -29,6 +29,9 @@
     --accent-gold-border: rgba(215, 169, 100, 0.25);
     --accent-gold-glow: rgba(215, 169, 100, 0.15);
 
+    /* Error — antagonist red */
+    --accent-error: #db7e7e;
+
     /* Borders — nearly invisible structural lines */
     --border-subtle: rgba(255, 255, 255, 0.06);
     --border-medium: rgba(255, 255, 255, 0.10);

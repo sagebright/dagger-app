@@ -26,6 +26,17 @@ export const config = {
 
   /** Anthropic API key for direct SDK usage */
   anthropicApiKey: process.env.ANTHROPIC_API_KEY || '',
+
+  /** Stripe configuration for credit-based payment system */
+  stripe: {
+    secretKey: process.env.STRIPE_SECRET_KEY || '',
+    webhookSecret: process.env.STRIPE_WEBHOOK_SECRET || '',
+    prices: {
+      oneCredit: process.env.STRIPE_PRICE_1_CREDIT || '',
+      fiveCredits: process.env.STRIPE_PRICE_5_CREDITS || '',
+      fifteenCredits: process.env.STRIPE_PRICE_15_CREDITS || '',
+    },
+  },
 } as const;
 
 export type Config = typeof config;

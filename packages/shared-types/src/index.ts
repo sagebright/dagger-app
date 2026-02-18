@@ -35,6 +35,9 @@ export * from './sage-events.js';
 // Re-export adventure state types (Sage Codex state model)
 export * from './adventure-state.js';
 
+// Re-export credit system types (balances, transactions, packages)
+export * from './credits.js';
+
 /**
  * API health check response
  */

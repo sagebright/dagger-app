@@ -10,6 +10,7 @@
  */
 
 import { getSupabase } from './supabase.js';
+import { hasCredits, deductCredit } from './credits.js';
 import type { Stage } from '@dagger-app/shared-types';
 
 // =============================================================================
@@ -133,6 +134,15 @@ export async function createSession(
     };
   }
 
+  // Credit gate: verify user has at least one credit before creating
+  const userHasCredits = await hasCredits(userId);
+  if (!userHasCredits) {
+    return {
+      data: null,
+      error: 'Insufficient credits. Purchase credits to start a new adventure.',
+    };
+  }
+
   const supabase = getSupabase();
 
   // Create the session row
@@ -155,6 +165,23 @@ export async function createSession(
   }
 
   const session = sessionData as SageSession;
+
+  // Atomically deduct one credit for this session
+  const deduction = await deductCredit(userId, session.id, title.trim());
+  if (deduction.error || !deduction.data?.success) {
+    // Rollback: delete the session row since credit deduction failed
+    const { error: deleteError } = await supabase
+      .from('sage_sessions')
+      .delete()
+      .eq('id', session.id);
+    if (deleteError) {
+      console.error(`[session-state] Failed to rollback session ${session.id}: ${deleteError.message}`);
+    }
+    return {
+      data: null,
+      error: 'Insufficient credits. Purchase credits to start a new adventure.',
+    };
+  }
 
   // Create the adventure state row
   const { data: stateData, error: stateError } = await supabase

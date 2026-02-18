@@ -4,11 +4,14 @@
  * Provides a session picker UI: start new adventure or resume existing.
  * Loads session state from the server on page load.
  * Redirects to the main adventure view once a session is active.
+ * Displays credit balance in the header and handles 402 (insufficient credits)
+ * by showing a prompt to purchase credits.
  */
 
 import { useState, useEffect, useCallback, type FormEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useCreditStore } from '@/stores/creditStore';
 import { STAGES } from '@dagger-app/shared-types';
 import type { Stage } from '@dagger-app/shared-types';
 
@@ -46,7 +49,7 @@ async function apiFetch<T>(
   url: string,
   token: string,
   options: RequestInit = {}
-): Promise<{ data: T | null; error: string | null }> {
+): Promise<{ data: T | null; error: string | null; status: number }> {
   try {
     const response = await fetch(url, {
       headers: {
@@ -60,13 +63,17 @@ async function apiFetch<T>(
     const body = await response.json();
 
     if (!response.ok) {
-      return { data: null, error: body.error ?? `Request failed (${response.status})` };
+      return {
+        data: null,
+        error: body.error ?? `Request failed (${response.status})`,
+        status: response.status,
+      };
     }
 
-    return { data: body as T, error: null };
+    return { data: body as T, error: null, status: response.status };
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Network error';
-    return { data: null, error: message };
+    return { data: null, error: message, status: 0 };
   }
 }
 
@@ -91,14 +98,18 @@ function findStageLabel(stageId: Stage): string {
 // Component
 // =============================================================================
 
+const INSUFFICIENT_CREDITS_STATUS = 402;
+
 export function SessionPage() {
   const navigate = useNavigate();
   const { session: authSession, logout } = useAuth();
+  const { balance, fetchBalance } = useCreditStore();
 
   const [sessions, setSessions] = useState<SessionSummary[]>([]);
   const [activeSession, setActiveSession] = useState<SessionDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [needsCredits, setNeedsCredits] = useState(false);
   const [newTitle, setNewTitle] = useState('');
   const [isCreating, setIsCreating] = useState(false);
 
@@ -142,20 +153,28 @@ export function SessionPage() {
 
   useEffect(() => {
     loadSessions();
-  }, [loadSessions]);
+    if (token) fetchBalance(token);
+  }, [loadSessions, token, fetchBalance]);
 
-  /** Create a new session */
+  /** Create a new session (handles 402 for insufficient credits) */
   const handleCreate = async (event: FormEvent) => {
     event.preventDefault();
     if (!newTitle.trim() || isCreating) return;
 
     setIsCreating(true);
     setError(null);
+    setNeedsCredits(false);
 
     const result = await apiFetch<SessionDetail>('/api/session', token, {
       method: 'POST',
       body: JSON.stringify({ title: newTitle.trim() }),
     });
+
+    if (result.status === INSUFFICIENT_CREDITS_STATUS) {
+      setNeedsCredits(true);
+      setIsCreating(false);
+      return;
+    }
 
     if (result.error) {
       setError(result.error);
@@ -222,13 +241,21 @@ export function SessionPage() {
         <span className="font-serif" style={styles.brandName}>
           Sage Codex
         </span>
-        <button
-          onClick={logout}
-          style={styles.logoutButton}
-          type="button"
-        >
-          Sign Out
-        </button>
+        <div style={styles.headerActions}>
+          <span style={styles.creditBadge}>
+            {balance} {balance === 1 ? 'credit' : 'credits'}
+          </span>
+          <Link to="/settings" style={styles.navLink}>
+            Settings
+          </Link>
+          <button
+            onClick={logout}
+            style={styles.logoutButton}
+            type="button"
+          >
+            Sign Out
+          </button>
+        </div>
       </header>
 
       <div style={styles.content}>
@@ -236,6 +263,18 @@ export function SessionPage() {
         {error && (
           <div style={styles.errorBanner} role="alert">
             {error}
+          </div>
+        )}
+
+        {/* Insufficient Credits Prompt */}
+        {needsCredits && (
+          <div style={styles.creditPrompt} role="alert">
+            <p style={styles.creditPromptText}>
+              You need credits to start a new adventure.
+            </p>
+            <Link to="/settings" className="footer-button" style={styles.purchaseLink}>
+              Purchase Credits
+            </Link>
           </div>
         )}
 
@@ -342,9 +381,15 @@ const styles: Record<string, React.CSSProperties> = {
   card: { display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' },
   header: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 24px', borderBottom: '1px solid var(--border-subtle)' },
   brandName: { fontSize: 16, fontWeight: 600, color: 'var(--accent-gold)' },
+  headerActions: { display: 'flex', alignItems: 'center', gap: 16 },
+  creditBadge: { fontSize: 12, fontWeight: 600, color: 'var(--accent-gold)', background: 'rgba(180, 162, 110, 0.1)', border: '1px solid rgba(180, 162, 110, 0.2)', borderRadius: 'var(--radius-sm)', padding: '4px 10px' },
+  navLink: { color: 'var(--text-muted)', fontSize: 13, textDecoration: 'none', fontFamily: 'var(--font-sans)' },
   logoutButton: { background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: 13, cursor: 'pointer', fontFamily: 'var(--font-sans)', padding: '6px 12px' },
   content: { maxWidth: 560, margin: '0 auto', padding: '32px 24px' },
   errorBanner: { padding: '10px 14px', marginBottom: 20, background: 'rgba(219, 126, 126, 0.1)', border: '1px solid rgba(219, 126, 126, 0.3)', borderRadius: 'var(--radius-sm)', color: '#db7e7e', fontSize: 13, lineHeight: 1.5 },
+  creditPrompt: { padding: '20px', marginBottom: 20, background: 'rgba(180, 162, 110, 0.08)', border: '1px solid rgba(180, 162, 110, 0.2)', borderRadius: 'var(--radius-sm)', textAlign: 'center' as const },
+  creditPromptText: { fontSize: 14, color: 'var(--text-secondary)', margin: '0 0 12px 0' },
+  purchaseLink: { display: 'inline-block', textDecoration: 'none' },
   section: { marginBottom: 32 },
   sectionTitle: { fontFamily: 'var(--font-serif)', fontSize: 18, fontWeight: 600, color: 'var(--accent-gold)', marginBottom: 16, marginTop: 0 },
   activeCard: { padding: '20px' },

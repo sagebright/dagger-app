@@ -63,7 +63,11 @@ router.post('/', async (req: Request, res: Response) => {
   const result = await createSession(userId, title);
 
   if (result.error) {
-    const status = result.error.includes('already exists') ? 409 : 500;
+    const status = result.error.includes('already exists')
+      ? 409
+      : result.error.includes('Insufficient credits')
+        ? 402
+        : 500;
     res.status(status).json({ error: result.error });
     return;
   }

@@ -22,7 +22,14 @@ vi.mock('./supabase.js', () => ({
   getSupabase: vi.fn(),
 }));
 
+// Mock the credits service
+vi.mock('./credits.js', () => ({
+  hasCredits: vi.fn(),
+  deductCredit: vi.fn(),
+}));
+
 import { getSupabase } from './supabase.js';
+import { hasCredits, deductCredit } from './credits.js';
 
 // =============================================================================
 // Helpers
@@ -222,6 +229,13 @@ describe('createSession', () => {
       updated_at: '2026-01-01T00:00:00Z',
     };
 
+    // Credit gate: user has credits and deduction succeeds
+    vi.mocked(hasCredits).mockResolvedValue(true);
+    vi.mocked(deductCredit).mockResolvedValue({
+      data: { success: true, new_balance: 2, transaction_id: 'tx-1' },
+      error: null,
+    });
+
     let callCount = 0;
     const findChain = createChainableMock({ data: null, error: null });
     const insertSessionChain = createChainableMock({
@@ -246,6 +260,64 @@ describe('createSession', () => {
     expect(result.error).toBeNull();
     expect(result.data?.session).toEqual(newSession);
     expect(result.data?.adventureState).toEqual(newState);
+  });
+
+  it('returns error when user has no credits', async () => {
+    // No active session
+    const chain = createChainableMock({ data: null, error: null });
+    vi.mocked(getSupabase).mockReturnValue({
+      from: vi.fn().mockReturnValue(chain),
+    } as never);
+
+    // Credit gate: user has no credits
+    vi.mocked(hasCredits).mockResolvedValue(false);
+
+    const result = await createSession('user-1', 'New Adventure');
+    expect(result.data).toBeNull();
+    expect(result.error).toBe(
+      'Insufficient credits. Purchase credits to start a new adventure.'
+    );
+  });
+
+  it('rolls back session when credit deduction fails', async () => {
+    const newSession = {
+      id: 'session-new',
+      user_id: 'user-1',
+      title: 'New Adventure',
+      stage: 'invoking',
+      is_active: true,
+    };
+
+    // Credit gate: user appears to have credits
+    vi.mocked(hasCredits).mockResolvedValue(true);
+    // But deduction fails (race condition — someone else took the last credit)
+    vi.mocked(deductCredit).mockResolvedValue({
+      data: { success: false, error: 'insufficient_credits' },
+      error: null,
+    });
+
+    let callCount = 0;
+    const findChain = createChainableMock({ data: null, error: null });
+    const insertSessionChain = createChainableMock({
+      data: newSession,
+      error: null,
+    });
+    const deleteChain = createChainableMock({ data: null, error: null });
+
+    vi.mocked(getSupabase).mockReturnValue({
+      from: vi.fn().mockImplementation(() => {
+        callCount++;
+        if (callCount === 1) return findChain;
+        if (callCount === 2) return insertSessionChain;
+        return deleteChain;
+      }),
+    } as never);
+
+    const result = await createSession('user-1', 'New Adventure');
+    expect(result.data).toBeNull();
+    expect(result.error).toBe(
+      'Insufficient credits. Purchase credits to start a new adventure.'
+    );
   });
 });
 

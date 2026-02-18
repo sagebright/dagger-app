@@ -111,6 +111,21 @@ describe('POST /api/session', () => {
     expect(res.body.error).toContain('already exists');
   });
 
+  it('returns 402 when user has insufficient credits', async () => {
+    vi.mocked(createSession).mockResolvedValue({
+      data: null,
+      error: 'Insufficient credits. Purchase credits to start a new adventure.',
+    });
+
+    const app = createTestApp();
+    const res = await request(app)
+      .post('/api/session')
+      .send({ title: 'New Adventure' });
+
+    expect(res.status).toBe(402);
+    expect(res.body.error).toContain('Insufficient credits');
+  });
+
   it('returns 201 with session and state on success', async () => {
     const sessionData = {
       session: {

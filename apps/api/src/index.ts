@@ -20,6 +20,8 @@ import undoRouter from './routes/undo.js';
 import componentRouter from './routes/component.js';
 import frameRouter from './routes/frame.js';
 import sceneRouter from './routes/scene.js';
+import creditRouter from './routes/credits.js';
+import stripeWebhookRouter from './routes/stripe-webhook.js';
 import { requireAuth } from './middleware/auth.js';
 import { errorHandler } from './middleware/error-handler.js';
 import { sanitizeInput } from './middleware/validation.js';
@@ -46,6 +48,11 @@ const app: Express = express();
 // Middleware
 app.use(requestLogger());
 app.use(createCorsMiddleware());
+
+// Stripe webhook must be registered BEFORE express.json() —
+// signature verification requires the raw request body.
+app.use('/api/stripe/webhook', express.raw({ type: 'application/json' }), stripeWebhookRouter);
+
 app.use(express.json());
 app.use(sanitizeInput);
 
@@ -60,6 +67,7 @@ app.use('/api/section', generalRateLimit, requireAuth, undoRouter);
 app.use('/api/component', generalRateLimit, requireAuth, componentRouter);
 app.use('/api/frame', generalRateLimit, requireAuth, frameRouter);
 app.use('/api/scene', generalRateLimit, requireAuth, sceneRouter);
+app.use('/api/credits', generalRateLimit, requireAuth, creditRouter);
 
 // Error handling middleware (must be registered after all routes)
 app.use(errorHandler);
