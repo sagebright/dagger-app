@@ -15,12 +15,12 @@ import {
   PILLARS_CHOICES,
   CHORUS_CHOICES,
   THREADS_CHOICES,
-} from '@dagger-app/shared-types';
+} from '@sage-codex/shared-types';
 import type {
   ComponentId,
   SerializableComponentsState,
   ComponentChoice,
-} from '@dagger-app/shared-types';
+} from '@sage-codex/shared-types';
 
 // =============================================================================
 // Choice Lookup Map

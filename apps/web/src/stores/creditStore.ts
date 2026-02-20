@@ -15,7 +15,7 @@ import type {
   CreditBalanceResponse,
   CreditTransaction,
   CreditPackage,
-} from '@dagger-app/shared-types';
+} from '@sage-codex/shared-types';
 
 // =============================================================================
 // Types

@@ -16,7 +16,7 @@
 
 import { StageDropdown } from '@/components/layout/StageDropdown';
 import { StageFooter } from '@/components/layout/StageFooter';
-import type { AdventureSpark, BoundFrame, SceneArc } from '@dagger-app/shared-types';
+import type { AdventureSpark, BoundFrame, SceneArc } from '@sage-codex/shared-types';
 
 // =============================================================================
 // Types

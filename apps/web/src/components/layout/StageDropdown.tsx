@@ -12,8 +12,8 @@
  */
 
 import { useState, useRef, useEffect, useCallback, type KeyboardEvent } from 'react';
-import { STAGES } from '@dagger-app/shared-types';
-import type { Stage } from '@dagger-app/shared-types';
+import { STAGES } from '@sage-codex/shared-types';
+import type { Stage } from '@sage-codex/shared-types';
 
 // =============================================================================
 // Stage Descriptions (shown under each stage name)

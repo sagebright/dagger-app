@@ -90,6 +90,26 @@ export async function checkSupabaseHealth(): Promise<{
 }
 
 /**
+ * Create a fresh Supabase client for auth operations (signUp, signIn, signOut).
+ *
+ * Auth methods like signInWithPassword() set the session in memory,
+ * which changes the Authorization header on the client. Using the data
+ * singleton for these calls causes subsequent PostgREST queries to run
+ * as 'authenticated' instead of 'service_role', triggering RLS violations.
+ *
+ * This factory creates a disposable client per auth request to keep
+ * the data singleton clean.
+ */
+export function createSupabaseAuthClient(): SupabaseClient {
+  return createClient(getSupabaseUrl(), getSupabaseServiceRoleKey(), {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+    },
+  });
+}
+
+/**
  * Reset the client singleton (useful for testing or reconnection)
  */
 export function resetSupabaseClient(): void {

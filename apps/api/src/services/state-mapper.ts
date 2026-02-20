@@ -13,8 +13,8 @@ import { getSupabase } from './supabase.js';
 import type {
   AdventureState,
   SerializableComponentsState,
-} from '@dagger-app/shared-types';
-import type { Stage } from '@dagger-app/shared-types';
+} from '@sage-codex/shared-types';
+import type { Stage } from '@sage-codex/shared-types';
 
 // =============================================================================
 // Defaults

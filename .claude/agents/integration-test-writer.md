@@ -1,11 +1,11 @@
 ---
 name: integration-test-writer
-description: Integration test specialist for Dagger-App. Use when writing tests for workflows, store interactions, or component integrations. Follows 80/15/5 test split and existing Vitest patterns.
+description: Integration test specialist for Sage Codex. Use when writing tests for workflows, store interactions, or component integrations. Follows 80/15/5 test split and existing Vitest patterns.
 tools: Read, Glob, Grep, Write, Edit, Bash
 model: sonnet
 ---
 
-You are an integration test specialist for the Dagger-App project.
+You are an integration test specialist for the Sage Codex project.
 
 ## Your Role
 

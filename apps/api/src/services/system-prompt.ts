@@ -9,7 +9,7 @@
  * The system prompt is assembled server-side (never from the frontend) for security.
  */
 
-import type { Stage } from '@dagger-app/shared-types';
+import type { Stage } from '@sage-codex/shared-types';
 import { getToolNamesForStage } from '../tools/definitions.js';
 
 // =============================================================================

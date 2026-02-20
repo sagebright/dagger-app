@@ -10,7 +10,7 @@
  */
 
 import { memo, useState, useCallback } from 'react';
-import type { PortentCategoryData, PortentEntry } from '@dagger-app/shared-types';
+import type { PortentCategoryData, PortentEntry } from '@sage-codex/shared-types';
 
 // =============================================================================
 // Types

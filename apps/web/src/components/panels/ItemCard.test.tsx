@@ -12,7 +12,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
 import { ItemCard } from './ItemCard';
-import type { ItemCardData } from '@dagger-app/shared-types';
+import type { ItemCardData } from '@sage-codex/shared-types';
 
 const MOCK_WEAPON: ItemCardData = {
   id: 'item-1',

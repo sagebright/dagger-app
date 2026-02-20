@@ -13,7 +13,7 @@
 
 import { Router } from 'express';
 import type { Request, Response, Router as RouterType } from 'express';
-import { getSupabase } from '../services/supabase.js';
+import { createSupabaseAuthClient, getSupabase } from '../services/supabase.js';
 
 const router: RouterType = Router();
 
@@ -54,9 +54,9 @@ router.post('/signup', async (req: Request, res: Response) => {
     return;
   }
 
-  const supabase = getSupabase();
+  const authClient = createSupabaseAuthClient();
 
-  const { data, error } = await supabase.auth.signUp({
+  const { data, error } = await authClient.auth.signUp({
     email: email as string,
     password: password as string,
   });
@@ -87,9 +87,9 @@ router.post('/login', async (req: Request, res: Response) => {
     return;
   }
 
-  const supabase = getSupabase();
+  const authClient = createSupabaseAuthClient();
 
-  const { data, error } = await supabase.auth.signInWithPassword({
+  const { data, error } = await authClient.auth.signInWithPassword({
     email: email as string,
     password: password as string,
   });
@@ -111,9 +111,9 @@ router.post('/login', async (req: Request, res: Response) => {
  * Signs out the current user, invalidating their session.
  */
 router.post('/logout', async (_req: Request, res: Response) => {
-  const supabase = getSupabase();
+  const authClient = createSupabaseAuthClient();
 
-  const { error } = await supabase.auth.signOut();
+  const { error } = await authClient.auth.signOut();
 
   if (error) {
     res.status(500).json({ error: error.message });

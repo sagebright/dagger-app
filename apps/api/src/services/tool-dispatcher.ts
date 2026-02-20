@@ -10,7 +10,7 @@
  * (content generation, DB queries, etc.) come in later issues.
  */
 
-import type { SageEvent } from '@dagger-app/shared-types';
+import type { SageEvent } from '@sage-codex/shared-types';
 import type { CollectedToolUse } from './stream-parser.js';
 
 // =============================================================================

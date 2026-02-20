@@ -134,7 +134,7 @@ jobs:
             packages/shared-types/dist
             apps/*/dist
           key: build-artifacts-${{ github.sha }}
-      - run: pnpm --filter @dagger-app/${{ matrix.package }} test
+      - run: pnpm --filter @sage-codex/${{ matrix.package }} test
         env:
           NODE_ENV: test
 
@@ -163,9 +163,9 @@ jobs:
             apps/*/dist
           key: build-artifacts-${{ github.sha }}
       - name: Install Playwright browsers
-        run: pnpm --filter @dagger-app/web exec playwright install --with-deps chromium
+        run: pnpm --filter @sage-codex/web exec playwright install --with-deps chromium
       - name: Run E2E tests
-        run: pnpm --filter @dagger-app/web test:e2e
+        run: pnpm --filter @sage-codex/web test:e2e
         env:
           CI: true
       - name: Upload Playwright report

@@ -7,7 +7,7 @@
  */
 
 import { getSupabase } from './supabase.js';
-import type { SageMessage } from '@dagger-app/shared-types';
+import type { SageMessage } from '@sage-codex/shared-types';
 
 // =============================================================================
 // Types

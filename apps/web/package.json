@@ -1,5 +1,5 @@
 {
-  "name": "@dagger-app/web",
+  "name": "@sage-codex/web",
   "version": "0.0.1",
   "private": true,
   "type": "module",
@@ -16,7 +16,7 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
-    "@dagger-app/shared-types": "workspace:*",
+    "@sage-codex/shared-types": "workspace:*",
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",

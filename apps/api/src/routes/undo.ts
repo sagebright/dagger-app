@@ -14,7 +14,7 @@ import { Router } from 'express';
 import type { Request, Response, Router as RouterType } from 'express';
 import { getSupabase } from '../services/supabase.js';
 import { applyUndo } from '../services/version-history.js';
-import type { AdventureState, SectionPath } from '@dagger-app/shared-types';
+import type { AdventureState, SectionPath } from '@sage-codex/shared-types';
 
 // =============================================================================
 // Constants

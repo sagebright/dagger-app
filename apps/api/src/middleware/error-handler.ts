@@ -14,7 +14,7 @@
  */
 
 import type { Request, Response, NextFunction } from 'express';
-import type { SageEvent } from '@dagger-app/shared-types';
+import type { SageEvent } from '@sage-codex/shared-types';
 
 // =============================================================================
 // Error Types

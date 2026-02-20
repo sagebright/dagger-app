@@ -5,7 +5,7 @@ tools: Read, Glob, Grep, Bash
 model: sonnet
 ---
 
-You are a Daggerheart TTRPG content expert for the Dagger-App project.
+You are a Daggerheart TTRPG content expert for the Sage Codex project.
 
 ## Your Expertise
 

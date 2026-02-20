@@ -11,7 +11,7 @@
  */
 
 import { StageFooter } from '@/components/layout/StageFooter';
-import type { AdventureSpark } from '@dagger-app/shared-types';
+import type { AdventureSpark } from '@sage-codex/shared-types';
 
 // =============================================================================
 // Types

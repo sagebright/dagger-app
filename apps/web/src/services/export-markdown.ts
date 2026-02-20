@@ -19,7 +19,7 @@ import type {
   SceneArc,
   InscribedScene,
   SerializableComponentsState,
-} from '@dagger-app/shared-types';
+} from '@sage-codex/shared-types';
 
 // =============================================================================
 // Public API

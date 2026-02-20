@@ -11,8 +11,8 @@
 
 import { describe, it, expect } from 'vitest';
 import { serializeForLLM } from './state-serializer.js';
-import type { AdventureState } from '@dagger-app/shared-types';
-import { createEmptyAdventureState } from '@dagger-app/shared-types';
+import type { AdventureState } from '@sage-codex/shared-types';
+import { createEmptyAdventureState } from '@sage-codex/shared-types';
 
 // =============================================================================
 // Fixtures

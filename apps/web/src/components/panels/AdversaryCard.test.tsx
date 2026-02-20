@@ -14,7 +14,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi } from 'vitest';
 import { AdversaryCard } from './AdversaryCard';
-import type { AdversaryCardData } from '@dagger-app/shared-types';
+import type { AdversaryCardData } from '@sage-codex/shared-types';
 
 const MOCK_ADVERSARY: AdversaryCardData = {
   id: 'adv-1',

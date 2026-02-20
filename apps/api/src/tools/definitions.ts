@@ -9,8 +9,8 @@
  * the context-assembler to build the API request.
  */
 
-import type { ToolDefinition } from '@dagger-app/shared-types';
-import type { Stage } from '@dagger-app/shared-types';
+import type { ToolDefinition } from '@sage-codex/shared-types';
+import type { Stage } from '@sage-codex/shared-types';
 
 // =============================================================================
 // Universal Tools (available in all stages)

@@ -18,7 +18,7 @@ import { useAdventureStore } from '@/stores/adventureStore';
 import { AppShell } from '@/components/layout/AppShell';
 import { ChatPanel } from '@/components/chat/ChatPanel';
 import { SparkPanel } from '@/components/panels/SparkPanel';
-import type { AdventureSpark } from '@dagger-app/shared-types';
+import type { AdventureSpark } from '@sage-codex/shared-types';
 
 // =============================================================================
 // Types

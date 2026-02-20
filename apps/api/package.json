@@ -1,5 +1,5 @@
 {
-  "name": "@dagger-app/api",
+  "name": "@sage-codex/api",
   "version": "0.0.1",
   "private": true,
   "type": "module",
@@ -16,7 +16,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",
-    "@dagger-app/shared-types": "workspace:*",
+    "@sage-codex/shared-types": "workspace:*",
     "@supabase/supabase-js": "^2.91.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",

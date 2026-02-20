@@ -20,8 +20,8 @@ import {
   getVersionHistory,
   getVersionCount,
 } from './version-history.js';
-import { createEmptyAdventureState } from '@dagger-app/shared-types';
-import type { AdventureState, SectionPath } from '@dagger-app/shared-types';
+import { createEmptyAdventureState } from '@sage-codex/shared-types';
+import type { AdventureState, SectionPath } from '@sage-codex/shared-types';
 
 // =============================================================================
 // Helpers

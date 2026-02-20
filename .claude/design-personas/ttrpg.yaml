@@ -1,12 +1,12 @@
-# TTRPG Design Persona - Dagger-App Project Override
+# TTRPG Design Persona - Sage Codex Project Override
 # This file extends/overrides the global persona at ~/.claude/design-personas/ttrpg.yaml
 #
 # Override Mechanism:
 # - Values specified here take precedence over the global ttrpg.yaml
 # - Unspecified values inherit from the global persona
-# - Use this file for dagger-app-specific adjustments
+# - Use this file for sage-codex-specific adjustments
 #
-# Source: Patterns validated during Dagger-App Dial Tuning UI revision (issues #79-#91)
+# Source: Patterns validated during Sage Codex Dial Tuning UI revision (issues #79-#91)
 #
 # Validation Commits:
 # - 2b92916: UX polish for Dial Tuning UI (border-radius, badge sizing)
@@ -14,20 +14,20 @@
 # - d3ebb3f: Unify Theme chips with button styling (accessibility, focus rings)
 
 identity:
-  id: ttrpg-dagger-app
-  name: Modern Fantasy TTRPG (Dagger-App)
-  description: Dagger-App specific overrides for TTRPG persona
+  id: ttrpg-sage-codex
+  name: Modern Fantasy TTRPG (Sage Codex)
+  description: Sage Codex specific overrides for TTRPG persona
   version: "1.0.0"
   extends: "ttrpg"                # Indicates this overrides the global ttrpg persona
 
 # =============================================================================
 # PROJECT-SPECIFIC DEFAULTS
-# These values are validated through dagger-app implementation and may differ
+# These values are validated through sage-codex implementation and may differ
 # from the global defaults based on app-specific requirements.
 # =============================================================================
 
 project_context:
-  app_name: "Dagger-App"
+  app_name: "Sage Codex"
   purpose: "Daggerheart TTRPG adventure generation"
   primary_workflow: "Dial tuning via chat interface"
 

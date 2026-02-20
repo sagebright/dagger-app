@@ -16,7 +16,7 @@ import type {
   SageMessage,
   ToolDefinition,
   Stage,
-} from '@dagger-app/shared-types';
+} from '@sage-codex/shared-types';
 import type { AnthropicMessage, StreamOptions } from './anthropic.js';
 import { buildSystemPrompt } from './system-prompt.js';
 import { serializeForLLM } from './state-serializer.js';

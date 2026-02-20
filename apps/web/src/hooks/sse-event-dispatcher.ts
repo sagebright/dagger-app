@@ -32,7 +32,7 @@ import type {
   PanelEntityPortentsEvent,
   UIReadyEvent,
   SageErrorEvent,
-} from '@dagger-app/shared-types';
+} from '@sage-codex/shared-types';
 import type { SageStreamCallbacks } from './useSageStream';
 
 // =============================================================================

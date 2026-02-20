@@ -17,8 +17,8 @@ import type {
   InscribedScene,
   SerializableComponentsState,
   Stage,
-} from '@dagger-app/shared-types';
-import { createEmptyAdventureState } from '@dagger-app/shared-types';
+} from '@sage-codex/shared-types';
+import { createEmptyAdventureState } from '@sage-codex/shared-types';
 
 // =============================================================================
 // Store Interface

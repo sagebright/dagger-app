@@ -1,4 +1,4 @@
-# Dagger-App
+# Sage Codex
 
 A local web application for generating Daggerheart TTRPG adventures. Converts a CLI-based adventure generator into an interactive web interface with AI-powered content generation.
 
@@ -22,8 +22,8 @@ A local web application for generating Daggerheart TTRPG adventures. Converts a 
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/your-username/dagger-app.git
-   cd dagger-app
+   git clone https://github.com/sagebright/sage-codex.git
+   cd sage-codex
    ```
 
 2. Install dependencies:
@@ -104,7 +104,7 @@ curl http://localhost:3001/api/health
 ## Project Structure
 
 ```
-dagger-app/
+sage-codex/
 ├── apps/
 │   ├── web/                    # React frontend (port 5173)
 │   └── api/                    # Express API server (port 3001)

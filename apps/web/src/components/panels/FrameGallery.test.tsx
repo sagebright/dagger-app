@@ -6,7 +6,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi } from 'vitest';
 import { FrameGallery } from './FrameGallery';
-import type { FrameCardData } from '@dagger-app/shared-types';
+import type { FrameCardData } from '@sage-codex/shared-types';
 
 const MOCK_FRAMES: FrameCardData[] = [
   {

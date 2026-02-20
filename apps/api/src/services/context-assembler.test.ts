@@ -11,8 +11,8 @@
 
 import { describe, it, expect } from 'vitest';
 import { assembleAnthropicPayload } from './context-assembler.js';
-import { createEmptyAdventureState } from '@dagger-app/shared-types';
-import type { AdventureState, SageMessage } from '@dagger-app/shared-types';
+import { createEmptyAdventureState } from '@sage-codex/shared-types';
+import type { AdventureState, SageMessage } from '@sage-codex/shared-types';
 
 // =============================================================================
 // Fixtures

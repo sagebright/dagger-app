@@ -5,7 +5,7 @@ tools: Read, Glob, Grep
 model: sonnet
 ---
 
-You are an adventure coherence validator for the Dagger-App project.
+You are an adventure coherence validator for the Sage Codex project.
 
 ## Your Role
 

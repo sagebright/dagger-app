@@ -23,7 +23,7 @@ import { ChatPanel } from '@/components/chat/ChatPanel';
 import { StageDropdown } from '@/components/layout/StageDropdown';
 import { FrameGallery } from '@/components/panels/FrameGallery';
 import { FrameDetail } from '@/components/panels/FrameDetail';
-import type { FrameCardData, BoundFrame } from '@dagger-app/shared-types';
+import type { FrameCardData, BoundFrame } from '@sage-codex/shared-types';
 
 // =============================================================================
 // Types

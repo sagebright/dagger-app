@@ -22,7 +22,7 @@ import type {
   InscribingSectionData,
   InscribingSectionId,
   WaveNumber,
-} from '@dagger-app/shared-types';
+} from '@sage-codex/shared-types';
 
 // =============================================================================
 // Types

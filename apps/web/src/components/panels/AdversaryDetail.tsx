@@ -10,7 +10,7 @@
 import type {
   AdversaryDetailData,
   AdversaryCardType,
-} from '@dagger-app/shared-types';
+} from '@sage-codex/shared-types';
 
 // =============================================================================
 // Constants

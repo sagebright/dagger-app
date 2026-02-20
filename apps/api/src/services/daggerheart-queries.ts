@@ -22,7 +22,7 @@ import type {
   DaggerheartCommunity,
   DaggerheartLocation,
   DaggerheartNPC,
-} from '@dagger-app/shared-types';
+} from '@sage-codex/shared-types';
 
 /** Consistent error handling for query results */
 export type QueryResult<T> = {

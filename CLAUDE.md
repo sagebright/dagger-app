@@ -1,10 +1,10 @@
-# CLAUDE.md - Dagger-App
+# CLAUDE.md - Sage Codex
 
 This file provides context for Claude Code when working on this project.
 
 ## Project Overview
 
-Dagger-App is a local web application for generating Daggerheart TTRPG adventures. It converts a CLI-based adventure generator into a web interface, using Claude Code via MCP (Model Context Protocol) for AI-powered content generation.
+Sage Codex is a local web application for generating Daggerheart TTRPG adventures. It converts a CLI-based adventure generator into a web interface, using Claude Code via MCP (Model Context Protocol) for AI-powered content generation.
 
 **Key Goal:** Conversational "component tuning" - users configure 8 adventure components through a chat interface, then generate frames, scenes, NPCs, adversaries, items, and GM tools.
 
@@ -38,7 +38,7 @@ Dagger-App is a local web application for generating Daggerheart TTRPG adventure
 ## Project Structure
 
 ```
-dagger-app/
+sage-codex/
 ├── apps/
 │   ├── web/                    # React frontend (port 5173)
 │   │   ├── src/
@@ -78,7 +78,7 @@ dagger-app/
 Types in `packages/shared-types` are shared between frontend and backend:
 
 ```typescript
-import { DaggerheartFrame, DaggerheartAdversary } from '@dagger-app/shared-types';
+import { DaggerheartFrame, DaggerheartAdversary } from '@sage-codex/shared-types';
 ```
 
 ### Fantasy Theme Colors

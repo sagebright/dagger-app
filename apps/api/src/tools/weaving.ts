@@ -12,7 +12,7 @@
  */
 
 import { registerToolHandler } from '../services/tool-dispatcher.js';
-import type { SageEvent, SceneArcData } from '@dagger-app/shared-types';
+import type { SageEvent, SceneArcData } from '@sage-codex/shared-types';
 
 // =============================================================================
 // Types

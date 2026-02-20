@@ -1,5 +1,5 @@
 /**
- * Shared types for dagger-app
+ * Shared types for sage-codex
  *
  * This package contains TypeScript type definitions shared between
  * the web frontend and API backend.

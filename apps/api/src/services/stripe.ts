@@ -12,7 +12,7 @@
 import Stripe from 'stripe';
 import { config } from '../config.js';
 import { getSupabase } from './supabase.js';
-import { CREDIT_PACKAGES, type CreditPackage } from '@dagger-app/shared-types';
+import { CREDIT_PACKAGES, type CreditPackage } from '@sage-codex/shared-types';
 
 // =============================================================================
 // Types

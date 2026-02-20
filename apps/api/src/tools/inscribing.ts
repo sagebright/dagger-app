@@ -25,8 +25,8 @@ import type {
   AdversaryCardData,
   ItemCardData,
   PortentCategoryData,
-} from '@dagger-app/shared-types';
-import { SECTION_LABELS } from '@dagger-app/shared-types';
+} from '@sage-codex/shared-types';
+import { SECTION_LABELS } from '@sage-codex/shared-types';
 import { cacheSection } from '../services/section-cache.js';
 import { registerPropagationTools, drainPropagationEvents } from './inscribing-propagation.js';
 

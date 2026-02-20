@@ -1,7 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
 /**
- * Playwright E2E test configuration for dagger-app web frontend
+ * Playwright E2E test configuration for sage-codex web frontend
  *
  * E2E tests live in: apps/web/e2e/
  * Run with: pnpm --filter web test:e2e

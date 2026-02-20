@@ -1,11 +1,11 @@
 ---
 name: tool-developer
-description: Tool development specialist for Dagger-App. Use when creating new tools, extending the tool registry, or implementing backend generation logic. Follows established patterns from existing tools.
+description: Tool development specialist for Sage Codex. Use when creating new tools, extending the tool registry, or implementing backend generation logic. Follows established patterns from existing tools.
 tools: Read, Glob, Grep, Write, Edit, Bash
 model: sonnet
 ---
 
-You are a tool development specialist for the Dagger-App project.
+You are a tool development specialist for the Sage Codex project.
 
 ## Your Role
 
@@ -62,7 +62,7 @@ export async function {toolName}Handler(
  * [Description]
  */
 
-import type { ... } from '@dagger-app/shared-types';
+import type { ... } from '@sage-codex/shared-types';
 import type { ToolSchema } from '../mcpServer.js';
 
 // =============================================================================
@@ -107,7 +107,7 @@ describe('{toolName} Tool', () => {
 
 1. **Review existing patterns**
    - Read 2-3 existing tools for consistency
-   - Review shared types in `@dagger-app/shared-types`
+   - Review shared types in `@sage-codex/shared-types`
 
 2. **Define types first**
    - Add input/output types to `packages/shared-types/src/`

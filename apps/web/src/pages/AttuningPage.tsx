@@ -26,7 +26,7 @@ import type {
   ComponentId,
   PanelComponentEvent,
   SerializableComponentsState,
-} from '@dagger-app/shared-types';
+} from '@sage-codex/shared-types';
 
 // =============================================================================
 // Types

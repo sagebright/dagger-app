@@ -18,7 +18,7 @@ import type {
   InscribingSectionId,
   InscribingSectionData,
   WaveNumber,
-} from '@dagger-app/shared-types';
+} from '@sage-codex/shared-types';
 import { NPCCard } from './NPCCard';
 import { AdversaryCard } from './AdversaryCard';
 import { ItemCard } from './ItemCard';

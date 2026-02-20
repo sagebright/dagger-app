@@ -13,7 +13,7 @@
  *   empty   — wave has no content yet
  */
 
-import type { WaveNumber } from '@dagger-app/shared-types';
+import type { WaveNumber } from '@sage-codex/shared-types';
 
 // =============================================================================
 // Constants

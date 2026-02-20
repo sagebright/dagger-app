@@ -10,7 +10,7 @@
  * of what happens in the scene.
  */
 
-import type { SceneArcData } from '@dagger-app/shared-types';
+import type { SceneArcData } from '@sage-codex/shared-types';
 
 // =============================================================================
 // Types

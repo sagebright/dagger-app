@@ -11,7 +11,7 @@
 
 import { getSupabase } from './supabase.js';
 import { hasCredits, deductCredit } from './credits.js';
-import type { Stage } from '@dagger-app/shared-types';
+import type { Stage } from '@sage-codex/shared-types';
 
 // =============================================================================
 // Types

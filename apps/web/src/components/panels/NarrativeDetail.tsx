@@ -13,8 +13,8 @@
  */
 
 import { ReadAloudBlock } from './ReadAloudBlock';
-import type { InscribingSectionId } from '@dagger-app/shared-types';
-import { SECTION_LABELS } from '@dagger-app/shared-types';
+import type { InscribingSectionId } from '@sage-codex/shared-types';
+import { SECTION_LABELS } from '@sage-codex/shared-types';
 
 // =============================================================================
 // Types

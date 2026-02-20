@@ -16,12 +16,12 @@ import { StageFooter } from '@/components/layout/StageFooter';
 import {
   COMPONENT_GROUPS,
   COMPONENT_METADATA,
-} from '@dagger-app/shared-types';
+} from '@sage-codex/shared-types';
 import type {
   ComponentId,
   ComponentGroup,
   SerializableComponentsState,
-} from '@dagger-app/shared-types';
+} from '@sage-codex/shared-types';
 import { formatComponentValue } from './component-display';
 
 // =============================================================================

@@ -6,7 +6,7 @@
 
 import { Router } from 'express';
 import type { Request, Response, Router as RouterType } from 'express';
-import type { HealthResponse } from '@dagger-app/shared-types';
+import type { HealthResponse } from '@sage-codex/shared-types';
 import { checkSupabaseHealth } from '../services/supabase.js';
 
 const router: RouterType = Router();

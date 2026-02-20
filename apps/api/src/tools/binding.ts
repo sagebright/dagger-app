@@ -12,7 +12,7 @@
 import { registerToolHandler } from '../services/tool-dispatcher.js';
 import { getFrames } from '../services/daggerheart-queries.js';
 import { getSupabase } from '../services/supabase.js';
-import type { SageEvent, FrameCardData, FrameDetailSection } from '@dagger-app/shared-types';
+import type { SageEvent, FrameCardData, FrameDetailSection } from '@sage-codex/shared-types';
 
 // =============================================================================
 // Types

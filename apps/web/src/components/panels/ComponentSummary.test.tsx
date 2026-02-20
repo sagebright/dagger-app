@@ -12,7 +12,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi } from 'vitest';
 import { ComponentSummary } from './ComponentSummary';
-import type { SerializableComponentsState } from '@dagger-app/shared-types';
+import type { SerializableComponentsState } from '@sage-codex/shared-types';
 
 const EMPTY_COMPONENTS: SerializableComponentsState = {
   span: null,

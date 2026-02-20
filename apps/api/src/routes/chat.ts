@@ -18,7 +18,7 @@
 
 import { Router } from 'express';
 import type { Request, Response, Router as RouterType } from 'express';
-import type { SageEvent, SageChatRequest, ToolDefinition } from '@dagger-app/shared-types';
+import type { SageEvent, SageChatRequest, ToolDefinition } from '@sage-codex/shared-types';
 import { createStreamingMessage } from '../services/anthropic.js';
 import { parseAnthropicStream, type StreamEvent } from '../services/stream-parser.js';
 import { dispatchToolCalls } from '../services/tool-dispatcher.js';

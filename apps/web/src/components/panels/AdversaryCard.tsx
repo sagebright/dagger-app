@@ -8,7 +8,7 @@
  */
 
 import { memo } from 'react';
-import type { AdversaryCardData, AdversaryCardType } from '@dagger-app/shared-types';
+import type { AdversaryCardData, AdversaryCardType } from '@sage-codex/shared-types';
 
 // =============================================================================
 // Constants

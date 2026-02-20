@@ -361,4 +361,4 @@ Retry or check GitHub CLI configuration.
 
 ---
 
-**Version**: 1.0.0 (dagger-app)
+**Version**: 1.0.0 (sage-codex)

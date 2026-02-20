@@ -13,7 +13,7 @@
  * preserving recent conversational context.
  */
 
-import type { SageMessage } from '@dagger-app/shared-types';
+import type { SageMessage } from '@sage-codex/shared-types';
 import type { AnthropicMessage } from './anthropic.js';
 
 // =============================================================================

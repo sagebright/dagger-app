@@ -12,7 +12,7 @@
  */
 
 import Anthropic from '@anthropic-ai/sdk';
-import type { ToolDefinition } from '@dagger-app/shared-types';
+import type { ToolDefinition } from '@sage-codex/shared-types';
 
 // =============================================================================
 // Constants

@@ -154,7 +154,7 @@ Create two files:
 import type {
   {InputType},
   {OutputType},
-} from '@dagger-app/shared-types';
+} from '@sage-codex/shared-types';
 import type { ToolSchema } from '../mcpServer.js';
 
 // =============================================================================
@@ -212,7 +212,7 @@ import {
   {toolName}Handler,
   {UPPER_SNAKE_CASE}_SCHEMA,
 } from './{toolName}.js';
-import type { {InputType} } from '@dagger-app/shared-types';
+import type { {InputType} } from '@sage-codex/shared-types';
 
 // Test fixture factory
 const createDefaultInput = (): {InputType} => ({
@@ -246,7 +246,7 @@ describe('{toolName} Tool', () => {
 | Schema const | `{UPPER_SNAKE_CASE}_SCHEMA: ToolSchema` |
 | Handler function | `async {toolName}Handler(input): Promise<Output>` |
 | Section dividers | `// ====== Section Name ======` |
-| Imports | Types from `@dagger-app/shared-types`, `ToolSchema` from `../mcpServer.js` |
+| Imports | Types from `@sage-codex/shared-types`, `ToolSchema` from `../mcpServer.js` |
 | Test fixtures | `createDefault{Type}()` factory functions |
 
 ---

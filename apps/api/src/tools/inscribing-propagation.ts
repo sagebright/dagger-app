@@ -15,7 +15,7 @@ import { registerToolHandler } from '../services/tool-dispatcher.js';
 import type {
   SageEvent,
   InscribingSectionId,
-} from '@dagger-app/shared-types';
+} from '@sage-codex/shared-types';
 import {
   buildDeterministicPropagation,
   buildSemanticPropagationHint,

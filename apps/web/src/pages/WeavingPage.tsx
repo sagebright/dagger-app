@@ -26,7 +26,7 @@ import { SceneTabs } from '@/components/panels/SceneTabs';
 import { SceneArc } from '@/components/panels/SceneArc';
 import { AdventureNameBanner } from '@/components/panels/AdventureNameBanner';
 import { StageFooter } from '@/components/layout/StageFooter';
-import type { SceneArcData } from '@dagger-app/shared-types';
+import type { SceneArcData } from '@sage-codex/shared-types';
 
 // =============================================================================
 // Types
@@ -325,7 +325,7 @@ function WeavingPanel({
 /** Sync local scene arc data to the adventure store */
 function syncSceneArcsToStore(
   arcs: SceneArcData[],
-  setSceneArcs: (arcs: import('@dagger-app/shared-types').SceneArc[]) => void
+  setSceneArcs: (arcs: import('@sage-codex/shared-types').SceneArc[]) => void
 ): void {
   const storeArcs = arcs.map((arc) => ({
     id: arc.id,

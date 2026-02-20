@@ -3,7 +3,7 @@ import {
   COMPONENT_GROUPS,
   COMPONENT_METADATA,
   TENOR_CHOICES,
-} from '@dagger-app/shared-types';
+} from '@sage-codex/shared-types';
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (

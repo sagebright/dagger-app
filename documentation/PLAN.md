@@ -32,7 +32,7 @@ Convert the CLI-based Daggerheart TTRPG adventure generator into a local web app
 ## Project Structure
 
 ```
-dagger-app/
+sage-codex/
 ├── apps/
 │   ├── web/                    # React frontend
 │   │   ├── src/

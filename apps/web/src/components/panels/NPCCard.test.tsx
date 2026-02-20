@@ -13,7 +13,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi } from 'vitest';
 import { NPCCard } from './NPCCard';
-import type { NPCCardData } from '@dagger-app/shared-types';
+import type { NPCCardData } from '@sage-codex/shared-types';
 
 const MOCK_ENRICHED_NPC: NPCCardData = {
   id: 'npc-1',

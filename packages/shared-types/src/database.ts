@@ -1,7 +1,7 @@
 /**
  * Database types for Supabase Daggerheart tables
  *
- * Generated from Supabase schema and customized for dagger-app.
+ * Generated from Supabase schema and customized for sage-codex.
  * These types are shared between the API backend and web frontend.
  */
 

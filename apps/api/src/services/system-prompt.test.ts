@@ -10,7 +10,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { buildSystemPrompt, getBasePersona, getStageAugment } from './system-prompt.js';
-import type { Stage } from '@dagger-app/shared-types';
+import type { Stage } from '@sage-codex/shared-types';
 
 // =============================================================================
 // Tests

@@ -11,7 +11,7 @@
  */
 
 import { StageFooter } from '@/components/layout/StageFooter';
-import type { FrameCardData } from '@dagger-app/shared-types';
+import type { FrameCardData } from '@sage-codex/shared-types';
 
 // =============================================================================
 // Types

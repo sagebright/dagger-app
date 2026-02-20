@@ -734,4 +734,4 @@ If user aborts refinement: Leave issue unchanged, keep `refine` label, inform us
 
 ---
 
-**Version**: 1.0.0 (dagger-app)
+**Version**: 1.0.0 (sage-codex)

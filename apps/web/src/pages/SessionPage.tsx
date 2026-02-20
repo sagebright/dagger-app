@@ -15,8 +15,8 @@ import { useCreditStore } from '@/stores/creditStore';
 import { useAdventureStore } from '@/stores/adventureStore';
 import { useChatStore } from '@/stores/chatStore';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
-import { STAGES } from '@dagger-app/shared-types';
-import type { Stage, AdventureState, SerializableComponentsState, BoundFrame } from '@dagger-app/shared-types';
+import { STAGES } from '@sage-codex/shared-types';
+import type { Stage, AdventureState, SerializableComponentsState, BoundFrame } from '@sage-codex/shared-types';
 
 // =============================================================================
 // Types

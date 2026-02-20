@@ -22,8 +22,8 @@ import { BindingPage } from './BindingPage';
 import { WeavingPage } from './WeavingPage';
 import { InscribingPage } from './InscribingPage';
 import { DeliveringPage } from './DeliveringPage';
-import type { AdventureState, Stage } from '@dagger-app/shared-types';
-import { createEmptyAdventureState } from '@dagger-app/shared-types';
+import type { AdventureState, Stage } from '@sage-codex/shared-types';
+import { createEmptyAdventureState } from '@sage-codex/shared-types';
 
 // =============================================================================
 // Types

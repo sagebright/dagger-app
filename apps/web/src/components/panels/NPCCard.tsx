@@ -9,7 +9,7 @@
  */
 
 import { memo } from 'react';
-import type { NPCCardData, NPCCardRole } from '@dagger-app/shared-types';
+import type { NPCCardData, NPCCardRole } from '@sage-codex/shared-types';
 
 // =============================================================================
 // Constants

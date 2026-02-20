@@ -13,7 +13,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi } from 'vitest';
 import { ComponentChoice } from './ComponentChoice';
-import type { ComponentId } from '@dagger-app/shared-types';
+import type { ComponentId } from '@sage-codex/shared-types';
 
 describe('ComponentChoice', () => {
   it('renders the component name and question', () => {

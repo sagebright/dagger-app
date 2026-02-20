@@ -22,8 +22,8 @@ import type {
   SerializableComponentsState,
   AdventureSpark,
   BoundFrame,
-} from '@dagger-app/shared-types';
-import type { Stage } from '@dagger-app/shared-types';
+} from '@sage-codex/shared-types';
+import type { Stage } from '@sage-codex/shared-types';
 
 // =============================================================================
 // Types

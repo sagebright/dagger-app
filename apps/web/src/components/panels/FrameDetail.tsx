@@ -14,7 +14,7 @@
  */
 
 import { useState, useCallback } from 'react';
-import type { FrameCardData, FrameDetailSection } from '@dagger-app/shared-types';
+import type { FrameCardData, FrameDetailSection } from '@sage-codex/shared-types';
 
 // =============================================================================
 // Types

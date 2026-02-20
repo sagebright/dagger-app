@@ -8,7 +8,7 @@
  */
 
 import { memo } from 'react';
-import type { ItemCardData, ItemCardCategory } from '@dagger-app/shared-types';
+import type { ItemCardData, ItemCardCategory } from '@sage-codex/shared-types';
 
 // =============================================================================
 // Constants

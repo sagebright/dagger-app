@@ -8,7 +8,7 @@
  * Design reference: documentation/mockups/conjuring-immersive.html
  */
 
-import type { NPCDetailData, NPCCardRole } from '@dagger-app/shared-types';
+import type { NPCDetailData, NPCCardRole } from '@sage-codex/shared-types';
 
 // =============================================================================
 // Constants

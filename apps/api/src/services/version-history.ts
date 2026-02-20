@@ -13,7 +13,7 @@ import type {
   SectionPath,
   VersionEntry,
   InscribedSceneSection,
-} from '@dagger-app/shared-types';
+} from '@sage-codex/shared-types';
 
 // =============================================================================
 // Constants

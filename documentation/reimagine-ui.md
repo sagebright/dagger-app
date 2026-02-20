@@ -1,8 +1,8 @@
-# Reimagining the Dagger-App UI
+# Reimagining the Sage Codex UI
 
 ## The Problem
 
-The dagger-app web interface works functionally but feels utilitarian. The goal is to reach the level of immersion that Claude's desktop app achieves: an interface that disappears so the conversation becomes the experience.
+The Sage Codex web interface works functionally but feels utilitarian. The goal is to reach the level of immersion that Claude's desktop app achieves: an interface that disappears so the conversation becomes the experience.
 
 Specific issues identified:
 - Saturated purple backgrounds on every surface overwhelm the eye

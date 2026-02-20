@@ -12,7 +12,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { compressConversationHistory } from './conversation-history.js';
-import type { SageMessage } from '@dagger-app/shared-types';
+import type { SageMessage } from '@sage-codex/shared-types';
 
 // =============================================================================
 // Helpers

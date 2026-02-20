@@ -185,7 +185,7 @@ See "New Issues to Create" section below.
 ## Scope Clarification
 Create BOTH:
 1. Global persona: `~/.claude/design-personas/ttrpg.yaml`
-2. Project override: `.claude/design-personas/ttrpg.yaml` (in dagger-app repo)
+2. Project override: `.claude/design-personas/ttrpg.yaml` (in sage-codex repo)
 
 ## Dependencies
 - Depends on: All UI issues (#79-#83 replacements, #animations) - patterns validated through implementation

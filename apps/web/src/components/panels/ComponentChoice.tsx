@@ -20,11 +20,11 @@ import {
   PILLARS_CHOICES,
   CHORUS_CHOICES,
   THREADS_CHOICES,
-} from '@dagger-app/shared-types';
+} from '@sage-codex/shared-types';
 import type {
   ComponentId,
   ComponentChoice as ComponentChoiceType,
-} from '@dagger-app/shared-types';
+} from '@sage-codex/shared-types';
 
 // =============================================================================
 // Types

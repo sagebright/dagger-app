@@ -10,7 +10,7 @@
  * the scene and advances to the next.
  */
 
-import type { SceneArcData } from '@dagger-app/shared-types';
+import type { SceneArcData } from '@sage-codex/shared-types';
 
 // =============================================================================
 // Types

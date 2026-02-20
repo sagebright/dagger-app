@@ -12,7 +12,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect } from 'vitest';
 import { PortentCard } from './PortentCard';
-import type { PortentCategoryData } from '@dagger-app/shared-types';
+import type { PortentCategoryData } from '@sage-codex/shared-types';
 
 const MOCK_PORTENT_CATEGORY: PortentCategoryData = {
   category: 'items_clues',

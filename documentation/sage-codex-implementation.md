@@ -2,7 +2,7 @@
 
 ## What This Is
 
-This is a full reboot of the dagger-app (Sage Codex). The design is done — 6 completed HTML mockups, a comprehensive design system, and a full behavioral spec. The existing codebase was a functional prototype, but the vision has evolved significantly enough that we need to evaluate whether to salvage or start clean.
+This is a full reboot of Sage Codex. The design is done — 6 completed HTML mockups, a comprehensive design system, and a full behavioral spec. The existing codebase was a functional prototype, but the vision has evolved significantly enough that we need to evaluate whether to salvage or start clean.
 
 Your job is to build the reboot plan. Not to start coding.
 

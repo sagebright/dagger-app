@@ -15,13 +15,17 @@ BEGIN;
 
 -- =============================================================================
 -- RLS Policies: Grant service_role full access to all credit tables
+-- Idempotent: DROP IF EXISTS before CREATE
 -- =============================================================================
+DROP POLICY IF EXISTS "service_role_all" ON credit_balances;
 CREATE POLICY "service_role_all" ON credit_balances
   FOR ALL TO service_role USING (true) WITH CHECK (true);
 
+DROP POLICY IF EXISTS "service_role_all" ON credit_transactions;
 CREATE POLICY "service_role_all" ON credit_transactions
   FOR ALL TO service_role USING (true) WITH CHECK (true);
 
+DROP POLICY IF EXISTS "service_role_all" ON stripe_customers;
 CREATE POLICY "service_role_all" ON stripe_customers
   FOR ALL TO service_role USING (true) WITH CHECK (true);
 
