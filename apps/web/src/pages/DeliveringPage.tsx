@@ -31,13 +31,15 @@ import { buildAdventureZip } from '@/services/export-zip';
 export interface DeliveringPageProps {
   /** The active session ID */
   sessionId: string;
+  /** Called when the user navigates to a completed stage via StageDropdown */
+  onNavigate?: (stage: import('@sage-codex/shared-types').Stage) => void;
 }
 
 // =============================================================================
 // Component
 // =============================================================================
 
-export function DeliveringPage({ sessionId }: DeliveringPageProps) {
+export function DeliveringPage({ sessionId, onNavigate }: DeliveringPageProps) {
   const navigate = useNavigate();
   const { session: authSession } = useAuth();
   const accessToken = authSession?.access_token ?? '';
@@ -161,6 +163,7 @@ export function DeliveringPage({ sessionId }: DeliveringPageProps) {
           isReady={isReady || hasCompletedAdventure(adventure)}
           isDownloading={isDownloading}
           onDownload={handleDownload}
+          onNavigate={onNavigate}
         />
       }
     />

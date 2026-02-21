@@ -11,13 +11,22 @@ import express from 'express';
 import type { Request, Response, NextFunction } from 'express';
 import sessionRouter, { sessionsListRouter } from './session.js';
 
-// Mock the session-state service
-vi.mock('../services/session-state.js', () => ({
-  createSession: vi.fn(),
-  loadSession: vi.fn(),
-  listSessions: vi.fn(),
-  abandonSession: vi.fn(),
-  advanceStage: vi.fn(),
+// Mock the session-state service (preserve isValidStage from original)
+vi.mock('../services/session-state.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../services/session-state.js')>();
+  return {
+    ...actual,
+    createSession: vi.fn(),
+    loadSession: vi.fn(),
+    listSessions: vi.fn(),
+    abandonSession: vi.fn(),
+    advanceStage: vi.fn(),
+  };
+});
+
+// Mock the message-store service
+vi.mock('../services/message-store.js', () => ({
+  loadConversationHistory: vi.fn(),
 }));
 
 import {
@@ -27,6 +36,8 @@ import {
   abandonSession,
   advanceStage,
 } from '../services/session-state.js';
+
+import { loadConversationHistory } from '../services/message-store.js';
 
 // =============================================================================
 // Test App Setup
@@ -408,5 +419,155 @@ describe('POST /api/session/:id/advance', () => {
 
     expect(res.status).toBe(200);
     expect(res.body.stage).toBe('attuning');
+  });
+});
+
+// =============================================================================
+// GET /api/session/:id/messages
+// =============================================================================
+
+describe('GET /api/session/:id/messages', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('returns 401 when user is not authenticated', async () => {
+    const app = createUnauthenticatedApp();
+    const res = await request(app)
+      .get('/api/session/session-1/messages?stage=invoking');
+
+    expect(res.status).toBe(401);
+    expect(res.body.error).toBe('User not authenticated');
+  });
+
+  it('returns 400 when stage query param is missing', async () => {
+    const app = createTestApp();
+    const res = await request(app)
+      .get('/api/session/session-1/messages');
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toContain('stage');
+  });
+
+  it('returns 400 when stage query param is invalid', async () => {
+    const app = createTestApp();
+    const res = await request(app)
+      .get('/api/session/session-1/messages?stage=invalid');
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toContain('Invalid stage');
+  });
+
+  it('returns 404 when session not found or not owned by user', async () => {
+    vi.mocked(loadSession).mockResolvedValue({
+      data: null,
+      error: 'Session not found',
+    });
+
+    const app = createTestApp();
+    const res = await request(app)
+      .get('/api/session/nonexistent/messages?stage=invoking');
+
+    expect(res.status).toBe(404);
+    expect(res.body.error).toBe('Session not found');
+  });
+
+  it('returns messages filtered by stage on success', async () => {
+    // Mock session ownership check
+    vi.mocked(loadSession).mockResolvedValue({
+      data: {
+        session: {
+          id: 'session-1',
+          user_id: 'user-123',
+          title: 'My Adventure',
+          stage: 'binding',
+          is_active: true,
+        },
+        adventureState: {
+          id: 'state-1',
+          session_id: 'session-1',
+          components: {},
+          frame: null,
+          outline: null,
+          scenes: [],
+        },
+      } as never,
+      error: null,
+    });
+
+    // Mock messages for the requested stage
+    const mockMessages = [
+      {
+        id: 'msg-1',
+        session_id: 'session-1',
+        role: 'user',
+        content: 'Hello Sage',
+        stage: 'invoking',
+        metadata: null,
+        created_at: '2026-02-20T00:00:00Z',
+      },
+      {
+        id: 'msg-2',
+        session_id: 'session-1',
+        role: 'assistant',
+        content: 'Welcome, traveler.',
+        stage: 'invoking',
+        metadata: null,
+        created_at: '2026-02-20T00:00:01Z',
+      },
+    ];
+
+    vi.mocked(loadConversationHistory).mockResolvedValue({
+      data: mockMessages as never,
+      error: null,
+    });
+
+    const app = createTestApp();
+    const res = await request(app)
+      .get('/api/session/session-1/messages?stage=invoking');
+
+    expect(res.status).toBe(200);
+    expect(res.body.messages).toHaveLength(2);
+    expect(res.body.messages[0].content).toBe('Hello Sage');
+    expect(res.body.messages[1].role).toBe('assistant');
+
+    // Verify loadConversationHistory was called with correct stage filter
+    expect(loadConversationHistory).toHaveBeenCalledWith('session-1', { stage: 'invoking' });
+  });
+
+  it('returns 500 when message loading fails', async () => {
+    // Mock session ownership check
+    vi.mocked(loadSession).mockResolvedValue({
+      data: {
+        session: {
+          id: 'session-1',
+          user_id: 'user-123',
+          title: 'My Adventure',
+          stage: 'binding',
+          is_active: true,
+        },
+        adventureState: {
+          id: 'state-1',
+          session_id: 'session-1',
+          components: {},
+          frame: null,
+          outline: null,
+          scenes: [],
+        },
+      } as never,
+      error: null,
+    });
+
+    vi.mocked(loadConversationHistory).mockResolvedValue({
+      data: null,
+      error: 'Database error',
+    });
+
+    const app = createTestApp();
+    const res = await request(app)
+      .get('/api/session/session-1/messages?stage=invoking');
+
+    expect(res.status).toBe(500);
+    expect(res.body.error).toBe('Database error');
   });
 });

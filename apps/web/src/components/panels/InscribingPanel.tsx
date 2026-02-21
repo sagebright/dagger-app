@@ -56,6 +56,7 @@ export interface InscribingPanelProps {
   onDrillIn: (sectionId: InscribingSectionId) => void;
   onBackToScene: () => void;
   onFooterAction: () => void;
+  onNavigate?: (stage: import('@sage-codex/shared-types').Stage) => void;
 }
 
 // =============================================================================
@@ -78,6 +79,7 @@ export function InscribingPanel({
   onDrillIn,
   onBackToScene,
   onFooterAction,
+  onNavigate,
 }: InscribingPanelProps) {
   const detailSection = detailSectionId
     ? sceneState.sections.find((s) => s.id === detailSectionId)
@@ -90,7 +92,7 @@ export function InscribingPanel({
         className="flex-shrink-0 flex items-center justify-between"
         style={{ padding: '12px var(--panel-padding) 4px' }}
       >
-        <StageDropdown currentStage="inscribing" />
+        <StageDropdown currentStage="inscribing" onNavigate={onNavigate} />
         <WaveIndicator
           populatedWaves={populatedWaves}
           isWave3Dimmed={isWave3Dimmed}

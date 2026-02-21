@@ -43,6 +43,8 @@ import { WAVE_SECTIONS, SECTION_LABELS } from '@sage-codex/shared-types';
 export interface InscribingPageProps {
   /** The active session ID */
   sessionId: string;
+  /** Called when the user navigates to a completed stage via StageDropdown */
+  onNavigate?: (stage: import('@sage-codex/shared-types').Stage) => void;
 }
 
 // =============================================================================
@@ -161,7 +163,7 @@ function createEmptySceneState(): SceneInscriptionState {
 // Component
 // =============================================================================
 
-export function InscribingPage({ sessionId }: InscribingPageProps) {
+export function InscribingPage({ sessionId, onNavigate }: InscribingPageProps) {
   const navigate = useNavigate();
   const { session: authSession } = useAuth();
   const accessToken = authSession?.access_token ?? '';
@@ -489,6 +491,7 @@ export function InscribingPage({ sessionId }: InscribingPageProps) {
           onDrillIn={handleDrillIn}
           onBackToScene={handleBackToScene}
           onFooterAction={footerAction}
+          onNavigate={onNavigate}
         />
       }
     />

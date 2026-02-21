@@ -32,6 +32,8 @@ import type { FrameCardData, BoundFrame } from '@sage-codex/shared-types';
 export interface BindingPageProps {
   /** The active session ID */
   sessionId: string;
+  /** Called when the user navigates to a completed stage via StageDropdown */
+  onNavigate?: (stage: import('@sage-codex/shared-types').Stage) => void;
 }
 
 type PanelView = 'gallery' | 'detail';
@@ -40,7 +42,7 @@ type PanelView = 'gallery' | 'detail';
 // Component
 // =============================================================================
 
-export function BindingPage({ sessionId }: BindingPageProps) {
+export function BindingPage({ sessionId, onNavigate }: BindingPageProps) {
   const navigate = useNavigate();
   const { session: authSession } = useAuth();
   const accessToken = authSession?.access_token ?? '';
@@ -231,6 +233,7 @@ export function BindingPage({ sessionId }: BindingPageProps) {
           onSelectFrame={handleSelectFrame}
           onAdvance={handleAdvance}
           currentStage="binding"
+          onNavigate={onNavigate}
         />
       }
     />
@@ -252,6 +255,7 @@ interface BindingPanelProps {
   onSelectFrame: (frameId: string) => void;
   onAdvance: () => void;
   currentStage: 'binding';
+  onNavigate?: (stage: import('@sage-codex/shared-types').Stage) => void;
 }
 
 function BindingPanel({
@@ -265,6 +269,7 @@ function BindingPanel({
   onSelectFrame,
   onAdvance,
   currentStage,
+  onNavigate,
 }: BindingPanelProps) {
   const exploringFrame = frames.find((f) => f.id === exploringFrameId);
 
@@ -275,7 +280,7 @@ function BindingPanel({
         className="flex-shrink-0 flex items-center gap-3"
         style={{ padding: '12px var(--panel-padding) 4px' }}
       >
-        <StageDropdown currentStage={currentStage} />
+        <StageDropdown currentStage={currentStage} onNavigate={onNavigate} />
       </div>
 
       {/* Content area -- gallery or detail */}

@@ -35,13 +35,15 @@ import type { SceneArcData } from '@sage-codex/shared-types';
 export interface WeavingPageProps {
   /** The active session ID */
   sessionId: string;
+  /** Called when the user navigates to a completed stage via StageDropdown */
+  onNavigate?: (stage: import('@sage-codex/shared-types').Stage) => void;
 }
 
 // =============================================================================
 // Component
 // =============================================================================
 
-export function WeavingPage({ sessionId }: WeavingPageProps) {
+export function WeavingPage({ sessionId, onNavigate }: WeavingPageProps) {
   const navigate = useNavigate();
   const { session: authSession } = useAuth();
   const accessToken = authSession?.access_token ?? '';
@@ -252,6 +254,7 @@ export function WeavingPage({ sessionId }: WeavingPageProps) {
           onTabClick={handleTabClick}
           onApproveName={handleApproveName}
           onFooterAction={footerAction}
+          onNavigate={onNavigate}
         />
       }
     />
@@ -273,6 +276,7 @@ interface WeavingPanelProps {
   onTabClick: (index: number) => void;
   onApproveName: (name: string) => void;
   onFooterAction: () => void;
+  onNavigate?: (stage: import('@sage-codex/shared-types').Stage) => void;
 }
 
 function WeavingPanel({
@@ -286,6 +290,7 @@ function WeavingPanel({
   onTabClick,
   onApproveName,
   onFooterAction,
+  onNavigate,
 }: WeavingPanelProps) {
   const activeArc = sceneArcs[activeSceneIndex] ?? null;
 
@@ -296,7 +301,7 @@ function WeavingPanel({
         className="flex-shrink-0 flex items-center gap-3"
         style={{ padding: '12px var(--panel-padding) 4px' }}
       >
-        <StageDropdown currentStage="weaving" />
+        <StageDropdown currentStage="weaving" onNavigate={onNavigate} />
       </div>
 
       {/* Scene tabs */}
