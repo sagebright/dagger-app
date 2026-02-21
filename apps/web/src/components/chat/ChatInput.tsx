@@ -15,6 +15,7 @@ import {
   useState,
   useRef,
   useCallback,
+  useEffect,
   type KeyboardEvent,
   type FormEvent,
 } from 'react';
@@ -83,6 +84,13 @@ export function ChatInput({
     const maxHeight = 180;
     textarea.style.height = `${Math.min(textarea.scrollHeight, maxHeight)}px`;
   }, []);
+
+  // Restore focus when the textarea re-enables after streaming ends
+  useEffect(() => {
+    if (!isDisabled && textareaRef.current) {
+      textareaRef.current.focus();
+    }
+  }, [isDisabled]);
 
   const hasContent = value.trim().length > 0;
 

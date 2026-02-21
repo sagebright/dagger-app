@@ -24,14 +24,14 @@ describe('SparkPanel', () => {
       vision: 'A mystery in a haunted mansion',
     };
 
-    render(
+    const { container } = render(
       <SparkPanel spark={spark} isReady={false} onAdvance={vi.fn()} />
     );
 
-    expect(screen.getByText('The Hollow Vigil')).toBeInTheDocument();
-    expect(
-      screen.getByText('A mystery in a haunted mansion')
-    ).toBeInTheDocument();
+    // RevealText splits text into individual word spans for animation;
+    // use toHaveTextContent which checks across child elements
+    expect(container).toHaveTextContent('The Hollow Vigil');
+    expect(container).toHaveTextContent('A mystery in a haunted mansion');
   });
 
   it('renders disabled Continue button when not ready', () => {

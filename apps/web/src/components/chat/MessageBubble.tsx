@@ -53,6 +53,30 @@ export const MessageBubble = memo(function MessageBubble({
   }
 
   // Assistant (Sage) message
+
+  // Hide completed messages with no text content (tool-only turns)
+  if (!isStreaming && content.trim() === '') {
+    return null;
+  }
+
+  // Show thinking dots when streaming but no text has arrived yet (tool execution)
+  if (isStreaming && content === '') {
+    return (
+      <div
+        className="flex items-center gap-2 self-start animate-message-appear"
+        role="status"
+        aria-label="Sage is working"
+      >
+        <span className="sage-label">Sage</span>
+        <div className="thinking-dots">
+          <div className="thinking-dot" />
+          <div className="thinking-dot" />
+          <div className="thinking-dot" />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       className="max-w-[88%] self-start animate-message-appear"

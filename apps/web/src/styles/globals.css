@@ -1667,6 +1667,27 @@
   }
 }
 
+@keyframes word-reveal {
+  0% {
+    opacity: 0;
+    text-shadow: 0 0 12px var(--accent-gold-glow);
+  }
+  60% {
+    opacity: 1;
+    text-shadow: 0 0 8px var(--accent-gold-glow);
+  }
+  100% {
+    opacity: 1;
+    text-shadow: none;
+  }
+}
+
+/* Word reveal — used by RevealText component for spark inscription effect */
+.word-reveal {
+  opacity: 0;
+  animation: word-reveal 0.4s ease-out forwards;
+}
+
 /* =============================================================================
  * Accessibility — Reduced Motion
  * ============================================================================= */

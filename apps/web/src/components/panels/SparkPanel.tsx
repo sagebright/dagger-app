@@ -11,6 +11,7 @@
  */
 
 import { StageFooter } from '@/components/layout/StageFooter';
+import { RevealText } from '@/components/ui/RevealText';
 import type { AdventureSpark } from '@sage-codex/shared-types';
 
 // =============================================================================
@@ -116,8 +117,12 @@ function SparkPlaceholder() {
 }
 
 function SparkContent({ spark }: { spark: AdventureSpark }) {
+  // Key on content so React remounts on spark updates, restarting CSS animations
+  const animationKey = `${spark.name}::${spark.vision}`;
+
   return (
     <div
+      key={animationKey}
       className="detail-card detail-card--gold"
       style={{ padding: '16px 20px' }}
     >
@@ -125,13 +130,13 @@ function SparkContent({ spark }: { spark: AdventureSpark }) {
         className="font-serif text-[16px] font-semibold mb-2"
         style={{ color: 'var(--accent-gold)' }}
       >
-        {spark.name}
+        <RevealText text={spark.name} />
       </div>
       <div
         className="font-serif text-[14px] leading-[1.65]"
         style={{ color: 'var(--text-primary)' }}
       >
-        {spark.vision}
+        <RevealText text={spark.vision} />
       </div>
     </div>
   );
