@@ -23,7 +23,9 @@ import {
   advanceStage,
   completeSession,
   resumeSession,
+  isValidStage,
 } from '../services/session-state.js';
+import { loadConversationHistory } from '../services/message-store.js';
 
 const router: RouterType = Router();
 
@@ -96,6 +98,48 @@ router.get('/:id', async (req: Request, res: Response) => {
   }
 
   res.json(result.data);
+});
+
+/**
+ * GET /api/session/:id/messages
+ *
+ * Fetch messages for a session filtered by stage.
+ * Requires `?stage=invoking` query parameter.
+ * Used for read-only stage review (viewing past stage conversations).
+ */
+router.get('/:id/messages', async (req: Request, res: Response) => {
+  const userId = req.user?.id;
+  if (!userId) {
+    res.status(401).json({ error: 'User not authenticated' });
+    return;
+  }
+
+  const stage = req.query.stage as string | undefined;
+  if (!stage) {
+    res.status(400).json({ error: 'The stage query parameter is required' });
+    return;
+  }
+
+  if (!isValidStage(stage)) {
+    res.status(400).json({ error: `Invalid stage: ${stage}` });
+    return;
+  }
+
+  // Verify session ownership
+  const sessionResult = await loadSession(extractParamId(req), userId);
+  if (sessionResult.error) {
+    res.status(404).json({ error: sessionResult.error });
+    return;
+  }
+
+  // Load messages for the requested stage
+  const messagesResult = await loadConversationHistory(extractParamId(req), { stage });
+  if (messagesResult.error) {
+    res.status(500).json({ error: messagesResult.error });
+    return;
+  }
+
+  res.json({ messages: messagesResult.data ?? [] });
 });
 
 /**

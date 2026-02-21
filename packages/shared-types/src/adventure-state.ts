@@ -258,6 +258,9 @@ export interface AdventureState {
 
   /** Adventure name (may differ from spark.name after refinement) */
   adventureName: string | null;
+
+  /** Stage summaries for cross-stage LLM context (stage -> summary text) */
+  stageSummaries?: Record<string, string>;
 }
 
 // =============================================================================
@@ -288,6 +291,19 @@ export function createEmptyAdventureState(): AdventureState {
     inscribedScenes: [],
     versionHistory: {},
     adventureName: null,
+  };
+}
+
+/** Merge a partial server state with safe defaults (handles missing/undefined sub-keys) */
+export function mergeWithDefaults(partial: Partial<AdventureState>): AdventureState {
+  const defaults = createEmptyAdventureState();
+  return {
+    ...defaults,
+    ...partial,
+    components: { ...defaults.components, ...(partial.components ?? {}) },
+    sceneArcs: partial.sceneArcs ?? defaults.sceneArcs,
+    inscribedScenes: partial.inscribedScenes ?? defaults.inscribedScenes,
+    versionHistory: partial.versionHistory ?? defaults.versionHistory,
   };
 }
 

@@ -12,7 +12,8 @@
  * to the chatStore, adventureStore, and local component state.
  */
 
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback } from 'react';
+import { useSageGreeting } from '@/hooks/useSageGreeting';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useSageStream } from '@/hooks/useSageStream';
@@ -20,6 +21,7 @@ import { useChatStore } from '@/stores/chatStore';
 import { useAdventureStore } from '@/stores/adventureStore';
 import { AppShell } from '@/components/layout/AppShell';
 import { ChatPanel } from '@/components/chat/ChatPanel';
+import { StageDropdown } from '@/components/layout/StageDropdown';
 import { ComponentSummary } from '@/components/panels/ComponentSummary';
 import { ComponentChoice } from '@/components/panels/ComponentChoice';
 import type {
@@ -35,6 +37,8 @@ import type {
 export interface AttuningPageProps {
   /** The active session ID */
   sessionId: string;
+  /** Called when the user navigates to a completed stage via StageDropdown */
+  onNavigate?: (stage: import('@sage-codex/shared-types').Stage) => void;
 }
 
 type PanelView = 'summary' | 'choice';
@@ -43,7 +47,7 @@ type PanelView = 'summary' | 'choice';
 // Component
 // =============================================================================
 
-export function AttuningPage({ sessionId }: AttuningPageProps) {
+export function AttuningPage({ sessionId, onNavigate }: AttuningPageProps) {
   const navigate = useNavigate();
   const { session: authSession } = useAuth();
   const accessToken = authSession?.access_token ?? '';
@@ -107,15 +111,7 @@ export function AttuningPage({ sessionId }: AttuningPageProps) {
     },
   });
 
-  // Request Sage greeting on mount (if no messages yet)
-  const hasGreeted = useRef(false);
-  useEffect(() => {
-    if (messages.length === 0 && !hasGreeted.current) {
-      hasGreeted.current = true;
-      setIsThinking(true);
-      requestGreeting();
-    }
-  }, [messages.length, requestGreeting]);
+  useSageGreeting(messages.length, requestGreeting, setIsThinking);
 
   /** Apply a component update from the set_component tool */
   const applyComponentUpdate = useCallback(
@@ -218,7 +214,7 @@ export function AttuningPage({ sessionId }: AttuningPageProps) {
   }, [navigate]);
 
   // Check if all 8 are confirmed
-  const allConfirmed = components.confirmedComponents.length >= 8;
+  const allConfirmed = (components?.confirmedComponents?.length ?? 0) >= 8;
 
   return (
     <AppShell
@@ -243,6 +239,7 @@ export function AttuningPage({ sessionId }: AttuningPageProps) {
           onConfirmComponent={handleConfirmComponent}
           onBack={handleBackToSummary}
           onAdvance={handleAdvance}
+          onNavigate={onNavigate}
         />
       }
     />
@@ -262,6 +259,7 @@ interface AttuningPanelProps {
   onConfirmComponent: (componentId: ComponentId, value: string | number | string[]) => void;
   onBack: () => void;
   onAdvance: () => void;
+  onNavigate?: (stage: import('@sage-codex/shared-types').Stage) => void;
 }
 
 function AttuningPanel({
@@ -273,26 +271,35 @@ function AttuningPanel({
   onConfirmComponent,
   onBack,
   onAdvance,
+  onNavigate,
 }: AttuningPanelProps) {
-  if (panelView === 'choice' && activeComponentId) {
-    const currentValue = getComponentValue(components, activeComponentId);
-    return (
-      <ComponentChoice
-        componentId={activeComponentId}
-        currentValue={currentValue}
-        onConfirm={onConfirmComponent}
-        onBack={onBack}
-      />
-    );
-  }
-
   return (
-    <ComponentSummary
-      components={components}
-      onSelectComponent={onSelectComponent}
-      onAdvance={onAdvance}
-      isReady={isReady}
-    />
+    <div className="flex flex-col min-h-0 h-full">
+      {/* Panel header with stage dropdown */}
+      <div
+        className="flex-shrink-0 flex items-center gap-3"
+        style={{ padding: '12px var(--panel-padding) 4px' }}
+      >
+        <StageDropdown currentStage="attuning" onNavigate={onNavigate} />
+      </div>
+
+      {/* Content area */}
+      {panelView === 'choice' && activeComponentId ? (
+        <ComponentChoice
+          componentId={activeComponentId}
+          currentValue={getComponentValue(components, activeComponentId)}
+          onConfirm={onConfirmComponent}
+          onBack={onBack}
+        />
+      ) : (
+        <ComponentSummary
+          components={components}
+          onSelectComponent={onSelectComponent}
+          onAdvance={onAdvance}
+          isReady={isReady}
+        />
+      )}
+    </div>
   );
 }
 

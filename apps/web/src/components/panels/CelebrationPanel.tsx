@@ -37,6 +37,8 @@ export interface CelebrationPanelProps {
   isDownloading: boolean;
   /** Called when the download button is clicked */
   onDownload: () => void;
+  /** Called when the user navigates to a completed stage via StageDropdown */
+  onNavigate?: (stage: import('@sage-codex/shared-types').Stage) => void;
 }
 
 // =============================================================================
@@ -64,6 +66,7 @@ export function CelebrationPanel({
   isReady,
   isDownloading,
   onDownload,
+  onNavigate,
 }: CelebrationPanelProps) {
   const incitingIncident = deriveIncitingIncident(sceneArcs);
   const downloadLabel = isDownloading
@@ -77,7 +80,7 @@ export function CelebrationPanel({
         className="flex-shrink-0 flex items-center gap-3"
         style={{ padding: '12px var(--panel-padding) 4px' }}
       >
-        <StageDropdown currentStage="delivering" />
+        <StageDropdown currentStage="delivering" onNavigate={onNavigate} />
       </div>
 
       {/* Scrollable celebration content */}

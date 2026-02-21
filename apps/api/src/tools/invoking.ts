@@ -141,7 +141,7 @@ async function handleSetSpark(
  */
 async function handleSignalReady(
   input: Record<string, unknown>,
-  _context: ToolContext
+  context: ToolContext
 ): Promise<{ result: unknown; isError: boolean }> {
   const readyInput = input as unknown as SignalReadyInput;
 
@@ -154,6 +154,20 @@ async function handleSignalReady(
 
   // Queue the ui:ready event for the frontend
   pendingEvents.push(buildReadyEvent(readyInput));
+
+  // Persist stage summary for cross-stage context (best effort)
+  if (readyInput.summary) {
+    try {
+      await persistStageSummary(
+        context.sessionId,
+        readyInput.stage,
+        readyInput.summary
+      );
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      console.warn(`Failed to persist stage summary: ${message}`);
+    }
+  }
 
   return {
     result: {
@@ -168,6 +182,52 @@ async function handleSignalReady(
 // =============================================================================
 // Persistence
 // =============================================================================
+
+/**
+ * Persist a stage summary to the adventure state in Supabase.
+ *
+ * Reads the current state JSONB, merges the summary into
+ * `stageSummaries[stage]`, and writes back. Best-effort — failures
+ * are logged but don't block the tool call.
+ */
+async function persistStageSummary(
+  sessionId: string,
+  stage: string,
+  summary: string
+): Promise<void> {
+  const supabase = getSupabase();
+
+  const { data: stateRow, error: fetchError } = await supabase
+    .from('sage_adventure_state')
+    .select('id, state')
+    .eq('session_id', sessionId)
+    .single();
+
+  if (fetchError || !stateRow) {
+    console.warn(`Adventure state not found for session ${sessionId}`);
+    return;
+  }
+
+  const currentState = (stateRow.state as Record<string, unknown>) ?? {};
+  const existingSummaries =
+    (currentState.stageSummaries as Record<string, string>) ?? {};
+
+  const updatedState = {
+    ...currentState,
+    stageSummaries: { ...existingSummaries, [stage]: summary },
+  };
+
+  const { error: updateError } = await supabase
+    .from('sage_adventure_state')
+    .update({ state: updatedState })
+    .eq('id', stateRow.id);
+
+  if (updateError) {
+    console.warn(
+      `Failed to persist stage summary for ${stage}: ${updateError.message}`
+    );
+  }
+}
 
 /**
  * Persist the spark data to the adventure state in Supabase.

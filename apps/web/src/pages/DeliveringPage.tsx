@@ -12,7 +12,8 @@
  * tool marks the session as completed on the server.
  */
 
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback } from 'react';
+import { useSageGreeting } from '@/hooks/useSageGreeting';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useSageStream } from '@/hooks/useSageStream';
@@ -31,13 +32,15 @@ import { buildAdventureZip } from '@/services/export-zip';
 export interface DeliveringPageProps {
   /** The active session ID */
   sessionId: string;
+  /** Called when the user navigates to a completed stage via StageDropdown */
+  onNavigate?: (stage: import('@sage-codex/shared-types').Stage) => void;
 }
 
 // =============================================================================
 // Component
 // =============================================================================
 
-export function DeliveringPage({ sessionId }: DeliveringPageProps) {
+export function DeliveringPage({ sessionId, onNavigate }: DeliveringPageProps) {
   const navigate = useNavigate();
   const { session: authSession } = useAuth();
   const accessToken = authSession?.access_token ?? '';
@@ -95,15 +98,7 @@ export function DeliveringPage({ sessionId }: DeliveringPageProps) {
     },
   });
 
-  // Request Sage greeting on mount (if no messages yet)
-  const hasGreeted = useRef(false);
-  useEffect(() => {
-    if (messages.length === 0 && !hasGreeted.current) {
-      hasGreeted.current = true;
-      setIsThinking(true);
-      requestGreeting();
-    }
-  }, [messages.length, requestGreeting]);
+  useSageGreeting(messages.length, requestGreeting, setIsThinking);
 
   // Send message handler
   const handleSendMessage = useCallback(
@@ -161,6 +156,7 @@ export function DeliveringPage({ sessionId }: DeliveringPageProps) {
           isReady={isReady || hasCompletedAdventure(adventure)}
           isDownloading={isDownloading}
           onDownload={handleDownload}
+          onNavigate={onNavigate}
         />
       }
     />

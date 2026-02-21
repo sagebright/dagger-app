@@ -28,6 +28,7 @@ function createSageMessage(
     session_id: 'session-1',
     role,
     content,
+    stage: 'invoking',
     tool_calls: null,
     token_count: null,
     created_at: new Date(Date.now() - (100 - index) * 60000).toISOString(),

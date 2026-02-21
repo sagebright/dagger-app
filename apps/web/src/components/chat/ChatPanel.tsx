@@ -30,6 +30,10 @@ export interface ChatPanelProps {
   onSendMessage: (message: string) => void;
   /** Placeholder text for the input */
   inputPlaceholder?: string;
+  /** When true, hides the input and shows a read-only indicator */
+  isReadOnly?: boolean;
+  /** Label shown in the read-only indicator (e.g., "Invoking") */
+  readOnlyStageLabel?: string;
 }
 
 // =============================================================================
@@ -42,6 +46,8 @@ export function ChatPanel({
   isThinking,
   onSendMessage,
   inputPlaceholder,
+  isReadOnly = false,
+  readOnlyStageLabel,
 }: ChatPanelProps) {
   const messageAreaRef = useRef<HTMLDivElement>(null);
 
@@ -74,12 +80,57 @@ export function ChatPanel({
         </div>
       </div>
 
-      {/* Pinned input area */}
-      <ChatInput
-        onSubmit={onSendMessage}
-        isDisabled={isStreaming || isThinking}
-        placeholder={inputPlaceholder}
-      />
+      {/* Pinned input area or read-only indicator */}
+      {isReadOnly ? (
+        <ReadOnlyIndicator stageLabel={readOnlyStageLabel} />
+      ) : (
+        <ChatInput
+          onSubmit={onSendMessage}
+          isDisabled={isStreaming || isThinking}
+          placeholder={inputPlaceholder}
+        />
+      )}
+    </div>
+  );
+}
+
+// =============================================================================
+// Sub-components
+// =============================================================================
+
+interface ReadOnlyIndicatorProps {
+  stageLabel?: string;
+}
+
+function ReadOnlyIndicator({ stageLabel }: ReadOnlyIndicatorProps) {
+  const label = stageLabel ? `Viewing ${stageLabel}` : 'Read-only';
+
+  return (
+    <div
+      className="input-area flex items-center justify-center"
+      role="status"
+      aria-label={`${label} - read-only`}
+    >
+      <div
+        className="flex items-center gap-2 text-[13px] py-3"
+        style={{ color: 'var(--text-muted)' }}
+      >
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+          <circle cx="12" cy="12" r="3" />
+        </svg>
+        <span>{label}</span>
+      </div>
     </div>
   );
 }

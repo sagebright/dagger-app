@@ -124,6 +124,35 @@ router.post('/logout', async (_req: Request, res: Response) => {
 });
 
 /**
+ * POST /api/auth/refresh
+ *
+ * Exchanges a refresh token for a new access/refresh token pair.
+ * Returns the user object and new session tokens on success.
+ */
+router.post('/refresh', async (req: Request, res: Response) => {
+  const { refresh_token } = req.body;
+
+  if (!refresh_token) {
+    res.status(400).json({ error: 'Refresh token is required' });
+    return;
+  }
+
+  const authClient = createSupabaseAuthClient();
+
+  const { data, error } = await authClient.auth.refreshSession({ refresh_token });
+
+  if (error || !data.session) {
+    res.status(401).json({ error: error?.message ?? 'Failed to refresh session' });
+    return;
+  }
+
+  res.json({
+    user: data.user,
+    session: data.session,
+  });
+});
+
+/**
  * GET /api/auth/session
  *
  * Verifies the current session by validating the Bearer token.

@@ -53,13 +53,14 @@ describe('storeMessage', () => {
     vi.clearAllMocks();
   });
 
-  it('should insert a user message', async () => {
+  it('should insert a user message with stage', async () => {
     resetChainMocks({
       data: {
         id: 'msg-001',
         session_id: 'session-001',
         role: 'user',
         content: 'Hello',
+        stage: 'invoking',
         tool_calls: null,
         token_count: null,
         created_at: '2025-01-01T00:00:00Z',
@@ -71,6 +72,7 @@ describe('storeMessage', () => {
       sessionId: 'session-001',
       role: 'user',
       content: 'Hello',
+      stage: 'invoking',
     });
 
     expect(result.error).toBeNull();
@@ -78,13 +80,14 @@ describe('storeMessage', () => {
     expect(mockFrom).toHaveBeenCalledWith('sage_messages');
   });
 
-  it('should insert an assistant message with tool_calls', async () => {
+  it('should insert an assistant message with tool_calls and stage', async () => {
     resetChainMocks({
       data: {
         id: 'msg-002',
         session_id: 'session-001',
         role: 'assistant',
         content: 'Response',
+        stage: 'attuning',
         tool_calls: [{ id: 't1', name: 'echo' }],
         token_count: 150,
         created_at: '2025-01-01T00:00:00Z',
@@ -96,6 +99,7 @@ describe('storeMessage', () => {
       sessionId: 'session-001',
       role: 'assistant',
       content: 'Response',
+      stage: 'attuning',
       toolCalls: [{ id: 't1', name: 'echo' }],
       tokenCount: 150,
     });
@@ -114,6 +118,7 @@ describe('storeMessage', () => {
       sessionId: 'session-001',
       role: 'user',
       content: 'Hello',
+      stage: 'invoking',
     });
 
     expect(result.error).toBe('Insert failed');
@@ -133,6 +138,7 @@ describe('loadConversationHistory', () => {
         session_id: 'session-001',
         role: 'user',
         content: 'Hello',
+        stage: 'invoking',
         tool_calls: null,
         token_count: null,
         created_at: '2025-01-01T00:00:00Z',
@@ -142,6 +148,7 @@ describe('loadConversationHistory', () => {
         session_id: 'session-001',
         role: 'assistant',
         content: 'Hi there',
+        stage: 'invoking',
         tool_calls: null,
         token_count: 50,
         created_at: '2025-01-01T00:00:01Z',
@@ -154,6 +161,24 @@ describe('loadConversationHistory', () => {
     expect(result.error).toBeNull();
     expect(result.data).toHaveLength(2);
     expect(mockFrom).toHaveBeenCalledWith('sage_messages');
+  });
+
+  it('should filter by stage when provided', async () => {
+    resetChainMocks({ data: [], error: null });
+
+    await loadConversationHistory('session-001', { stage: 'attuning' });
+
+    expect(mockEq).toHaveBeenCalledWith('session_id', 'session-001');
+    expect(mockEq).toHaveBeenCalledWith('stage', 'attuning');
+  });
+
+  it('should not filter by stage when omitted', async () => {
+    resetChainMocks({ data: [], error: null });
+
+    await loadConversationHistory('session-001');
+
+    expect(mockEq).toHaveBeenCalledWith('session_id', 'session-001');
+    expect(mockEq).not.toHaveBeenCalledWith('stage', expect.anything());
   });
 
   it('should return empty array when no messages exist', async () => {

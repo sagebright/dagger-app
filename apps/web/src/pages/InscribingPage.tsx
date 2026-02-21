@@ -18,7 +18,8 @@
  * panel:balance_warning, and panel:scene_confirmed events.
  */
 
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback } from 'react';
+import { useSageGreeting } from '@/hooks/useSageGreeting';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useSageStream } from '@/hooks/useSageStream';
@@ -43,6 +44,8 @@ import { WAVE_SECTIONS, SECTION_LABELS } from '@sage-codex/shared-types';
 export interface InscribingPageProps {
   /** The active session ID */
   sessionId: string;
+  /** Called when the user navigates to a completed stage via StageDropdown */
+  onNavigate?: (stage: import('@sage-codex/shared-types').Stage) => void;
 }
 
 // =============================================================================
@@ -161,7 +164,7 @@ function createEmptySceneState(): SceneInscriptionState {
 // Component
 // =============================================================================
 
-export function InscribingPage({ sessionId }: InscribingPageProps) {
+export function InscribingPage({ sessionId, onNavigate }: InscribingPageProps) {
   const navigate = useNavigate();
   const { session: authSession } = useAuth();
   const accessToken = authSession?.access_token ?? '';
@@ -325,15 +328,7 @@ export function InscribingPage({ sessionId }: InscribingPageProps) {
     },
   });
 
-  // Request Sage greeting on mount (if no messages yet)
-  const hasGreeted = useRef(false);
-  useEffect(() => {
-    if (messages.length === 0 && !hasGreeted.current) {
-      hasGreeted.current = true;
-      setIsThinking(true);
-      requestGreeting();
-    }
-  }, [messages.length, requestGreeting]);
+  useSageGreeting(messages.length, requestGreeting, setIsThinking);
 
   // Send message handler
   const handleSendMessage = useCallback(
@@ -435,8 +430,8 @@ export function InscribingPage({ sessionId }: InscribingPageProps) {
   const allSectionsPopulated = currentSceneState.sections.every(
     (s) => s.content.length > 0
   );
-  const allScenesConfirmed = sceneArcs.length > 0 &&
-    sceneArcs.every((arc) => {
+  const allScenesConfirmed = (sceneArcs?.length ?? 0) > 0 &&
+    (sceneArcs ?? []).every((arc) => {
       const state = sceneStates.get(arc.id);
       return state?.confirmed ?? false;
     });
@@ -451,7 +446,7 @@ export function InscribingPage({ sessionId }: InscribingPageProps) {
   const footerAction = allScenesConfirmed ? handleAdvance : handleConfirmScene;
 
   // Build scene arc data for tabs (with inscribing-level confirmed state)
-  const sceneArcTabData: SceneArcData[] = sceneArcs.map((arc) => ({
+  const sceneArcTabData: SceneArcData[] = (sceneArcs ?? []).map((arc) => ({
     id: arc.id,
     sceneNumber: arc.sceneNumber,
     title: arc.title,
@@ -489,6 +484,7 @@ export function InscribingPage({ sessionId }: InscribingPageProps) {
           onDrillIn={handleDrillIn}
           onBackToScene={handleBackToScene}
           onFooterAction={footerAction}
+          onNavigate={onNavigate}
         />
       }
     />

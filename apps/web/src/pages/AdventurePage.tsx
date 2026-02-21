@@ -22,6 +22,7 @@ import { BindingPage } from './BindingPage';
 import { WeavingPage } from './WeavingPage';
 import { InscribingPage } from './InscribingPage';
 import { DeliveringPage } from './DeliveringPage';
+import { StageReview } from '@/components/chat/StageReview';
 import type { AdventureState, Stage } from '@sage-codex/shared-types';
 import { createEmptyAdventureState } from '@sage-codex/shared-types';
 
@@ -63,6 +64,7 @@ export function AdventurePage() {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [viewingStage, setViewingStage] = useState<Stage | null>(null);
 
   // Subscribe to the adventure store's stage so that when stage pages
   // call setStage() after advancing, this component re-renders and
@@ -130,6 +132,16 @@ export function AdventurePage() {
     loadActiveSession();
   }, [loadActiveSession]);
 
+  /** Navigate to a completed stage (read-only review) */
+  const handleStageNavigate = useCallback((targetStage: Stage) => {
+    setViewingStage(targetStage);
+  }, []);
+
+  /** Return from stage review to the active stage */
+  const handleReturnFromReview = useCallback(() => {
+    setViewingStage(null);
+  }, []);
+
   // Loading state
   if (isLoading) {
     return (
@@ -176,19 +188,33 @@ export function AdventurePage() {
     return null;
   }
 
+  // Stage review mode: show read-only past stage conversation
+  if (viewingStage) {
+    return (
+      <StageReview
+        sessionId={sessionId}
+        stage={viewingStage}
+        currentStage={stage}
+        onReturn={handleReturnFromReview}
+      />
+    );
+  }
+
   // Render the appropriate stage page
   switch (stage) {
     case 'invoking':
       return <InvokingPage sessionId={sessionId} />;
     case 'attuning':
-      return <AttuningPage sessionId={sessionId} />;
+      return <AttuningPage sessionId={sessionId} onNavigate={handleStageNavigate} />;
     case 'binding':
-      return <BindingPage sessionId={sessionId} />;
+      return <BindingPage sessionId={sessionId} onNavigate={handleStageNavigate} />;
     case 'weaving':
-      return <WeavingPage sessionId={sessionId} />;
+      return <WeavingPage sessionId={sessionId} onNavigate={handleStageNavigate} />;
     case 'inscribing':
-      return <InscribingPage sessionId={sessionId} />;
+      return <InscribingPage sessionId={sessionId} onNavigate={handleStageNavigate} />;
     case 'delivering':
-      return <DeliveringPage sessionId={sessionId} />;
+      return <DeliveringPage sessionId={sessionId} onNavigate={handleStageNavigate} />;
+    default:
+      return null;
   }
 }

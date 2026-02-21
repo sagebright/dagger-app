@@ -9,7 +9,8 @@
  * to the chatStore and adventureStore.
  */
 
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback } from 'react';
+import { useSageGreeting } from '@/hooks/useSageGreeting';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useSageStream } from '@/hooks/useSageStream';
@@ -99,15 +100,7 @@ export function InvokingPage({ sessionId }: InvokingPageProps) {
     },
   });
 
-  // Request Sage greeting on mount (if no messages yet)
-  const hasGreeted = useRef(false);
-  useEffect(() => {
-    if (messages.length === 0 && !hasGreeted.current) {
-      hasGreeted.current = true;
-      setIsThinking(true);
-      requestGreeting();
-    }
-  }, [messages.length, requestGreeting]);
+  useSageGreeting(messages.length, requestGreeting, setIsThinking);
 
   // Send message handler
   const handleSendMessage = useCallback(
