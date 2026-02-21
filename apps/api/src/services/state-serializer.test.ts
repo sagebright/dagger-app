@@ -250,4 +250,74 @@ describe('serializeForLLM', () => {
       expect(result.tiersIncluded).not.toContain('T2');
     });
   });
+
+  describe('stage summaries', () => {
+    it('should serialize prior-stage summaries when present', () => {
+      const state = createMidWeavingState();
+      state.stageSummaries = {
+        invoking: 'The party seeks a cursed monastery to break a dark pact.',
+        attuning: 'A serious tier 2 adventure with themes of redemption and corruption.',
+      };
+      const result = serializeForLLM(state, 'weaving');
+      expect(result.text).toContain('Prior Stages:');
+      expect(result.text).toContain('Invoking: The party seeks a cursed monastery');
+      expect(result.text).toContain('Attuning: A serious tier 2 adventure');
+    });
+
+    it('should NOT include current-stage summary', () => {
+      const state = createMidWeavingState();
+      state.stageSummaries = {
+        invoking: 'Invoking summary text',
+        attuning: 'Attuning summary text',
+        weaving: 'Weaving summary text should not appear',
+      };
+      const result = serializeForLLM(state, 'weaving');
+      expect(result.text).not.toContain('Weaving summary text should not appear');
+    });
+
+    it('should NOT include future-stage summaries', () => {
+      const state = createMidWeavingState();
+      state.stageSummaries = {
+        invoking: 'Invoking summary text',
+        inscribing: 'Future inscribing summary should not appear',
+        delivering: 'Future delivering summary should not appear',
+      };
+      const result = serializeForLLM(state, 'attuning');
+      expect(result.text).not.toContain('Future inscribing summary');
+      expect(result.text).not.toContain('Future delivering summary');
+    });
+
+    it('should produce no summaries section when stageSummaries is empty', () => {
+      const state = createMidWeavingState();
+      state.stageSummaries = {};
+      const result = serializeForLLM(state, 'weaving');
+      expect(result.text).not.toContain('Prior Stages:');
+    });
+
+    it('should produce no summaries section when stageSummaries is undefined', () => {
+      const state = createMidWeavingState();
+      // stageSummaries not set (undefined)
+      const result = serializeForLLM(state, 'weaving');
+      expect(result.text).not.toContain('Prior Stages:');
+    });
+
+    it('should order summaries by stage order (invoking before attuning)', () => {
+      const state = createFullInscribingState();
+      state.stageSummaries = {
+        attuning: 'Attuning done',
+        invoking: 'Invoking done',
+        binding: 'Binding done',
+        weaving: 'Weaving done',
+      };
+      const result = serializeForLLM(state, 'inscribing', { activeSceneId: 'arc-1' });
+      const text = result.text;
+      const invokingIdx = text.indexOf('Invoking: Invoking done');
+      const attuningIdx = text.indexOf('Attuning: Attuning done');
+      const bindingIdx = text.indexOf('Binding: Binding done');
+      const weavingIdx = text.indexOf('Weaving: Weaving done');
+      expect(invokingIdx).toBeLessThan(attuningIdx);
+      expect(attuningIdx).toBeLessThan(bindingIdx);
+      expect(bindingIdx).toBeLessThan(weavingIdx);
+    });
+  });
 });

@@ -24,6 +24,7 @@ import type {
   BoundFrame,
 } from '@sage-codex/shared-types';
 import type { Stage } from '@sage-codex/shared-types';
+import { STAGES } from '@sage-codex/shared-types';
 
 // =============================================================================
 // Types
@@ -107,6 +108,47 @@ function serializeTier1(state: AdventureState): string {
   ].filter(Boolean);
 
   return sections.join('\n\n');
+}
+
+// =============================================================================
+// Stage Summaries (cross-stage context)
+// =============================================================================
+
+/** Ordered stage IDs for consistent serialization */
+const STAGE_ORDER: Stage[] = STAGES.map((s) => s.id);
+
+/**
+ * Serialize prior-stage summaries for cross-stage LLM context.
+ *
+ * Only includes summaries for stages that come BEFORE the current stage
+ * in the Unfolding order. Current and future stages are excluded.
+ *
+ * Format:
+ *   Prior Stages:
+ *   - Invoking: [summary]
+ *   - Attuning: [summary]
+ */
+export function serializeStageSummaries(
+  state: AdventureState,
+  currentStage: Stage
+): string {
+  const summaries = state.stageSummaries;
+  if (!summaries || Object.keys(summaries).length === 0) return '';
+
+  const currentIndex = STAGE_ORDER.indexOf(currentStage);
+  const priorStages = STAGE_ORDER.slice(0, currentIndex);
+
+  const lines: string[] = [];
+  for (const stage of priorStages) {
+    const summary = summaries[stage];
+    if (summary) {
+      const label = STAGES.find((s) => s.id === stage)?.label ?? stage;
+      lines.push(`- ${label}: ${summary}`);
+    }
+  }
+
+  if (lines.length === 0) return '';
+  return `Prior Stages:\n${lines.join('\n')}`;
 }
 
 // =============================================================================
@@ -270,6 +312,12 @@ export function serializeForLLM(
   if (t1) {
     sections.push(t1);
     tiersIncluded.push('T1');
+  }
+
+  // Stage summaries: prior-stage context (after T1, before T2)
+  const stageSummaryText = serializeStageSummaries(state, stage);
+  if (stageSummaryText) {
+    sections.push(stageSummaryText);
   }
 
   // T2: Active scene detail (inscribing stage only)

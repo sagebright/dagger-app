@@ -258,6 +258,9 @@ export interface AdventureState {
 
   /** Adventure name (may differ from spark.name after refinement) */
   adventureName: string | null;
+
+  /** Stage summaries for cross-stage LLM context (stage -> summary text) */
+  stageSummaries?: Record<string, string>;
 }
 
 // =============================================================================
