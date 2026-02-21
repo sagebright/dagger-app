@@ -61,9 +61,13 @@ export function AdventurePage() {
   const token = authSession?.access_token ?? '';
 
   const [sessionId, setSessionId] = useState<string | null>(null);
-  const [stage, setStage] = useState<Stage | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Subscribe to the adventure store's stage so that when stage pages
+  // call setStage() after advancing, this component re-renders and
+  // switches to the next stage page.
+  const stage = useAdventureStore((s) => s.adventure.stage);
 
   const initialize = useAdventureStore((s) => s.initialize);
   const clearMessages = useChatStore((s) => s.clearMessages);
@@ -114,7 +118,6 @@ export function AdventurePage() {
       clearMessages();
 
       setSessionId(detail.session.id);
-      setStage(detail.session.stage);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to load';
       setError(message);
@@ -169,7 +172,7 @@ export function AdventurePage() {
   }
 
   // No session loaded
-  if (!sessionId || !stage) {
+  if (!sessionId) {
     return null;
   }
 

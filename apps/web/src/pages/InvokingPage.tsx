@@ -139,15 +139,14 @@ export function InvokingPage({ sessionId }: InvokingPageProps) {
         );
       }
 
-      // Navigate to the next stage (Attuning) — placeholder for now
+      useChatStore.getState().clearMessages();
       useAdventureStore.getState().setStage('attuning');
-      navigate('/adventure');
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : 'Failed to advance';
       setError(errorMessage);
     }
-  }, [isReady, sessionId, accessToken, navigate, setError]);
+  }, [isReady, sessionId, accessToken, setError]);
 
   // Home navigation
   const handleHomeClick = useCallback(() => {

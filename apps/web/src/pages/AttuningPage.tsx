@@ -12,7 +12,7 @@
  * to the chatStore, adventureStore, and local component state.
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useSageStream } from '@/hooks/useSageStream';
@@ -72,7 +72,7 @@ export function AttuningPage({ sessionId }: AttuningPageProps) {
   const [isThinking, setIsThinking] = useState(false);
 
   // SSE streaming
-  const { sendMessage, isStreaming: hookIsStreaming } = useSageStream({
+  const { sendMessage, requestGreeting, isStreaming: hookIsStreaming } = useSageStream({
     sessionId,
     accessToken,
     onChatStart: (data) => {
@@ -106,6 +106,16 @@ export function AttuningPage({ sessionId }: AttuningPageProps) {
       setError(data.message);
     },
   });
+
+  // Request Sage greeting on mount (if no messages yet)
+  const hasGreeted = useRef(false);
+  useEffect(() => {
+    if (messages.length === 0 && !hasGreeted.current) {
+      hasGreeted.current = true;
+      setIsThinking(true);
+      requestGreeting();
+    }
+  }, [messages.length, requestGreeting]);
 
   /** Apply a component update from the set_component tool */
   const applyComponentUpdate = useCallback(
@@ -193,14 +203,14 @@ export function AttuningPage({ sessionId }: AttuningPageProps) {
         );
       }
 
+      useChatStore.getState().clearMessages();
       useAdventureStore.getState().setStage('binding');
-      navigate('/adventure');
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : 'Failed to advance';
       setError(errorMessage);
     }
-  }, [isReady, sessionId, accessToken, navigate, setError]);
+  }, [isReady, sessionId, accessToken, setError]);
 
   // Home navigation
   const handleHomeClick = useCallback(() => {
