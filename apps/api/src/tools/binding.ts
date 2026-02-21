@@ -34,6 +34,19 @@ interface SelectFrameInput {
   isCustom?: boolean;
 }
 
+interface DraftFrameInput {
+  name: string;
+  description: string;
+  themes?: string[];
+  typicalAdversaries?: string[];
+  lore?: string;
+  isCustom?: boolean;
+}
+
+interface DraftCustomFramesInput {
+  frames: DraftFrameInput[];
+}
+
 // =============================================================================
 // Pending Events Queue
 // =============================================================================
@@ -59,6 +72,7 @@ export function drainBindingEvents(): SageEvent[] {
 export function registerBindingTools(): void {
   registerToolHandler('query_frames', handleQueryFrames);
   registerToolHandler('select_frame', handleSelectFrame);
+  registerToolHandler('draft_custom_frames', handleDraftCustomFrames);
 }
 
 /**
@@ -69,7 +83,7 @@ export function registerBindingTools(): void {
  */
 async function handleQueryFrames(
   input: Record<string, unknown>,
-  _context: ToolContext
+  context: ToolContext
 ): Promise<{ result: unknown; isError: boolean }> {
   const queryInput = input as unknown as QueryFramesInput;
   const limit = queryInput.limit ?? 5;
@@ -103,11 +117,33 @@ async function handleQueryFrames(
       themes: f.themes,
     }));
 
+    // Load adventure context so the Sage can assess frame relevance
+    let adventureContext: Record<string, unknown> | null = null;
+    try {
+      const supabase = getSupabase();
+      const { data: stateRow } = await supabase
+        .from('sage_adventure_state')
+        .select('state')
+        .eq('session_id', context.sessionId)
+        .single();
+
+      if (stateRow?.state) {
+        const state = stateRow.state as Record<string, unknown>;
+        adventureContext = {
+          spark: state.spark ?? null,
+          components: state.components ?? null,
+        };
+      }
+    } catch {
+      // Best-effort; continue without context
+    }
+
     return {
       result: {
         status: 'frames_loaded',
         count: frameCards.length,
         frames: frameSummary,
+        adventureContext,
       },
       isError: false,
     };
@@ -155,6 +191,65 @@ async function handleSelectFrame(
       frameId,
       name: frameInput.name,
       description: frameInput.description,
+    },
+    isError: false,
+  };
+}
+
+/**
+ * Handle the draft_custom_frames tool call.
+ *
+ * Converts Sage-generated frame drafts into gallery card data and
+ * pushes a panel:frames event that replaces the gallery contents.
+ * The Sage controls the full set (DB picks + custom).
+ */
+async function handleDraftCustomFrames(
+  input: Record<string, unknown>,
+  _context: ToolContext
+): Promise<{ result: unknown; isError: boolean }> {
+  const draftInput = input as unknown as DraftCustomFramesInput;
+
+  if (!draftInput.frames || draftInput.frames.length === 0) {
+    return {
+      result: 'At least one frame is required for draft_custom_frames',
+      isError: true,
+    };
+  }
+
+  const frameCards: FrameCardData[] = draftInput.frames.map((frame) => {
+    const id = crypto.randomUUID();
+    const description = frame.description ?? '';
+    const themes = frame.themes ?? [];
+    const lore = frame.lore ?? '';
+    const typicalAdversaries = frame.typicalAdversaries ?? [];
+
+    return {
+      id,
+      name: frame.name,
+      pitch: extractPitch(description),
+      themes,
+      sections: buildFrameSections({ description, themes, lore, typicalAdversaries }),
+    };
+  });
+
+  // Replace the gallery with the curated set
+  pendingEvents.push({
+    type: 'panel:frames',
+    data: { frames: frameCards, activeFrameId: null },
+  });
+
+  const frameSummary = frameCards.map((f) => ({
+    id: f.id,
+    name: f.name,
+    pitch: f.pitch,
+    themes: f.themes,
+  }));
+
+  return {
+    result: {
+      status: 'frames_drafted',
+      count: frameCards.length,
+      frames: frameSummary,
     },
     isError: false,
   };

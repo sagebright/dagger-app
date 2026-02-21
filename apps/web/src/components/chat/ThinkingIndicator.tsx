@@ -10,7 +10,7 @@
 export function ThinkingIndicator() {
   return (
     <div
-      className="flex items-center gap-2 self-start animate-message-appear"
+      className="flex items-center gap-2 self-start"
       role="status"
       aria-label="Sage is thinking"
     >

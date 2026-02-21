@@ -72,7 +72,6 @@ export function AttuningPage({ sessionId, onNavigate }: AttuningPageProps) {
   // Panel view state
   const [panelView, setPanelView] = useState<PanelView>('summary');
   const [activeComponentId, setActiveComponentId] = useState<ComponentId | null>(null);
-  const [isReady, setIsReady] = useState(false);
   const [isThinking, setIsThinking] = useState(false);
 
   // SSE streaming
@@ -103,7 +102,7 @@ export function AttuningPage({ sessionId, onNavigate }: AttuningPageProps) {
       applyComponentUpdate(data);
     },
     onUIReady: () => {
-      setIsReady(true);
+      // signal_ready still fires but the button depends only on allConfirmed
     },
     onError: (data) => {
       setIsThinking(false);
@@ -179,9 +178,12 @@ export function AttuningPage({ sessionId, onNavigate }: AttuningPageProps) {
     [components, setComponents, sessionId, accessToken]
   );
 
+  // Check if all 8 are confirmed
+  const allConfirmed = (components?.confirmedComponents?.length ?? 0) >= 8;
+
   // Advance to Binding
   const handleAdvance = useCallback(async () => {
-    if (!isReady) return;
+    if (!allConfirmed) return;
 
     try {
       const response = await fetch(`/api/session/${sessionId}/advance`, {
@@ -206,15 +208,12 @@ export function AttuningPage({ sessionId, onNavigate }: AttuningPageProps) {
         err instanceof Error ? err.message : 'Failed to advance';
       setError(errorMessage);
     }
-  }, [isReady, sessionId, accessToken, setError]);
+  }, [allConfirmed, sessionId, accessToken, setError]);
 
   // Home navigation
   const handleHomeClick = useCallback(() => {
     navigate('/');
   }, [navigate]);
-
-  // Check if all 8 are confirmed
-  const allConfirmed = (components?.confirmedComponents?.length ?? 0) >= 8;
 
   return (
     <AppShell
@@ -234,7 +233,7 @@ export function AttuningPage({ sessionId, onNavigate }: AttuningPageProps) {
           panelView={panelView}
           activeComponentId={activeComponentId}
           components={components}
-          isReady={isReady && allConfirmed}
+          isReady={allConfirmed}
           onSelectComponent={handleSelectComponent}
           onConfirmComponent={handleConfirmComponent}
           onBack={handleBackToSummary}

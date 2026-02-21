@@ -60,6 +60,9 @@ export interface ChatStoreState {
   /** Current error state, if any */
   error: string | null;
 
+  /** Whether the greeting RevealText animation has played */
+  hasAnimatedGreeting: boolean;
+
   // ----- Actions -----
 
   /** Add a user message to the chat */
@@ -88,6 +91,9 @@ export interface ChatStoreState {
 
   /** Load messages from server (e.g., on session restore) */
   loadMessages: (messages: ChatMessage[]) => void;
+
+  /** Mark greeting animation as played */
+  markGreetingAnimated: () => void;
 }
 
 // =============================================================================
@@ -107,6 +113,7 @@ export const useChatStore = create<ChatStoreState>((set) => ({
   isStreaming: false,
   activeMessageId: null,
   error: null,
+  hasAnimatedGreeting: false,
 
   addUserMessage: (content) => {
     const id = generateMessageId();
@@ -199,7 +206,10 @@ export const useChatStore = create<ChatStoreState>((set) => ({
       isStreaming: false,
       activeMessageId: null,
       error: null,
+      hasAnimatedGreeting: false,
     }),
 
   loadMessages: (messages) => set({ messages }),
+
+  markGreetingAnimated: () => set({ hasAnimatedGreeting: true }),
 }));

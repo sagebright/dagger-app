@@ -191,7 +191,60 @@ const QUERY_FRAMES: ToolDefinition = {
   },
 };
 
-const BINDING_TOOLS: ToolDefinition[] = [SELECT_FRAME, QUERY_FRAMES];
+const DRAFT_CUSTOM_FRAMES: ToolDefinition = {
+  name: 'draft_custom_frames',
+  description:
+    'Populate the frame gallery with curated frame options. Use this after ' +
+    'calling query_frames to assess the database. Pass the complete set of ' +
+    'frames you want shown (both database picks and custom-generated ones). ' +
+    'Always aim for exactly 3 frame options.',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      frames: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            name: {
+              type: 'string',
+              description: 'Frame name',
+            },
+            description: {
+              type: 'string',
+              description: 'Frame description',
+            },
+            themes: {
+              type: 'array',
+              items: { type: 'string' },
+              description: 'Thematic elements',
+            },
+            typicalAdversaries: {
+              type: 'array',
+              items: { type: 'string' },
+              description: 'Typical adversary types',
+            },
+            lore: {
+              type: 'string',
+              description: 'Background lore',
+            },
+            isCustom: {
+              type: 'boolean',
+              description: 'Whether this is a custom-generated frame (true) or database frame (false)',
+            },
+          },
+          required: ['name', 'description'],
+        },
+        minItems: 1,
+        maxItems: 5,
+        description: 'Array of frame options to display in the gallery',
+      },
+    },
+    required: ['frames'],
+  },
+};
+
+const BINDING_TOOLS: ToolDefinition[] = [SELECT_FRAME, QUERY_FRAMES, DRAFT_CUSTOM_FRAMES];
 
 // =============================================================================
 // Weaving Tools
