@@ -17,6 +17,7 @@ export interface StoreMessageParams {
   sessionId: string;
   role: 'user' | 'assistant';
   content: string;
+  stage: string;
   toolCalls?: Record<string, unknown>[] | null;
   tokenCount?: number | null;
 }
@@ -59,6 +60,7 @@ export async function storeMessage(
         session_id: params.sessionId,
         role: params.role,
         content: params.content,
+        stage: params.stage,
         metadata,
       })
       .select()
@@ -76,8 +78,20 @@ export async function storeMessage(
   }
 }
 
+/** Options for loading conversation history */
+export interface LoadHistoryOptions {
+  /** Filter messages to a specific stage (omit to load all stages) */
+  stage?: string;
+  /** Maximum number of messages to return (default 50) */
+  limit?: number;
+}
+
 /**
  * Load conversation history for a session, ordered by creation time.
+ *
+ * When `stage` is provided, only messages from that stage are returned.
+ * This prevents cross-stage message bleed that causes the greet endpoint
+ * to return 'already_greeted' on stage transitions.
  *
  * Returns messages in chronological order for building the Anthropic
  * messages array. Limits to the most recent N messages to avoid
@@ -85,17 +99,27 @@ export async function storeMessage(
  */
 export async function loadConversationHistory(
   sessionId: string,
-  limit = 50
+  options: LoadHistoryOptions = {}
 ): Promise<MessageStoreResult<SageMessage[]>> {
+  const { stage, limit = 50 } = options;
+
   try {
     const supabase = getSupabase();
 
-    const { data, error } = await supabase
+    let query = supabase
       .from('sage_messages')
       .select('*')
-      .eq('session_id', sessionId)
+      .eq('session_id', sessionId);
+
+    if (stage) {
+      query = query.eq('stage', stage);
+    }
+
+    query = query
       .order('created_at', { ascending: true })
       .limit(limit);
+
+    const { data, error } = await query;
 
     if (error) {
       return { data: null, error: error.message };

@@ -28,6 +28,7 @@ function createMessage(
     session_id: 'session-1',
     role,
     content: content ?? `Message content ${index}`,
+    stage: 'invoking',
     tool_calls: null,
     token_count: null,
     created_at: new Date(Date.now() - (1000 - index) * 60000).toISOString(),

@@ -303,12 +303,13 @@ router.post('/', async (req: Request, res: Response) => {
     const stage = session.stage;
 
     // Load conversation history + adventure state BEFORE storing the new message
-    const historyResult = await loadConversationHistory(sessionId);
+    // Filter by current stage so cross-stage messages don't leak into context
+    const historyResult = await loadConversationHistory(sessionId, { stage });
     const history = historyResult.data ?? [];
     const adventureState = await loadAdventureState(sessionId, stage);
 
     // Store the user's message (after loading history so it's excluded naturally)
-    const userStoreResult = await storeMessage({ sessionId, role: 'user', content: message });
+    const userStoreResult = await storeMessage({ sessionId, role: 'user', content: message, stage });
     if (userStoreResult.error) {
       console.error(`Failed to store user message: ${userStoreResult.error}`);
     }
@@ -333,6 +334,7 @@ router.post('/', async (req: Request, res: Response) => {
       sessionId,
       role: 'assistant',
       content: result.finalText,
+      stage,
       toolCalls: result.finalToolCalls.length > 0 ? result.finalToolCalls : null,
       tokenCount: result.totalInputTokens + result.totalOutputTokens,
     });
@@ -390,11 +392,12 @@ router.post('/greet', async (req: Request, res: Response) => {
     const stage = session.stage;
 
     // Load existing conversation history + adventure state
-    const historyResult = await loadConversationHistory(sessionId);
+    // Filter by current stage so advancing stages always triggers a fresh greeting
+    const historyResult = await loadConversationHistory(sessionId, { stage });
     const history = historyResult.data ?? [];
     const adventureState = await loadAdventureState(sessionId, stage);
 
-    // If there are already messages, skip the greeting — the Sage already spoke
+    // If there are already messages for THIS stage, skip the greeting
     if (history.length > 0) {
       res.status(200).json({ status: 'already_greeted' });
       return;
@@ -404,7 +407,7 @@ router.post('/greet', async (req: Request, res: Response) => {
     // with a user-role message (Anthropic API requirement).
     // Note: GREETING_TRIGGER is sent to Anthropic in-flight (never stored),
     // while this marker anchors the persistent history with a user role.
-    const startResult = await storeMessage({ sessionId, role: 'user', content: '[Session started]' });
+    const startResult = await storeMessage({ sessionId, role: 'user', content: '[Session started]', stage });
     if (startResult.error) {
       console.error(`Failed to store session-start marker: ${startResult.error}`);
     }
@@ -428,6 +431,7 @@ router.post('/greet', async (req: Request, res: Response) => {
       sessionId,
       role: 'assistant',
       content: result.finalText,
+      stage,
       toolCalls: result.finalToolCalls.length > 0 ? result.finalToolCalls : null,
       tokenCount: result.totalInputTokens + result.totalOutputTokens,
     });

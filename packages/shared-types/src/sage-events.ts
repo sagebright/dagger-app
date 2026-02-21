@@ -568,6 +568,7 @@ export interface SageMessage {
   session_id: string;
   role: 'user' | 'assistant';
   content: string;
+  stage: string;
   tool_calls: Record<string, unknown>[] | null;
   token_count: number | null;
   created_at: string;
