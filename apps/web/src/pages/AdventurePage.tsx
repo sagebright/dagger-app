@@ -190,5 +190,7 @@ export function AdventurePage() {
       return <InscribingPage sessionId={sessionId} />;
     case 'delivering':
       return <DeliveringPage sessionId={sessionId} />;
+    default:
+      return null;
   }
 }

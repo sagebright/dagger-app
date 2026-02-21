@@ -113,7 +113,7 @@ export function AttuningPage({ sessionId }: AttuningPageProps) {
     if (messages.length === 0 && !hasGreeted.current) {
       hasGreeted.current = true;
       setIsThinking(true);
-      requestGreeting();
+      requestGreeting().finally(() => setIsThinking(false));
     }
   }, [messages.length, requestGreeting]);
 
