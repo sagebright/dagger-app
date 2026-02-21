@@ -12,7 +12,8 @@
  * to the chatStore, adventureStore, and local component state.
  */
 
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback } from 'react';
+import { useSageGreeting } from '@/hooks/useSageGreeting';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useSageStream } from '@/hooks/useSageStream';
@@ -110,15 +111,7 @@ export function AttuningPage({ sessionId, onNavigate }: AttuningPageProps) {
     },
   });
 
-  // Request Sage greeting on mount (if no messages yet)
-  const hasGreeted = useRef(false);
-  useEffect(() => {
-    if (messages.length === 0 && !hasGreeted.current) {
-      hasGreeted.current = true;
-      setIsThinking(true);
-      requestGreeting().finally(() => setIsThinking(false));
-    }
-  }, [messages.length, requestGreeting]);
+  useSageGreeting(messages.length, requestGreeting, setIsThinking);
 
   /** Apply a component update from the set_component tool */
   const applyComponentUpdate = useCallback(

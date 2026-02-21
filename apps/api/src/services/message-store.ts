@@ -7,7 +7,7 @@
  */
 
 import { getSupabase } from './supabase.js';
-import type { SageMessage } from '@sage-codex/shared-types';
+import type { SageMessage, Stage } from '@sage-codex/shared-types';
 
 // =============================================================================
 // Types
@@ -17,7 +17,7 @@ export interface StoreMessageParams {
   sessionId: string;
   role: 'user' | 'assistant';
   content: string;
-  stage: string;
+  stage: Stage;
   toolCalls?: Record<string, unknown>[] | null;
   tokenCount?: number | null;
 }
@@ -81,7 +81,7 @@ export async function storeMessage(
 /** Options for loading conversation history */
 export interface LoadHistoryOptions {
   /** Filter messages to a specific stage (omit to load all stages) */
-  stage?: string;
+  stage?: Stage;
   /** Maximum number of messages to return (default 50) */
   limit?: number;
 }
