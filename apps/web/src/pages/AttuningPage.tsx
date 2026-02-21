@@ -221,7 +221,7 @@ export function AttuningPage({ sessionId, onNavigate }: AttuningPageProps) {
   }, [navigate]);
 
   // Check if all 8 are confirmed
-  const allConfirmed = components.confirmedComponents.length >= 8;
+  const allConfirmed = (components?.confirmedComponents?.length ?? 0) >= 8;
 
   return (
     <AppShell

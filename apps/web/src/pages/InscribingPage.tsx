@@ -437,8 +437,8 @@ export function InscribingPage({ sessionId, onNavigate }: InscribingPageProps) {
   const allSectionsPopulated = currentSceneState.sections.every(
     (s) => s.content.length > 0
   );
-  const allScenesConfirmed = sceneArcs.length > 0 &&
-    sceneArcs.every((arc) => {
+  const allScenesConfirmed = (sceneArcs?.length ?? 0) > 0 &&
+    (sceneArcs ?? []).every((arc) => {
       const state = sceneStates.get(arc.id);
       return state?.confirmed ?? false;
     });
@@ -453,7 +453,7 @@ export function InscribingPage({ sessionId, onNavigate }: InscribingPageProps) {
   const footerAction = allScenesConfirmed ? handleAdvance : handleConfirmScene;
 
   // Build scene arc data for tabs (with inscribing-level confirmed state)
-  const sceneArcTabData: SceneArcData[] = sceneArcs.map((arc) => ({
+  const sceneArcTabData: SceneArcData[] = (sceneArcs ?? []).map((arc) => ({
     id: arc.id,
     sceneNumber: arc.sceneNumber,
     title: arc.title,

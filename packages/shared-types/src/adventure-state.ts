@@ -294,6 +294,19 @@ export function createEmptyAdventureState(): AdventureState {
   };
 }
 
+/** Merge a partial server state with safe defaults (handles missing/undefined sub-keys) */
+export function mergeWithDefaults(partial: Partial<AdventureState>): AdventureState {
+  const defaults = createEmptyAdventureState();
+  return {
+    ...defaults,
+    ...partial,
+    components: { ...defaults.components, ...(partial.components ?? {}) },
+    sceneArcs: partial.sceneArcs ?? defaults.sceneArcs,
+    inscribedScenes: partial.inscribedScenes ?? defaults.inscribedScenes,
+    versionHistory: partial.versionHistory ?? defaults.versionHistory,
+  };
+}
+
 // =============================================================================
 // Helpers
 // =============================================================================

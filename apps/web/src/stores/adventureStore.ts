@@ -18,7 +18,7 @@ import type {
   SerializableComponentsState,
   Stage,
 } from '@sage-codex/shared-types';
-import { createEmptyAdventureState } from '@sage-codex/shared-types';
+import { createEmptyAdventureState, mergeWithDefaults } from '@sage-codex/shared-types';
 
 // =============================================================================
 // Store Interface
@@ -78,7 +78,7 @@ export const useAdventureStore = create<AdventureStoreState>((set) => ({
 
   initialize: (sessionId, state) =>
     set({
-      adventure: state,
+      adventure: mergeWithDefaults(state),
       isInitialized: true,
       sessionId,
     }),

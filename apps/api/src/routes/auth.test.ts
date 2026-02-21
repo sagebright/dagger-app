@@ -38,6 +38,7 @@ interface MockAuth {
   signInWithPassword: ReturnType<typeof vi.fn>;
   signOut: ReturnType<typeof vi.fn>;
   getUser: ReturnType<typeof vi.fn>;
+  refreshSession: ReturnType<typeof vi.fn>;
 }
 
 function createMockAuth(): MockAuth {
@@ -46,6 +47,7 @@ function createMockAuth(): MockAuth {
     signInWithPassword: vi.fn(),
     signOut: vi.fn(),
     getUser: vi.fn(),
+    refreshSession: vi.fn(),
   };
 }
 
@@ -257,5 +259,59 @@ describe('GET /api/auth/session', () => {
 
     expect(res.status).toBe(401);
     expect(res.body.error).toBe('Invalid or expired token');
+  });
+});
+
+describe('POST /api/auth/refresh', () => {
+  let mockAuth: MockAuth;
+
+  beforeEach(() => {
+    mockAuth = createMockAuth();
+    vi.mocked(createSupabaseAuthClient).mockReturnValue({ auth: mockAuth } as never);
+  });
+
+  it('returns 400 when refresh_token is missing', async () => {
+    const app = createTestApp();
+    const res = await request(app)
+      .post('/api/auth/refresh')
+      .send({});
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe('Refresh token is required');
+  });
+
+  it('returns new user and session on valid refresh token', async () => {
+    mockAuth.refreshSession.mockResolvedValue({
+      data: {
+        user: { id: 'user-123', email: 'test@example.com' },
+        session: { access_token: 'new-token', refresh_token: 'new-refresh' },
+      },
+      error: null,
+    });
+
+    const app = createTestApp();
+    const res = await request(app)
+      .post('/api/auth/refresh')
+      .send({ refresh_token: 'old-refresh-token' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.user.id).toBe('user-123');
+    expect(res.body.session.access_token).toBe('new-token');
+    expect(res.body.session.refresh_token).toBe('new-refresh');
+  });
+
+  it('returns 401 when refresh token is invalid', async () => {
+    mockAuth.refreshSession.mockResolvedValue({
+      data: { user: null, session: null },
+      error: { message: 'Invalid refresh token' },
+    });
+
+    const app = createTestApp();
+    const res = await request(app)
+      .post('/api/auth/refresh')
+      .send({ refresh_token: 'expired-refresh-token' });
+
+    expect(res.status).toBe(401);
+    expect(res.body.error).toBe('Invalid refresh token');
   });
 });

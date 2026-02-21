@@ -84,6 +84,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   /** Restore session from stored token on mount */
   useEffect(() => {
+    let aborted = false;
+
     const restoreSession = async () => {
       const token = localStorage.getItem(TOKEN_STORAGE_KEY);
 
@@ -96,6 +98,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const data = await authFetch('/api/auth/session', {
           headers: { Authorization: `Bearer ${token}` },
         });
+        if (aborted) return;
 
         if (data.user) {
           setState({
@@ -112,13 +115,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setState({ user: null, session: null, isLoading: false, error: null });
         }
       } catch {
+        if (aborted) return;
+
+        // Access token expired — try refresh before clearing
+        const refreshToken = localStorage.getItem(REFRESH_STORAGE_KEY);
+        if (refreshToken) {
+          try {
+            const refreshData = await authFetch('/api/auth/refresh', {
+              method: 'POST',
+              body: JSON.stringify({ refresh_token: refreshToken }),
+            });
+            if (aborted) return;
+
+            if (refreshData.user && refreshData.session) {
+              saveTokens(refreshData.session);
+              setState({
+                user: refreshData.user,
+                session: refreshData.session,
+                isLoading: false,
+                error: null,
+              });
+              return;
+            }
+          } catch {
+            if (aborted) return;
+          }
+        }
+
         clearTokens();
         setState({ user: null, session: null, isLoading: false, error: null });
       }
     };
 
     restoreSession();
-  }, [clearTokens]);
+    return () => { aborted = true; };
+  }, [clearTokens, saveTokens]);
 
   /** Sign up with email and password */
   const signup = useCallback(
