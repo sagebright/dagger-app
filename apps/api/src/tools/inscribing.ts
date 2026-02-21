@@ -16,6 +16,7 @@
  */
 
 import { registerToolHandler } from '../services/tool-dispatcher.js';
+import type { ToolContext } from '../services/tool-dispatcher.js';
 import type {
   SageEvent,
   InscribingSectionId,
@@ -171,7 +172,8 @@ export function registerInscribingTools(): void {
  * for the frontend to update the specific accordion section.
  */
 async function handleUpdateSection(
-  input: Record<string, unknown>
+  input: Record<string, unknown>,
+  _context: ToolContext
 ): Promise<{ result: unknown; isError: boolean }> {
   const sectionInput = input as unknown as UpdateSectionInput;
 
@@ -230,7 +232,8 @@ async function handleUpdateSection(
  * panel:sections event for the frontend to update the accordion.
  */
 async function handleSetWave(
-  input: Record<string, unknown>
+  input: Record<string, unknown>,
+  _context: ToolContext
 ): Promise<{ result: unknown; isError: boolean }> {
   const waveInput = input as unknown as SetWaveInput;
 
@@ -286,7 +289,8 @@ async function handleSetWave(
 
 /** Handle the invalidate_wave3 tool call. */
 async function handleInvalidateWave3(
-  input: Record<string, unknown>
+  input: Record<string, unknown>,
+  _context: ToolContext
 ): Promise<{ result: unknown; isError: boolean }> {
   const invalidateInput = input as unknown as InvalidateWave3Input;
 
@@ -324,7 +328,8 @@ async function handleInvalidateWave3(
 
 /** Handle the warn_balance tool call. */
 async function handleWarnBalance(
-  input: Record<string, unknown>
+  input: Record<string, unknown>,
+  _context: ToolContext
 ): Promise<{ result: unknown; isError: boolean }> {
   const warningInput = input as unknown as WarnBalanceInput;
 
@@ -363,7 +368,8 @@ async function handleWarnBalance(
 
 /** Handle the set_entity_npcs tool call. */
 async function handleSetEntityNPCs(
-  input: Record<string, unknown>
+  input: Record<string, unknown>,
+  _context: ToolContext
 ): Promise<{ result: unknown; isError: boolean }> {
   const entityInput = input as unknown as SetEntityNPCsInput;
 
@@ -395,7 +401,8 @@ async function handleSetEntityNPCs(
 
 /** Handle the set_entity_adversaries tool call. */
 async function handleSetEntityAdversaries(
-  input: Record<string, unknown>
+  input: Record<string, unknown>,
+  _context: ToolContext
 ): Promise<{ result: unknown; isError: boolean }> {
   const entityInput = input as unknown as SetEntityAdversariesInput;
 
@@ -427,7 +434,8 @@ async function handleSetEntityAdversaries(
 
 /** Handle the set_entity_items tool call. */
 async function handleSetEntityItems(
-  input: Record<string, unknown>
+  input: Record<string, unknown>,
+  _context: ToolContext
 ): Promise<{ result: unknown; isError: boolean }> {
   const entityInput = input as unknown as SetEntityItemsInput;
 
@@ -459,7 +467,8 @@ async function handleSetEntityItems(
 
 /** Handle the set_entity_portents tool call. */
 async function handleSetEntityPortents(
-  input: Record<string, unknown>
+  input: Record<string, unknown>,
+  _context: ToolContext
 ): Promise<{ result: unknown; isError: boolean }> {
   const entityInput = input as unknown as SetEntityPortentsInput;
 

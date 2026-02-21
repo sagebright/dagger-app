@@ -11,12 +11,13 @@ CREATE TABLE sage_sessions (
   title           TEXT NOT NULL DEFAULT 'Untitled Adventure',
 
   -- Workflow state
-  current_stage   TEXT NOT NULL DEFAULT 'invoking'
-                    CHECK (current_stage IN (
+  stage           TEXT NOT NULL DEFAULT 'invoking'
+                    CHECK (stage IN (
                       'invoking', 'attuning', 'binding',
                       'weaving', 'inscribing', 'delivering'
                     )),
   stage_history   TEXT[] DEFAULT '{}',
+  is_active       BOOLEAN NOT NULL DEFAULT true,
 
   -- Component selections (the 8 attuning components as JSONB)
   components      JSONB DEFAULT '{}',

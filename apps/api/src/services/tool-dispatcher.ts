@@ -25,9 +25,15 @@ export interface ToolResultBlock {
   is_error?: boolean;
 }
 
+/** Request-scoped context passed to tool handlers */
+export interface ToolContext {
+  sessionId: string;
+}
+
 /** A tool handler function */
 export type ToolHandler = (
-  input: Record<string, unknown>
+  input: Record<string, unknown>,
+  context: ToolContext
 ) => Promise<{ result: unknown; isError: boolean }>;
 
 /** Result from dispatching all tool calls */
@@ -77,7 +83,8 @@ export function clearToolHandlers(): void {
  * Returns all events and tool results for the caller to send.
  */
 export async function dispatchToolCalls(
-  toolUseBlocks: CollectedToolUse[]
+  toolUseBlocks: CollectedToolUse[],
+  context: ToolContext
 ): Promise<DispatchResult> {
   const events: SageEvent[] = [];
   const toolResults: ToolResultBlock[] = [];
@@ -92,7 +99,7 @@ export async function dispatchToolCalls(
       },
     });
 
-    const { result, isError } = await executeToolHandler(toolUse);
+    const { result, isError } = await executeToolHandler(toolUse, context);
 
     events.push({
       type: 'tool:end',
@@ -119,7 +126,8 @@ export async function dispatchToolCalls(
  * Execute a single tool handler, catching any errors.
  */
 async function executeToolHandler(
-  toolUse: CollectedToolUse
+  toolUse: CollectedToolUse,
+  context: ToolContext
 ): Promise<{ result: unknown; isError: boolean }> {
   const handler = toolHandlers.get(toolUse.name);
 
@@ -131,7 +139,7 @@ async function executeToolHandler(
   }
 
   try {
-    return await handler(toolUse.input);
+    return await handler(toolUse.input, context);
   } catch (error) {
     const errorMessage =
       error instanceof Error ? error.message : 'Tool execution failed';

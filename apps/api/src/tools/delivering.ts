@@ -9,6 +9,7 @@
  */
 
 import { registerToolHandler } from '../services/tool-dispatcher.js';
+import type { ToolContext } from '../services/tool-dispatcher.js';
 import type { SageEvent } from '@sage-codex/shared-types';
 
 // =============================================================================
@@ -55,7 +56,8 @@ export function registerDeliveringTools(): void {
  * so the frontend enables the download button.
  */
 async function handleFinalizeAdventure(
-  input: Record<string, unknown>
+  input: Record<string, unknown>,
+  _context: ToolContext
 ): Promise<{ result: unknown; isError: boolean }> {
   const finalizeInput = input as unknown as FinalizeAdventureInput;
 

@@ -12,6 +12,7 @@
  */
 
 import { registerToolHandler } from '../services/tool-dispatcher.js';
+import type { ToolContext } from '../services/tool-dispatcher.js';
 import type { SageEvent, SceneArcData } from '@sage-codex/shared-types';
 
 // =============================================================================
@@ -101,7 +102,8 @@ export function registerWeavingTools(): void {
  * to fill the panel with initial scene content.
  */
 async function handleSetAllSceneArcs(
-  input: Record<string, unknown>
+  input: Record<string, unknown>,
+  _context: ToolContext
 ): Promise<{ result: unknown; isError: boolean }> {
   const arcsInput = input as unknown as SetAllSceneArcsInput;
 
@@ -154,7 +156,8 @@ async function handleSetAllSceneArcs(
  * event for the frontend to update the specific scene tab.
  */
 async function handleSetSceneArc(
-  input: Record<string, unknown>
+  input: Record<string, unknown>,
+  _context: ToolContext
 ): Promise<{ result: unknown; isError: boolean }> {
   const arcInput = input as unknown as SetSceneArcInput;
 
@@ -201,7 +204,8 @@ async function handleSetSceneArc(
  * receives a panel:scene_arcs event with the new order.
  */
 async function handleReorderScenes(
-  input: Record<string, unknown>
+  input: Record<string, unknown>,
+  _context: ToolContext
 ): Promise<{ result: unknown; isError: boolean }> {
   const reorderInput = input as unknown as ReorderScenesInput;
 
@@ -235,7 +239,8 @@ async function handleReorderScenes(
  * for the frontend to display the name banner.
  */
 async function handleSuggestName(
-  input: Record<string, unknown>
+  input: Record<string, unknown>,
+  _context: ToolContext
 ): Promise<{ result: unknown; isError: boolean }> {
   const nameInput = input as unknown as SuggestNameInput;
 

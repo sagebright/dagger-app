@@ -14,7 +14,10 @@ import {
   registerToolHandler,
   clearToolHandlers,
 } from './tool-dispatcher.js';
+import type { ToolContext } from './tool-dispatcher.js';
 import type { CollectedToolUse } from './stream-parser.js';
+
+const mockContext: ToolContext = { sessionId: 'test-session-id' };
 
 // =============================================================================
 // Setup
@@ -42,7 +45,7 @@ describe('dispatchToolCalls', () => {
         input: { text: 'hello' },
       };
 
-      const dispatch = await dispatchToolCalls([toolUse]);
+      const dispatch = await dispatchToolCalls([toolUse], mockContext);
 
       expect(dispatch.toolResults).toHaveLength(1);
       expect(dispatch.toolResults[0].tool_use_id).toBe('toolu_001');
@@ -61,7 +64,7 @@ describe('dispatchToolCalls', () => {
         input: {},
       };
 
-      const dispatch = await dispatchToolCalls([toolUse]);
+      const dispatch = await dispatchToolCalls([toolUse], mockContext);
       const eventTypes = dispatch.events.map((e) => e.type);
 
       expect(eventTypes).toEqual(['tool:start', 'tool:end']);
@@ -80,7 +83,7 @@ describe('dispatchToolCalls', () => {
         input: { tier: 2, type: 'undead' },
       };
 
-      await dispatchToolCalls([toolUse]);
+      await dispatchToolCalls([toolUse], mockContext);
 
       expect(receivedInput).toEqual({ tier: 2, type: 'undead' });
     });
@@ -94,7 +97,7 @@ describe('dispatchToolCalls', () => {
         input: {},
       };
 
-      const dispatch = await dispatchToolCalls([toolUse]);
+      const dispatch = await dispatchToolCalls([toolUse], mockContext);
 
       expect(dispatch.toolResults).toHaveLength(1);
       expect(dispatch.toolResults[0].is_error).toBe(true);
@@ -108,7 +111,7 @@ describe('dispatchToolCalls', () => {
         input: {},
       };
 
-      const dispatch = await dispatchToolCalls([toolUse]);
+      const dispatch = await dispatchToolCalls([toolUse], mockContext);
       const eventTypes = dispatch.events.map((e) => e.type);
 
       expect(eventTypes).toEqual(['tool:start', 'tool:end']);
@@ -127,7 +130,7 @@ describe('dispatchToolCalls', () => {
         input: {},
       };
 
-      const dispatch = await dispatchToolCalls([toolUse]);
+      const dispatch = await dispatchToolCalls([toolUse], mockContext);
 
       expect(dispatch.toolResults[0].is_error).toBe(true);
       expect(dispatch.toolResults[0].content).toContain(
@@ -155,7 +158,7 @@ describe('dispatchToolCalls', () => {
         { id: 'toolu_b', name: 'second', input: {} },
       ];
 
-      const dispatch = await dispatchToolCalls(toolUses);
+      const dispatch = await dispatchToolCalls(toolUses, mockContext);
 
       expect(callOrder).toEqual(['first', 'second']);
       expect(dispatch.toolResults).toHaveLength(2);
@@ -165,7 +168,7 @@ describe('dispatchToolCalls', () => {
 
   describe('empty tool list', () => {
     it('should return empty results for no tools', async () => {
-      const dispatch = await dispatchToolCalls([]);
+      const dispatch = await dispatchToolCalls([], mockContext);
 
       expect(dispatch.events).toHaveLength(0);
       expect(dispatch.toolResults).toHaveLength(0);

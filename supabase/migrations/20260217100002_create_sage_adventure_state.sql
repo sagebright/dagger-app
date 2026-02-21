@@ -9,8 +9,14 @@ CREATE TABLE sage_adventure_state (
   id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   session_id      UUID NOT NULL UNIQUE REFERENCES sage_sessions(id) ON DELETE CASCADE,
 
+  -- Unified state blob (used by context-assembler, state-mapper, and REST routes)
+  state           JSONB DEFAULT '{}',
+
+  -- Component selections (the 8 attuning components)
+  components      JSONB DEFAULT '{}',
+
   -- Frame selection (Binding stage)
-  selected_frame  JSONB,
+  frame           JSONB,
   frame_confirmed BOOLEAN DEFAULT false,
 
   -- Outline (Weaving stage)

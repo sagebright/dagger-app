@@ -39,10 +39,22 @@ vi.mock('../services/daggerheart-queries.js', () => ({
   }),
 }));
 
-// Mock supabase
+// Mock supabase (binding.ts uses direct table queries for state persistence)
 vi.mock('../services/supabase.js', () => ({
   getSupabase: vi.fn().mockReturnValue({
-    rpc: vi.fn().mockResolvedValue({ error: null }),
+    from: vi.fn().mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          single: vi.fn().mockResolvedValue({
+            data: { id: 'state-1', state: {} },
+            error: null,
+          }),
+        }),
+      }),
+      update: vi.fn().mockReturnValue({
+        eq: vi.fn().mockResolvedValue({ error: null }),
+      }),
+    }),
   }),
 }));
 
@@ -52,7 +64,10 @@ vi.mock('../services/supabase.js', () => ({
 
 // We need to get access to the tool handlers through the dispatcher
 import { dispatchToolCalls } from '../services/tool-dispatcher.js';
+import type { ToolContext } from '../services/tool-dispatcher.js';
 import type { CollectedToolUse } from '../services/stream-parser.js';
+
+const mockContext: ToolContext = { sessionId: 'test-session-id' };
 
 beforeEach(() => {
   clearToolHandlers();
@@ -71,7 +86,7 @@ describe('registerBindingTools', () => {
     // query_frames should be dispatched successfully (not return "Unknown tool")
     const result = await dispatchToolCalls([
       { id: 'tool-1', name: 'query_frames', input: {} } as CollectedToolUse,
-    ]);
+    ], mockContext);
 
     const toolEndEvent = result.events.find(
       (e) => e.type === 'tool:end' && (e.data as { toolName: string }).toolName === 'query_frames'
@@ -86,7 +101,7 @@ describe('query_frames handler', () => {
   it('returns frame data from the database', async () => {
     const result = await dispatchToolCalls([
       { id: 'tool-1', name: 'query_frames', input: {} } as CollectedToolUse,
-    ]);
+    ], mockContext);
 
     const toolResult = result.toolResults[0];
     expect(toolResult.is_error).toBeUndefined();
@@ -101,7 +116,7 @@ describe('query_frames handler', () => {
   it('queues a panel:frames event', async () => {
     await dispatchToolCalls([
       { id: 'tool-1', name: 'query_frames', input: {} } as CollectedToolUse,
-    ]);
+    ], mockContext);
 
     const events = drainBindingEvents();
     expect(events.length).toBe(1);
@@ -118,7 +133,7 @@ describe('query_frames handler', () => {
   it('respects the limit parameter', async () => {
     await dispatchToolCalls([
       { id: 'tool-1', name: 'query_frames', input: { limit: 1 } } as CollectedToolUse,
-    ]);
+    ], mockContext);
 
     const events = drainBindingEvents();
     const data = events[0].data as { frames: unknown[] };
@@ -138,7 +153,7 @@ describe('select_frame handler', () => {
           description: 'A stolen relic triggers endless spring.',
         },
       } as CollectedToolUse,
-    ]);
+    ], mockContext);
 
     const toolResult = result.toolResults[0];
     expect(toolResult.is_error).toBeUndefined();
@@ -156,7 +171,7 @@ describe('select_frame handler', () => {
         name: 'select_frame',
         input: { description: 'No name provided' },
       } as CollectedToolUse,
-    ]);
+    ], mockContext);
 
     const toolResult = result.toolResults[0];
     expect(toolResult.is_error).toBe(true);
@@ -170,7 +185,7 @@ describe('select_frame handler', () => {
         name: 'select_frame',
         input: { name: 'Test Frame' },
       } as CollectedToolUse,
-    ]);
+    ], mockContext);
 
     const toolResult = result.toolResults[0];
     expect(toolResult.is_error).toBe(true);
@@ -186,7 +201,7 @@ describe('drainBindingEvents', () => {
   it('clears events after draining', async () => {
     await dispatchToolCalls([
       { id: 'tool-1', name: 'query_frames', input: {} } as CollectedToolUse,
-    ]);
+    ], mockContext);
 
     const firstDrain = drainBindingEvents();
     expect(firstDrain.length).toBe(1);

@@ -41,14 +41,25 @@ export async function storeMessage(
   try {
     const supabase = getSupabase();
 
+    // Build metadata JSONB from optional fields
+    // The sage_messages table has a `metadata` JSONB column (not discrete columns)
+    const metadata =
+      params.toolCalls || params.tokenCount != null
+        ? {
+            ...(params.toolCalls && { tool_calls: params.toolCalls }),
+            ...(params.tokenCount != null && {
+              token_count: params.tokenCount,
+            }),
+          }
+        : null;
+
     const { data, error } = await supabase
       .from('sage_messages')
       .insert({
         session_id: params.sessionId,
         role: params.role,
         content: params.content,
-        tool_calls: params.toolCalls ?? null,
-        token_count: params.tokenCount ?? null,
+        metadata,
       })
       .select()
       .single();

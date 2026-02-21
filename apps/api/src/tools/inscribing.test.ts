@@ -19,7 +19,10 @@ import {
   seedSectionCache,
 } from './inscribing.js';
 import { clearToolHandlers, dispatchToolCalls } from '../services/tool-dispatcher.js';
+import type { ToolContext } from '../services/tool-dispatcher.js';
 import type { CollectedToolUse } from '../services/stream-parser.js';
+
+const mockContext: ToolContext = { sessionId: 'test-session-id' };
 
 // =============================================================================
 // Setup
@@ -48,7 +51,7 @@ describe('update_section handler', () => {
           content: 'The party arrives at the haunted crossroads.',
         },
       } as CollectedToolUse,
-    ]);
+    ], mockContext);
 
     const toolResult = result.toolResults[0];
     expect(toolResult.is_error).toBeUndefined();
@@ -70,7 +73,7 @@ describe('update_section handler', () => {
           content: 'A thick fog rolls in as the caravan stops.',
         },
       } as CollectedToolUse,
-    ]);
+    ], mockContext);
 
     const events = drainInscribingEvents();
     expect(events.length).toBe(1);
@@ -95,7 +98,7 @@ describe('update_section handler', () => {
         name: 'update_section',
         input: { sectionId: 'overview', content: 'test' },
       } as CollectedToolUse,
-    ]);
+    ], mockContext);
 
     const toolResult = result.toolResults[0];
     expect(toolResult.is_error).toBe(true);
@@ -109,7 +112,7 @@ describe('update_section handler', () => {
         name: 'update_section',
         input: { sceneArcId: 'arc-1', content: 'test' },
       } as CollectedToolUse,
-    ]);
+    ], mockContext);
 
     const toolResult = result.toolResults[0];
     expect(toolResult.is_error).toBe(true);
@@ -123,7 +126,7 @@ describe('update_section handler', () => {
         name: 'update_section',
         input: { sceneArcId: 'arc-1', sectionId: 'overview' },
       } as CollectedToolUse,
-    ]);
+    ], mockContext);
 
     const toolResult = result.toolResults[0];
     expect(toolResult.is_error).toBe(true);
@@ -149,7 +152,7 @@ describe('set_wave handler', () => {
   it('returns wave_populated on valid input', async () => {
     const result = await dispatchToolCalls([
       { id: 'tool-2', name: 'set_wave', input: validInput } as CollectedToolUse,
-    ]);
+    ], mockContext);
 
     const toolResult = result.toolResults[0];
     expect(toolResult.is_error).toBeUndefined();
@@ -163,7 +166,7 @@ describe('set_wave handler', () => {
   it('queues a panel:sections event', async () => {
     await dispatchToolCalls([
       { id: 'tool-2', name: 'set_wave', input: validInput } as CollectedToolUse,
-    ]);
+    ], mockContext);
 
     const events = drainInscribingEvents();
     expect(events.length).toBe(1);
@@ -186,7 +189,7 @@ describe('set_wave handler', () => {
         name: 'set_wave',
         input: { wave: 1, sections: [] },
       } as CollectedToolUse,
-    ]);
+    ], mockContext);
 
     const toolResult = result.toolResults[0];
     expect(toolResult.is_error).toBe(true);
@@ -200,7 +203,7 @@ describe('set_wave handler', () => {
         name: 'set_wave',
         input: { sceneArcId: 'arc-1', wave: 4, sections: [] },
       } as CollectedToolUse,
-    ]);
+    ], mockContext);
 
     const toolResult = result.toolResults[0];
     expect(toolResult.is_error).toBe(true);
@@ -214,7 +217,7 @@ describe('set_wave handler', () => {
         name: 'set_wave',
         input: { sceneArcId: 'arc-1', wave: 1, sections: [] },
       } as CollectedToolUse,
-    ]);
+    ], mockContext);
 
     const toolResult = result.toolResults[0];
     expect(toolResult.is_error).toBe(true);
@@ -237,7 +240,7 @@ describe('invalidate_wave3 handler', () => {
           reason: 'Developments section was revised with new story elements',
         },
       } as CollectedToolUse,
-    ]);
+    ], mockContext);
 
     const toolResult = result.toolResults[0];
     expect(toolResult.is_error).toBeUndefined();
@@ -257,7 +260,7 @@ describe('invalidate_wave3 handler', () => {
           reason: 'NPC roster changed',
         },
       } as CollectedToolUse,
-    ]);
+    ], mockContext);
 
     const events = drainInscribingEvents();
     expect(events.length).toBe(1);
@@ -275,7 +278,7 @@ describe('invalidate_wave3 handler', () => {
         name: 'invalidate_wave3',
         input: { reason: 'test' },
       } as CollectedToolUse,
-    ]);
+    ], mockContext);
 
     const toolResult = result.toolResults[0];
     expect(toolResult.is_error).toBe(true);
@@ -289,7 +292,7 @@ describe('invalidate_wave3 handler', () => {
         name: 'invalidate_wave3',
         input: { sceneArcId: 'arc-1' },
       } as CollectedToolUse,
-    ]);
+    ], mockContext);
 
     const toolResult = result.toolResults[0];
     expect(toolResult.is_error).toBe(true);
@@ -312,7 +315,7 @@ describe('warn_balance handler', () => {
           message: 'Three solo adversaries in one scene may overwhelm a tier 1 party.',
         },
       } as CollectedToolUse,
-    ]);
+    ], mockContext);
 
     const toolResult = result.toolResults[0];
     expect(toolResult.is_error).toBeUndefined();
@@ -333,7 +336,7 @@ describe('warn_balance handler', () => {
           sectionId: 'adversaries',
         },
       } as CollectedToolUse,
-    ]);
+    ], mockContext);
 
     const events = drainInscribingEvents();
     expect(events.length).toBe(1);
@@ -356,7 +359,7 @@ describe('warn_balance handler', () => {
         name: 'warn_balance',
         input: { message: 'test' },
       } as CollectedToolUse,
-    ]);
+    ], mockContext);
 
     const toolResult = result.toolResults[0];
     expect(toolResult.is_error).toBe(true);
@@ -370,7 +373,7 @@ describe('warn_balance handler', () => {
         name: 'warn_balance',
         input: { sceneArcId: 'arc-1' },
       } as CollectedToolUse,
-    ]);
+    ], mockContext);
 
     const toolResult = result.toolResults[0];
     expect(toolResult.is_error).toBe(true);
@@ -401,7 +404,7 @@ describe('set_entity_npcs handler', () => {
         name: 'set_entity_npcs',
         input: { sceneArcId: 'arc-1', npcs: validNPCs },
       } as CollectedToolUse,
-    ]);
+    ], mockContext);
 
     const toolResult = result.toolResults[0];
     expect(toolResult.is_error).toBeUndefined();
@@ -418,7 +421,7 @@ describe('set_entity_npcs handler', () => {
         name: 'set_entity_npcs',
         input: { sceneArcId: 'arc-1', npcs: validNPCs },
       } as CollectedToolUse,
-    ]);
+    ], mockContext);
 
     const events = drainInscribingEvents();
     expect(events.length).toBe(1);
@@ -432,7 +435,7 @@ describe('set_entity_npcs handler', () => {
         name: 'set_entity_npcs',
         input: { npcs: validNPCs },
       } as CollectedToolUse,
-    ]);
+    ], mockContext);
 
     const toolResult = result.toolResults[0];
     expect(toolResult.is_error).toBe(true);
@@ -446,7 +449,7 @@ describe('set_entity_npcs handler', () => {
         name: 'set_entity_npcs',
         input: { sceneArcId: 'arc-1' },
       } as CollectedToolUse,
-    ]);
+    ], mockContext);
 
     const toolResult = result.toolResults[0];
     expect(toolResult.is_error).toBe(true);
@@ -478,7 +481,7 @@ describe('set_entity_adversaries handler', () => {
         name: 'set_entity_adversaries',
         input: { sceneArcId: 'arc-1', adversaries: validAdversaries },
       } as CollectedToolUse,
-    ]);
+    ], mockContext);
 
     const toolResult = result.toolResults[0];
     expect(toolResult.is_error).toBeUndefined();
@@ -495,7 +498,7 @@ describe('set_entity_adversaries handler', () => {
         name: 'set_entity_adversaries',
         input: { sceneArcId: 'arc-1', adversaries: validAdversaries },
       } as CollectedToolUse,
-    ]);
+    ], mockContext);
 
     const events = drainInscribingEvents();
     expect(events.length).toBe(1);
@@ -509,7 +512,7 @@ describe('set_entity_adversaries handler', () => {
         name: 'set_entity_adversaries',
         input: { adversaries: validAdversaries },
       } as CollectedToolUse,
-    ]);
+    ], mockContext);
 
     const toolResult = result.toolResults[0];
     expect(toolResult.is_error).toBe(true);
@@ -540,7 +543,7 @@ describe('set_entity_items handler', () => {
         name: 'set_entity_items',
         input: { sceneArcId: 'arc-1', items: validItems },
       } as CollectedToolUse,
-    ]);
+    ], mockContext);
 
     const toolResult = result.toolResults[0];
     expect(toolResult.is_error).toBeUndefined();
@@ -557,7 +560,7 @@ describe('set_entity_items handler', () => {
         name: 'set_entity_items',
         input: { sceneArcId: 'arc-1', items: validItems },
       } as CollectedToolUse,
-    ]);
+    ], mockContext);
 
     const events = drainInscribingEvents();
     expect(events.length).toBe(1);
@@ -571,7 +574,7 @@ describe('set_entity_items handler', () => {
         name: 'set_entity_items',
         input: { sceneArcId: 'arc-1' },
       } as CollectedToolUse,
-    ]);
+    ], mockContext);
 
     const toolResult = result.toolResults[0];
     expect(toolResult.is_error).toBe(true);
@@ -608,7 +611,7 @@ describe('set_entity_portents handler', () => {
         name: 'set_entity_portents',
         input: { sceneArcId: 'arc-1', categories: validPortents },
       } as CollectedToolUse,
-    ]);
+    ], mockContext);
 
     const toolResult = result.toolResults[0];
     expect(toolResult.is_error).toBeUndefined();
@@ -625,7 +628,7 @@ describe('set_entity_portents handler', () => {
         name: 'set_entity_portents',
         input: { sceneArcId: 'arc-1', categories: validPortents },
       } as CollectedToolUse,
-    ]);
+    ], mockContext);
 
     const events = drainInscribingEvents();
     expect(events.length).toBe(1);
@@ -639,7 +642,7 @@ describe('set_entity_portents handler', () => {
         name: 'set_entity_portents',
         input: { sceneArcId: 'arc-1' },
       } as CollectedToolUse,
-    ]);
+    ], mockContext);
 
     const toolResult = result.toolResults[0];
     expect(toolResult.is_error).toBe(true);
@@ -668,7 +671,7 @@ describe('drainInscribingEvents', () => {
           content: 'Test content',
         },
       } as CollectedToolUse,
-    ]);
+    ], mockContext);
 
     const firstDrain = drainInscribingEvents();
     expect(firstDrain.length).toBe(1);
@@ -700,7 +703,7 @@ describe('propagate_rename handler', () => {
           newName: 'Theron',
         },
       } as CollectedToolUse,
-    ]);
+    ], mockContext);
 
     const toolResult = result.toolResults[0];
     expect(toolResult.is_error).toBeUndefined();
@@ -727,7 +730,7 @@ describe('propagate_rename handler', () => {
           newName: 'Theron',
         },
       } as CollectedToolUse,
-    ]);
+    ], mockContext);
 
     const events = drainInscribingEvents();
     const sectionEvents = events.filter((e) => e.type === 'panel:section');
@@ -756,7 +759,7 @@ describe('propagate_rename handler', () => {
           originSectionId: 'setup',
         },
       } as CollectedToolUse,
-    ]);
+    ], mockContext);
 
     const parsed = JSON.parse(result.toolResults[0].content);
     expect(parsed.sectionsUpdated).toBe(1);
@@ -774,7 +777,7 @@ describe('propagate_rename handler', () => {
           newName: 'Aldric',
         },
       } as CollectedToolUse,
-    ]);
+    ], mockContext);
 
     const parsed = JSON.parse(result.toolResults[0].content);
     expect(parsed.status).toBe('no_propagation_needed');
@@ -787,7 +790,7 @@ describe('propagate_rename handler', () => {
         name: 'propagate_rename',
         input: { oldName: 'Aldric', newName: 'Theron' },
       } as CollectedToolUse,
-    ]);
+    ], mockContext);
 
     const toolResult = result.toolResults[0];
     expect(toolResult.is_error).toBe(true);
@@ -801,7 +804,7 @@ describe('propagate_rename handler', () => {
         name: 'propagate_rename',
         input: { sceneArcId: 'arc-1', newName: 'Theron' },
       } as CollectedToolUse,
-    ]);
+    ], mockContext);
 
     const toolResult = result.toolResults[0];
     expect(toolResult.is_error).toBe(true);
@@ -815,7 +818,7 @@ describe('propagate_rename handler', () => {
         name: 'propagate_rename',
         input: { sceneArcId: 'arc-1', oldName: 'Aldric' },
       } as CollectedToolUse,
-    ]);
+    ], mockContext);
 
     const toolResult = result.toolResults[0];
     expect(toolResult.is_error).toBe(true);
@@ -846,7 +849,7 @@ describe('propagate_semantic handler', () => {
           newValue: 'Betray the village',
         },
       } as CollectedToolUse,
-    ]);
+    ], mockContext);
 
     const toolResult = result.toolResults[0];
     expect(toolResult.is_error).toBeUndefined();
@@ -873,7 +876,7 @@ describe('propagate_semantic handler', () => {
           newValue: 'antagonist',
         },
       } as CollectedToolUse,
-    ]);
+    ], mockContext);
 
     const events = drainInscribingEvents();
     const semanticEvent = events.find(
@@ -905,7 +908,7 @@ describe('propagate_semantic handler', () => {
           newValue: 'new',
         },
       } as CollectedToolUse,
-    ]);
+    ], mockContext);
 
     const toolResult = result.toolResults[0];
     expect(toolResult.is_error).toBe(true);
@@ -924,7 +927,7 @@ describe('propagate_semantic handler', () => {
           newValue: 'new',
         },
       } as CollectedToolUse,
-    ]);
+    ], mockContext);
 
     const toolResult = result.toolResults[0];
     expect(toolResult.is_error).toBe(true);
@@ -943,7 +946,7 @@ describe('propagate_semantic handler', () => {
           newValue: 'new',
         },
       } as CollectedToolUse,
-    ]);
+    ], mockContext);
 
     const toolResult = result.toolResults[0];
     expect(toolResult.is_error).toBe(true);

@@ -15,7 +15,10 @@ import {
   drainWeavingEvents,
 } from './weaving.js';
 import { clearToolHandlers, dispatchToolCalls } from '../services/tool-dispatcher.js';
+import type { ToolContext } from '../services/tool-dispatcher.js';
 import type { CollectedToolUse } from '../services/stream-parser.js';
+
+const mockContext: ToolContext = { sessionId: 'test-session-id' };
 
 // =============================================================================
 // Setup
@@ -53,7 +56,7 @@ describe('set_all_scene_arcs handler', () => {
   it('returns scene_arcs_populated on valid input', async () => {
     const result = await dispatchToolCalls([
       { id: 'tool-1', name: 'set_all_scene_arcs', input: validInput } as CollectedToolUse,
-    ]);
+    ], mockContext);
 
     const toolResult = result.toolResults[0];
     expect(toolResult.is_error).toBeUndefined();
@@ -68,7 +71,7 @@ describe('set_all_scene_arcs handler', () => {
   it('queues a panel:scene_arcs event', async () => {
     await dispatchToolCalls([
       { id: 'tool-1', name: 'set_all_scene_arcs', input: validInput } as CollectedToolUse,
-    ]);
+    ], mockContext);
 
     const events = drainWeavingEvents();
     expect(events.length).toBe(1);
@@ -86,7 +89,7 @@ describe('set_all_scene_arcs handler', () => {
   it('returns error when sceneArcs is missing', async () => {
     const result = await dispatchToolCalls([
       { id: 'tool-1', name: 'set_all_scene_arcs', input: {} } as CollectedToolUse,
-    ]);
+    ], mockContext);
 
     const toolResult = result.toolResults[0];
     expect(toolResult.is_error).toBe(true);
@@ -96,7 +99,7 @@ describe('set_all_scene_arcs handler', () => {
   it('returns error when sceneArcs is empty', async () => {
     const result = await dispatchToolCalls([
       { id: 'tool-1', name: 'set_all_scene_arcs', input: { sceneArcs: [] } } as CollectedToolUse,
-    ]);
+    ], mockContext);
 
     const toolResult = result.toolResults[0];
     expect(toolResult.is_error).toBe(true);
@@ -124,7 +127,7 @@ describe('set_scene_arc handler', () => {
           },
         },
       } as CollectedToolUse,
-    ]);
+    ], mockContext);
 
     const toolResult = result.toolResults[0];
     expect(toolResult.is_error).toBeUndefined();
@@ -150,7 +153,7 @@ describe('set_scene_arc handler', () => {
           },
         },
       } as CollectedToolUse,
-    ]);
+    ], mockContext);
 
     const events = drainWeavingEvents();
     expect(events.length).toBe(1);
@@ -176,7 +179,7 @@ describe('set_scene_arc handler', () => {
           sceneArc: { id: 'a', sceneNumber: 1, title: 'Test', description: 'Test' },
         },
       } as CollectedToolUse,
-    ]);
+    ], mockContext);
 
     const toolResult = result.toolResults[0];
     expect(toolResult.is_error).toBe(true);
@@ -193,7 +196,7 @@ describe('set_scene_arc handler', () => {
           sceneArc: { id: 'a', sceneNumber: 1, description: 'No title' },
         },
       } as CollectedToolUse,
-    ]);
+    ], mockContext);
 
     const toolResult = result.toolResults[0];
     expect(toolResult.is_error).toBe(true);
@@ -213,7 +216,7 @@ describe('reorder_scenes handler', () => {
         name: 'reorder_scenes',
         input: { order: ['arc-2', 'arc-1', 'arc-3'] },
       } as CollectedToolUse,
-    ]);
+    ], mockContext);
 
     const toolResult = result.toolResults[0];
     expect(toolResult.is_error).toBeUndefined();
@@ -226,7 +229,7 @@ describe('reorder_scenes handler', () => {
   it('returns error when order is missing', async () => {
     const result = await dispatchToolCalls([
       { id: 'tool-3', name: 'reorder_scenes', input: {} } as CollectedToolUse,
-    ]);
+    ], mockContext);
 
     const toolResult = result.toolResults[0];
     expect(toolResult.is_error).toBe(true);
@@ -236,7 +239,7 @@ describe('reorder_scenes handler', () => {
   it('returns error when order is empty', async () => {
     const result = await dispatchToolCalls([
       { id: 'tool-3', name: 'reorder_scenes', input: { order: [] } } as CollectedToolUse,
-    ]);
+    ], mockContext);
 
     const toolResult = result.toolResults[0];
     expect(toolResult.is_error).toBe(true);
@@ -256,7 +259,7 @@ describe('suggest_adventure_name handler', () => {
         name: 'suggest_adventure_name',
         input: { name: 'Calamity in the Witherwild', reason: 'Matches the frame' },
       } as CollectedToolUse,
-    ]);
+    ], mockContext);
 
     const toolResult = result.toolResults[0];
     expect(toolResult.is_error).toBeUndefined();
@@ -273,7 +276,7 @@ describe('suggest_adventure_name handler', () => {
         name: 'suggest_adventure_name',
         input: { name: 'Twilight of the Vigil' },
       } as CollectedToolUse,
-    ]);
+    ], mockContext);
 
     const events = drainWeavingEvents();
     expect(events.length).toBe(1);
@@ -286,7 +289,7 @@ describe('suggest_adventure_name handler', () => {
   it('returns error when name is missing', async () => {
     const result = await dispatchToolCalls([
       { id: 'tool-4', name: 'suggest_adventure_name', input: {} } as CollectedToolUse,
-    ]);
+    ], mockContext);
 
     const toolResult = result.toolResults[0];
     expect(toolResult.is_error).toBe(true);
@@ -315,7 +318,7 @@ describe('drainWeavingEvents', () => {
           ],
         },
       } as CollectedToolUse,
-    ]);
+    ], mockContext);
 
     const firstDrain = drainWeavingEvents();
     expect(firstDrain.length).toBe(1);

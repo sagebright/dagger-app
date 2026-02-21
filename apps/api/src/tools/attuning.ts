@@ -9,6 +9,7 @@
  */
 
 import { registerToolHandler } from '../services/tool-dispatcher.js';
+import type { ToolContext } from '../services/tool-dispatcher.js';
 import { getSupabase } from '../services/supabase.js';
 import type { SageEvent } from '@sage-codex/shared-types';
 
@@ -85,7 +86,8 @@ export function registerAttuningTools(): void {
  * the component selection to the adventure state.
  */
 async function handleSetComponent(
-  input: Record<string, unknown>
+  input: Record<string, unknown>,
+  context: ToolContext
 ): Promise<{ result: unknown; isError: boolean }> {
   const componentInput = input as unknown as SetComponentInput;
 
@@ -102,7 +104,7 @@ async function handleSetComponent(
 
   // Persist to Supabase (best effort)
   try {
-    await persistComponentUpdate(componentInput);
+    await persistComponentUpdate(context.sessionId, componentInput);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     console.error(`Failed to persist component: ${message}`);
@@ -140,19 +142,48 @@ function isValidSetComponentInput(input: SetComponentInput): boolean {
 /**
  * Persist the component update to the adventure state in Supabase.
  *
+ * Reads the current state JSONB, merges the component, and writes back.
+ * Mirrors the same pattern used by the /api/component/select REST route.
  * Best-effort; failures are logged but don't block the tool result.
  */
-async function persistComponentUpdate(input: SetComponentInput): Promise<void> {
+async function persistComponentUpdate(
+  sessionId: string,
+  input: SetComponentInput
+): Promise<void> {
   const supabase = getSupabase();
 
-  const { error } = await supabase.rpc('update_adventure_component', {
-    p_component_id: input.componentId,
-    p_value: input.value,
-    p_confirmed: input.confirmed ?? true,
-  });
+  const { data: stateRow, error: fetchError } = await supabase
+    .from('sage_adventure_state')
+    .select('id, state')
+    .eq('session_id', sessionId)
+    .single();
 
-  if (error) {
-    // If the RPC doesn't exist yet, log but don't fail
-    console.warn(`Component persistence RPC not available: ${error.message}`);
+  if (fetchError || !stateRow) {
+    console.warn(`Adventure state not found for session ${sessionId}`);
+    return;
+  }
+
+  const currentState = (stateRow.state as Record<string, unknown>) ?? {};
+  const components = (currentState.components as Record<string, unknown>) ?? {};
+
+  components[input.componentId] = input.value;
+
+  if (input.confirmed ?? true) {
+    const confirmed = new Set(
+      (components.confirmedComponents as string[]) ?? []
+    );
+    confirmed.add(input.componentId);
+    components.confirmedComponents = [...confirmed];
+  }
+
+  const updatedState = { ...currentState, components };
+
+  const { error: updateError } = await supabase
+    .from('sage_adventure_state')
+    .update({ state: updatedState })
+    .eq('id', stateRow.id);
+
+  if (updateError) {
+    console.warn(`Failed to update component state: ${updateError.message}`);
   }
 }

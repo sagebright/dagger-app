@@ -10,6 +10,7 @@
  */
 
 import { registerToolHandler } from '../services/tool-dispatcher.js';
+import type { ToolContext } from '../services/tool-dispatcher.js';
 import { getFrames } from '../services/daggerheart-queries.js';
 import { getSupabase } from '../services/supabase.js';
 import type { SageEvent, FrameCardData, FrameDetailSection } from '@sage-codex/shared-types';
@@ -67,7 +68,8 @@ export function registerBindingTools(): void {
  * and queues a panel:frames event for the frontend.
  */
 async function handleQueryFrames(
-  input: Record<string, unknown>
+  input: Record<string, unknown>,
+  _context: ToolContext
 ): Promise<{ result: unknown; isError: boolean }> {
   const queryInput = input as unknown as QueryFramesInput;
   const limit = queryInput.limit ?? 5;
@@ -125,7 +127,8 @@ async function handleQueryFrames(
  * with the active frame highlighted.
  */
 async function handleSelectFrame(
-  input: Record<string, unknown>
+  input: Record<string, unknown>,
+  context: ToolContext
 ): Promise<{ result: unknown; isError: boolean }> {
   const frameInput = input as unknown as SelectFrameInput;
 
@@ -140,7 +143,7 @@ async function handleSelectFrame(
 
   // Persist to Supabase (best effort)
   try {
-    await persistFrameSelection(frameId, frameInput);
+    await persistFrameSelection(context.sessionId, frameId, frameInput);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     console.error(`Failed to persist frame selection: ${message}`);
@@ -261,16 +264,33 @@ function buildFrameSections(fields: {
 // =============================================================================
 
 /**
- * Persist the frame selection to Supabase.
+ * Persist the frame selection to the adventure state in Supabase.
+ *
+ * Reads the current state JSONB, merges the frame, and writes back.
+ * Best-effort; failures are logged but don't block the tool result.
  */
 async function persistFrameSelection(
+  sessionId: string,
   frameId: string,
   input: SelectFrameInput
 ): Promise<void> {
   const supabase = getSupabase();
 
-  const { error } = await supabase.rpc('update_adventure_frame', {
-    p_frame: {
+  const { data: stateRow, error: fetchError } = await supabase
+    .from('sage_adventure_state')
+    .select('id, state')
+    .eq('session_id', sessionId)
+    .single();
+
+  if (fetchError || !stateRow) {
+    console.warn(`Adventure state not found for session ${sessionId}`);
+    return;
+  }
+
+  const currentState = (stateRow.state as Record<string, unknown>) ?? {};
+  const updatedState = {
+    ...currentState,
+    frame: {
       id: frameId,
       name: input.name,
       description: input.description,
@@ -279,9 +299,14 @@ async function persistFrameSelection(
       lore: input.lore ?? '',
       isCustom: input.isCustom ?? false,
     },
-  });
+  };
 
-  if (error) {
-    console.warn(`Frame persistence RPC not available: ${error.message}`);
+  const { error: updateError } = await supabase
+    .from('sage_adventure_state')
+    .update({ state: updatedState })
+    .eq('id', stateRow.id);
+
+  if (updateError) {
+    console.warn(`Failed to update frame state: ${updateError.message}`);
   }
 }

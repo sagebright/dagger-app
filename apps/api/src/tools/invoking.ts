@@ -10,6 +10,7 @@
  */
 
 import { registerToolHandler } from '../services/tool-dispatcher.js';
+import type { ToolContext } from '../services/tool-dispatcher.js';
 import { getSupabase } from '../services/supabase.js';
 import type { SageEvent } from '@sage-codex/shared-types';
 
@@ -99,7 +100,8 @@ export function registerInvokingTools(): void {
  * event for the frontend to update the SparkPanel.
  */
 async function handleSetSpark(
-  input: Record<string, unknown>
+  input: Record<string, unknown>,
+  context: ToolContext
 ): Promise<{ result: unknown; isError: boolean }> {
   const sparkInput = input as unknown as SetSparkInput;
 
@@ -115,7 +117,7 @@ async function handleSetSpark(
 
   // Save spark to adventure state in Supabase (best effort)
   try {
-    await persistSparkToState(sparkInput);
+    await persistSparkToState(context.sessionId, sparkInput);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     console.error(`Failed to persist spark: ${message}`);
@@ -138,7 +140,8 @@ async function handleSetSpark(
  * Queues a ui:ready event for the frontend.
  */
 async function handleSignalReady(
-  input: Record<string, unknown>
+  input: Record<string, unknown>,
+  _context: ToolContext
 ): Promise<{ result: unknown; isError: boolean }> {
   const readyInput = input as unknown as SignalReadyInput;
 
@@ -169,21 +172,39 @@ async function handleSignalReady(
 /**
  * Persist the spark data to the adventure state in Supabase.
  *
- * Updates the sage_adventure_state JSONB column with the spark data.
- * This is best-effort — failures are logged but don't block the tool call.
+ * Reads the current state JSONB, merges the spark, and writes back.
+ * Scoped to the session via sessionId. Best-effort — failures are
+ * logged but don't block the tool call.
  */
-async function persistSparkToState(spark: SetSparkInput): Promise<void> {
+async function persistSparkToState(
+  sessionId: string,
+  spark: SetSparkInput
+): Promise<void> {
   const supabase = getSupabase();
 
-  // Update adventure state with the spark
-  // Note: This updates all rows — in practice, the chat route should
-  // pass the session ID to scope the update. For now, this is a placeholder.
-  const { error } = await supabase.rpc('update_adventure_spark', {
-    p_spark: { name: spark.name, vision: spark.vision },
-  });
+  const { data: stateRow, error: fetchError } = await supabase
+    .from('sage_adventure_state')
+    .select('id, state')
+    .eq('session_id', sessionId)
+    .single();
 
-  if (error) {
-    // If the RPC doesn't exist yet, log but don't fail
-    console.warn(`Spark persistence RPC not available: ${error.message}`);
+  if (fetchError || !stateRow) {
+    console.warn(`Adventure state not found for session ${sessionId}`);
+    return;
+  }
+
+  const currentState = (stateRow.state as Record<string, unknown>) ?? {};
+  const updatedState = {
+    ...currentState,
+    spark: { name: spark.name, vision: spark.vision },
+  };
+
+  const { error: updateError } = await supabase
+    .from('sage_adventure_state')
+    .update({ state: updatedState })
+    .eq('id', stateRow.id);
+
+  if (updateError) {
+    console.warn(`Failed to update spark state: ${updateError.message}`);
   }
 }

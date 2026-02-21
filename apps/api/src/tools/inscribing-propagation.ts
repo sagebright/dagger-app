@@ -12,6 +12,7 @@
  */
 
 import { registerToolHandler } from '../services/tool-dispatcher.js';
+import type { ToolContext } from '../services/tool-dispatcher.js';
 import type {
   SageEvent,
   InscribingSectionId,
@@ -84,7 +85,8 @@ export function registerPropagationTools(): void {
  * and emits a panel:propagation_deterministic summary event.
  */
 async function handlePropagateRename(
-  input: Record<string, unknown>
+  input: Record<string, unknown>,
+  _context: ToolContext
 ): Promise<{ result: unknown; isError: boolean }> {
   const renameInput = input as unknown as PropagateRenameInput;
 
@@ -184,7 +186,8 @@ async function handlePropagateRename(
  * event so the frontend can show which sections need review.
  */
 async function handlePropagateSemantic(
-  input: Record<string, unknown>
+  input: Record<string, unknown>,
+  _context: ToolContext
 ): Promise<{ result: unknown; isError: boolean }> {
   const semanticInput = input as unknown as PropagateSemanticInput;
 

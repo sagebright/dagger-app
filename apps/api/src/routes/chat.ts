@@ -153,7 +153,8 @@ async function runStreamingLoop(
   res: Response,
   initialMessages: AnthropicMessage[],
   systemPrompt: string | undefined,
-  tools: ToolDefinition[] | undefined
+  tools: ToolDefinition[] | undefined,
+  sessionId: string
 ): Promise<StreamResult> {
   let apiMessages = initialMessages;
   let totalInputTokens = 0;
@@ -190,7 +191,7 @@ async function runStreamingLoop(
     }
 
     // Dispatch tool calls and send tool events
-    const dispatch = await dispatchToolCalls(parsed.toolUseBlocks);
+    const dispatch = await dispatchToolCalls(parsed.toolUseBlocks, { sessionId });
     for (const event of dispatch.events) {
       sendSSEEvent(res, event);
     }
@@ -324,7 +325,7 @@ router.post('/', async (req: Request, res: Response) => {
     // Initialize SSE response and run streaming loop
     initializeSSEResponse(res);
     const result = await runStreamingLoop(
-      res, streamOptions.messages, streamOptions.systemPrompt, streamOptions.tools
+      res, streamOptions.messages, streamOptions.systemPrompt, streamOptions.tools, sessionId
     );
 
     // Store the assistant's response
@@ -342,10 +343,11 @@ router.post('/', async (req: Request, res: Response) => {
     // Log token usage (non-fatal)
     await logTokenUsage({
       sessionId,
-      messageId: 'aggregated',
       inputTokens: result.totalInputTokens,
       outputTokens: result.totalOutputTokens,
       model: result.model,
+      stage,
+      operation: 'chat',
     });
 
     res.end();
@@ -418,7 +420,7 @@ router.post('/greet', async (req: Request, res: Response) => {
     // Initialize SSE response and run streaming loop
     initializeSSEResponse(res);
     const result = await runStreamingLoop(
-      res, streamOptions.messages, streamOptions.systemPrompt, streamOptions.tools
+      res, streamOptions.messages, streamOptions.systemPrompt, streamOptions.tools, sessionId
     );
 
     // Store the assistant's greeting response
@@ -435,10 +437,11 @@ router.post('/greet', async (req: Request, res: Response) => {
 
     await logTokenUsage({
       sessionId,
-      messageId: 'aggregated',
       inputTokens: result.totalInputTokens,
       outputTokens: result.totalOutputTokens,
       model: result.model,
+      stage,
+      operation: 'greet',
     });
 
     res.end();
