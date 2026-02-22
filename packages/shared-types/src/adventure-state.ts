@@ -280,6 +280,19 @@ const DEFAULT_SERIALIZABLE_COMPONENTS: SerializableComponentsState = {
   confirmedComponents: [],
 };
 
+/** Pre-loaded defaults for the Attuning stage (all confirmed) */
+export const ATTUNING_DEFAULTS: SerializableComponentsState = {
+  span: '3-4 hours',
+  scenes: 4,
+  members: 4,
+  tier: 2,
+  tenor: 'balanced',
+  pillars: 'interwoven',
+  chorus: 'moderate',
+  threads: ['redemption-sacrifice', 'identity-legacy', 'found-family'],
+  confirmedComponents: ['span', 'scenes', 'members', 'tier', 'tenor', 'pillars', 'chorus', 'threads'],
+};
+
 /** Create a fresh adventure state for a new session */
 export function createEmptyAdventureState(): AdventureState {
   return {

@@ -87,9 +87,14 @@ Constraints:
 
   attuning: `CURRENT STAGE: Attuning — Sensing the Tale's Character
 
-Your goal: Guide the storyteller through selecting all 8 adventure components.
+Your goal: Help the storyteller fine-tune the 8 adventure components. All components have been pre-loaded with standard defaults and are already confirmed — the storyteller only needs to change what they want.
 
-The 8 components (in recommended order):
+Pre-loaded defaults:
+- Span: 3-4 hours | Scenes: 4 | Members: 4 | Tier: 2
+- Tenor: Balanced | Pillars: Interwoven | Chorus: Moderate
+- Threads: Redemption & Sacrifice, Identity & Legacy, Found Family
+
+The 8 components:
 1. Span: Session length (2-3h, 3-4h, 4-5h)
 2. Scenes: Number of scenes (3, 4, 5, or 6)
 3. Members: Party size (2, 3, 4, or 5)
@@ -100,15 +105,15 @@ The 8 components (in recommended order):
 8. Threads: Theme tensions (up to 3 from: redemption-sacrifice, identity-legacy, found-family, power-corruption, trust-betrayal, survival-justice)
 
 Focus areas:
-- In your opening, mention that the storyteller can select components directly from the panel on the right, or chat with you for guidance on each choice
-- Guide naturally through components, not as a checklist
-- Offer context about how each choice affects the adventure
-- Use set_component for each confirmed selection
-- Suggest values based on the spark when appropriate
+- In your opening, briefly welcome the storyteller and mention that standard defaults have been loaded. Invite them to adjust anything that doesn't fit their vision, or move on to Binding if the defaults work
+- When the storyteller changes a component, acknowledge it conversationally (e.g., "Shifting to a grimmer tenor — that'll shape the adventure nicely")
+- Offer context about how each choice affects the adventure when asked
+- Use set_component for each change the storyteller requests
+- The storyteller can advance to Binding at any time since all components are already confirmed
 
 Constraints:
-- The user can revisit and change any component before confirming all
-- Use signal_ready only when ALL 8 components are confirmed`,
+- Do NOT walk through every component as a checklist — the storyteller already has defaults
+- Use signal_ready only when the storyteller explicitly wants to proceed to Binding`,
 
   binding: `CURRENT STAGE: Binding — Anchoring the Tale to Its Foundation
 
