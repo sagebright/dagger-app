@@ -73,6 +73,7 @@ export function AdventurePage() {
 
   const initialize = useAdventureStore((s) => s.initialize);
   const clearMessages = useChatStore((s) => s.clearMessages);
+  const loadMessages = useChatStore((s) => s.loadMessages);
 
   /** Load the active session and initialize stores */
   const loadActiveSession = useCallback(async () => {
@@ -119,6 +120,39 @@ export function AdventurePage() {
       initialize(detail.session.id, adventureState);
       clearMessages();
 
+      // Load past messages for the current stage so chat isn't empty on resume.
+      // If no messages exist, useSageGreeting will fire in the stage page.
+      try {
+        const msgRes = await fetch(
+          `/api/session/${detail.session.id}/messages?stage=${detail.session.stage}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        if (msgRes.ok) {
+          const msgData = (await msgRes.json()) as {
+            messages: Array<{
+              id: string;
+              role: string;
+              content: string;
+              created_at: string;
+            }>;
+          };
+          if (msgData.messages.length > 0) {
+            loadMessages(
+              msgData.messages.map((m) => ({
+                id: m.id,
+                role: m.role as 'user' | 'assistant',
+                content: m.content,
+                timestamp: m.created_at,
+                isStreaming: false,
+                toolCalls: [],
+              }))
+            );
+          }
+        }
+      } catch {
+        // Best-effort; chat will start empty and greeting will fire
+      }
+
       setSessionId(detail.session.id);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to load';
@@ -126,7 +160,7 @@ export function AdventurePage() {
     } finally {
       setIsLoading(false);
     }
-  }, [token, navigate, initialize, clearMessages]);
+  }, [token, navigate, initialize, clearMessages, loadMessages]);
 
   useEffect(() => {
     loadActiveSession();
