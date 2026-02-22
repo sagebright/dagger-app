@@ -22,6 +22,8 @@ const router: RouterType = Router();
 interface FrameSelectBody {
   sessionId: string;
   frameId: string;
+  /** Full frame data from frontend (used for custom frames that don't exist in DB) */
+  frame?: Record<string, unknown>;
 }
 
 // =============================================================================
@@ -77,9 +79,10 @@ function isValidFrameSelectBody(body: unknown): body is FrameSelectBody {
 // =============================================================================
 
 /**
- * Update the adventure state JSONB with the selected frame ID.
+ * Update the adventure state JSONB with the selected frame.
  *
- * Reads the current state, sets the frame field, and writes back.
+ * If `body.frame` is provided (custom frames), uses that data directly.
+ * Otherwise, looks up the frame from the daggerheart_frames table.
  */
 async function persistFrameToState(body: FrameSelectBody): Promise<void> {
   const supabase = getSupabase();
@@ -95,28 +98,38 @@ async function persistFrameToState(body: FrameSelectBody): Promise<void> {
     throw new Error(`Adventure state not found for session ${body.sessionId}`);
   }
 
-  // Look up the frame from the database
-  const { data: frameRow, error: frameError } = await supabase
-    .from('daggerheart_frames')
-    .select('*')
-    .eq('id', body.frameId)
-    .single();
+  let frameData: Record<string, unknown>;
 
-  if (frameError || !frameRow) {
-    throw new Error(`Frame not found: ${body.frameId}`);
+  if (body.frame) {
+    // Custom frame — use data provided by frontend
+    frameData = body.frame;
+  } else {
+    // Database frame — look up from daggerheart_frames
+    const { data: frameRow, error: frameError } = await supabase
+      .from('daggerheart_frames')
+      .select('*')
+      .eq('id', body.frameId)
+      .single();
+
+    if (frameError || !frameRow) {
+      throw new Error(`Frame not found: ${body.frameId}`);
+    }
+
+    frameData = {
+      id: frameRow.id,
+      name: frameRow.name,
+      description: frameRow.description,
+      themes: frameRow.themes ?? [],
+      typicalAdversaries: frameRow.typical_adversaries ?? [],
+      lore: frameRow.lore ?? '',
+      isCustom: false,
+      sections: [],
+    };
   }
 
   // Merge the frame into the adventure state
   const state = (stateRow.state as Record<string, unknown>) ?? {};
-  state.frame = {
-    id: frameRow.id,
-    name: frameRow.name,
-    description: frameRow.description,
-    themes: frameRow.themes ?? [],
-    typicalAdversaries: frameRow.typical_adversaries ?? [],
-    lore: frameRow.lore ?? '',
-    isCustom: false,
-  };
+  state.frame = frameData;
 
   const { error: updateError } = await supabase
     .from('sage_adventure_state')

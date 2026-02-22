@@ -127,6 +127,55 @@ const ATTUNING_TOOLS: ToolDefinition[] = [SET_COMPONENT];
 // Binding Tools
 // =============================================================================
 
+/** Rich frame properties shared by select_frame and draft_custom_frames schemas */
+const RICH_FRAME_PROPERTIES = {
+  incitingIncident: {
+    type: 'string',
+    description: 'The event or catalyst that launches the adventure',
+  },
+  toneFeel: {
+    type: 'array',
+    items: { type: 'string' },
+    description: 'Tone and atmosphere keywords (e.g., "eerie", "hopeful", "war-torn")',
+  },
+  touchstones: {
+    type: 'array',
+    items: { type: 'string' },
+    description: 'Media, genre, or cultural touchstones for reference (e.g., "The Witcher", "Studio Ghibli")',
+  },
+  distinctions: {
+    type: 'string',
+    description: 'What makes this frame unique — distinct setting features, unusual elements, or worldbuilding hooks',
+  },
+  heritageClasses: {
+    type: 'string',
+    description: 'Heritage and class guidance — which ancestries and classes fit this setting and why',
+  },
+  playerPrinciples: {
+    type: 'array',
+    items: { type: 'string' },
+    description: 'Guiding principles for players in this frame',
+  },
+  gmPrinciples: {
+    type: 'array',
+    items: { type: 'string' },
+    description: 'Guiding principles for the GM running this frame',
+  },
+  customMechanics: {
+    type: 'string',
+    description: 'Any special mechanics, rules modifications, or unique game elements for this frame',
+  },
+  sessionZeroQuestions: {
+    type: 'array',
+    items: { type: 'string' },
+    description: 'Discussion questions for session zero to establish expectations and boundaries',
+  },
+  complexityRating: {
+    type: 'number',
+    description: 'Complexity rating from 1 (low) to 4 (very high)',
+  },
+} as const;
+
 const SELECT_FRAME: ToolDefinition = {
   name: 'select_frame',
   description:
@@ -165,6 +214,7 @@ const SELECT_FRAME: ToolDefinition = {
         type: 'boolean',
         description: 'Whether this is a user-created frame',
       },
+      ...RICH_FRAME_PROPERTIES,
     },
     required: ['name', 'description'],
   },
@@ -197,7 +247,7 @@ const DRAFT_CUSTOM_FRAMES: ToolDefinition = {
     'Populate the frame gallery with curated frame options. Use this after ' +
     'calling query_frames to assess the database. Pass the complete set of ' +
     'frames you want shown (both database picks and custom-generated ones). ' +
-    'Always aim for exactly 3 frame options.',
+    'Always aim for exactly 3 frame options. Include ALL fields for each frame.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -212,7 +262,7 @@ const DRAFT_CUSTOM_FRAMES: ToolDefinition = {
             },
             description: {
               type: 'string',
-              description: 'Frame description',
+              description: 'Frame description / overview',
             },
             themes: {
               type: 'array',
@@ -232,6 +282,7 @@ const DRAFT_CUSTOM_FRAMES: ToolDefinition = {
               type: 'boolean',
               description: 'Whether this is a custom-generated frame (true) or database frame (false)',
             },
+            ...RICH_FRAME_PROPERTIES,
           },
           required: ['name', 'description'],
         },

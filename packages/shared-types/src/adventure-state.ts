@@ -12,6 +12,7 @@
  */
 
 import type { Stage, ComponentsState } from './stages.js';
+import type { FrameDetailSection } from './sage-events.js';
 
 // =============================================================================
 // Spark (Invoking Stage)
@@ -45,6 +46,8 @@ export interface BoundFrame {
   lore: string;
   /** Whether this frame was user-created */
   isCustom: boolean;
+  /** Accordion sections for the frame detail view */
+  sections: FrameDetailSection[];
 }
 
 // =============================================================================

@@ -24,7 +24,21 @@ interface QueryFramesInput {
   limit?: number;
 }
 
-interface SelectFrameInput {
+/** Rich frame fields shared by SelectFrameInput and DraftFrameInput */
+interface RichFrameFields {
+  incitingIncident?: string;
+  toneFeel?: string[];
+  touchstones?: string[];
+  distinctions?: string;
+  heritageClasses?: string;
+  playerPrinciples?: string[];
+  gmPrinciples?: string[];
+  customMechanics?: string;
+  sessionZeroQuestions?: string[];
+  complexityRating?: number;
+}
+
+interface SelectFrameInput extends RichFrameFields {
   frameId?: string;
   name: string;
   description: string;
@@ -34,7 +48,7 @@ interface SelectFrameInput {
   isCustom?: boolean;
 }
 
-interface DraftFrameInput {
+interface DraftFrameInput extends RichFrameFields {
   name: string;
   description: string;
   themes?: string[];
@@ -234,7 +248,22 @@ async function handleDraftCustomFrames(
       name: frame.name,
       pitch: extractPitch(description),
       themes,
-      sections: buildFrameSections({ description, themes, lore, typicalAdversaries }),
+      sections: buildFrameSections({
+        description,
+        themes,
+        lore,
+        typicalAdversaries,
+        incitingIncident: frame.incitingIncident,
+        toneFeel: frame.toneFeel,
+        touchstones: frame.touchstones,
+        distinctions: frame.distinctions,
+        heritageClasses: frame.heritageClasses,
+        playerPrinciples: frame.playerPrinciples,
+        gmPrinciples: frame.gmPrinciples,
+        customMechanics: frame.customMechanics,
+        sessionZeroQuestions: frame.sessionZeroQuestions,
+        complexityRating: frame.complexityRating,
+      }),
     };
   });
 
@@ -420,17 +449,7 @@ function buildFrameSections(fields: {
     });
   }
 
-  // 7. Typical Adversaries (pills)
-  if (fields.typicalAdversaries.length > 0) {
-    sections.push({
-      key: 'adversaries',
-      label: 'Typical Adversaries',
-      content: fields.typicalAdversaries.join(', '),
-      pills: fields.typicalAdversaries,
-    });
-  }
-
-  // 8. Distinctions (JSONB — render as formatted text)
+  // 7. Distinctions (JSONB — render as formatted text)
   if (fields.distinctions) {
     const text = formatJsonbContent(fields.distinctions);
     if (text) {
@@ -442,7 +461,7 @@ function buildFrameSections(fields: {
     }
   }
 
-  // 9. Heritage & Classes Guidance (JSONB)
+  // 8. Heritage & Classes Guidance (JSONB)
   if (fields.heritageClasses) {
     const text = formatJsonbContent(fields.heritageClasses);
     if (text) {
@@ -452,6 +471,16 @@ function buildFrameSections(fields: {
         content: text,
       });
     }
+  }
+
+  // 9. Typical Adversaries (pills)
+  if (fields.typicalAdversaries.length > 0) {
+    sections.push({
+      key: 'adversaries',
+      label: 'Typical Adversaries',
+      content: fields.typicalAdversaries.join(', '),
+      pills: fields.typicalAdversaries,
+    });
   }
 
   // 10. Player & GM Principles (combined)
@@ -579,6 +608,25 @@ async function persistFrameSelection(
   }
 
   const currentState = (stateRow.state as Record<string, unknown>) ?? {};
+
+  // Build sections from the rich fields so they persist with the frame
+  const sections = buildFrameSections({
+    description: input.description,
+    themes: input.themes ?? [],
+    lore: input.lore ?? '',
+    typicalAdversaries: input.typicalAdversaries ?? [],
+    incitingIncident: input.incitingIncident,
+    toneFeel: input.toneFeel,
+    touchstones: input.touchstones,
+    distinctions: input.distinctions,
+    heritageClasses: input.heritageClasses,
+    playerPrinciples: input.playerPrinciples,
+    gmPrinciples: input.gmPrinciples,
+    customMechanics: input.customMechanics,
+    sessionZeroQuestions: input.sessionZeroQuestions,
+    complexityRating: input.complexityRating,
+  });
+
   const updatedState = {
     ...currentState,
     frame: {
@@ -589,6 +637,7 @@ async function persistFrameSelection(
       typicalAdversaries: input.typicalAdversaries ?? [],
       lore: input.lore ?? '',
       isCustom: input.isCustom ?? false,
+      sections,
     },
   };
 

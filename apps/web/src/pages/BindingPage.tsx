@@ -24,7 +24,7 @@ import { ChatPanel } from '@/components/chat/ChatPanel';
 import { StageDropdown } from '@/components/layout/StageDropdown';
 import { FrameGallery } from '@/components/panels/FrameGallery';
 import { FrameDetail } from '@/components/panels/FrameDetail';
-import type { FrameCardData, BoundFrame } from '@sage-codex/shared-types';
+import type { FrameCardData } from '@sage-codex/shared-types';
 
 // =============================================================================
 // Types
@@ -107,15 +107,7 @@ export function BindingPage({ sessionId, onNavigate }: BindingPageProps) {
       // Also update adventure store if the frame is in the gallery
       const selectedFrame = frames.find((f) => f.id === data.frameId);
       if (selectedFrame) {
-        setFrame({
-          id: selectedFrame.id,
-          name: selectedFrame.name,
-          description: selectedFrame.pitch,
-          themes: selectedFrame.themes,
-          typicalAdversaries: [],
-          lore: '',
-          isCustom: false,
-        });
+        setFrame(frameToBound(selectedFrame));
       }
     },
     onUIReady: () => {
@@ -160,22 +152,14 @@ export function BindingPage({ sessionId, onNavigate }: BindingPageProps) {
 
       // Find the full frame data for the adventure store
       const selectedFrame = frames.find((f) => f.id === frameId);
-      if (selectedFrame) {
-        const boundFrame: BoundFrame = {
-          id: selectedFrame.id,
-          name: selectedFrame.name,
-          description: selectedFrame.pitch,
-          themes: selectedFrame.themes,
-          typicalAdversaries: [],
-          lore: '',
-          isCustom: false,
-        };
-        setFrame(boundFrame);
+      const bound = selectedFrame ? frameToBound(selectedFrame) : null;
+      if (bound) {
+        setFrame(bound);
       }
 
       // Persist selection to the backend
       try {
-        await persistFrameSelection(sessionId, accessToken, frameId);
+        await persistFrameSelection(sessionId, accessToken, frameId, bound);
       } catch {
         // Best-effort persistence; local state is authoritative
       }
@@ -317,11 +301,31 @@ function BindingPanel({
 // Helpers
 // =============================================================================
 
+/** Convert a FrameCardData to a BoundFrame for the adventure store */
+function frameToBound(frame: FrameCardData): import('@sage-codex/shared-types').BoundFrame {
+  const sectionContent = (key: string) =>
+    frame.sections.find((s) => s.key === key)?.content ?? '';
+  const sectionPills = (key: string) =>
+    frame.sections.find((s) => s.key === key)?.pills ?? [];
+
+  return {
+    id: frame.id,
+    name: frame.name,
+    description: frame.pitch,
+    themes: frame.themes,
+    typicalAdversaries: sectionPills('adversaries'),
+    lore: sectionContent('lore'),
+    isCustom: true,
+    sections: frame.sections,
+  };
+}
+
 /** Persist the frame selection to the backend */
 async function persistFrameSelection(
   sessionId: string,
   accessToken: string,
-  frameId: string
+  frameId: string,
+  frame: import('@sage-codex/shared-types').BoundFrame | null
 ): Promise<void> {
   await fetch('/api/frame/select', {
     method: 'POST',
@@ -329,6 +333,6 @@ async function persistFrameSelection(
       'Content-Type': 'application/json',
       Authorization: `Bearer ${accessToken}`,
     },
-    body: JSON.stringify({ sessionId, frameId }),
+    body: JSON.stringify({ sessionId, frameId, frame }),
   });
 }
