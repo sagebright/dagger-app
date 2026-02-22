@@ -32,6 +32,7 @@ import type {
   PanelSparkEvent,
   PanelComponentEvent,
   PanelFramesEvent,
+  PanelFrameSelectedEvent,
   PanelSceneArcsEvent,
   PanelSceneArcEvent,
   PanelNameEvent,
@@ -80,6 +81,7 @@ export interface SageStreamCallbacks {
   onPanelSpark?: (data: PanelSparkEvent['data']) => void;
   onPanelComponent?: (data: PanelComponentEvent['data']) => void;
   onPanelFrames?: (data: PanelFramesEvent['data']) => void;
+  onPanelFrameSelected?: (data: PanelFrameSelectedEvent['data']) => void;
   onPanelSceneArcs?: (data: PanelSceneArcsEvent['data']) => void;
   onPanelSceneArc?: (data: PanelSceneArcEvent['data']) => void;
   onPanelName?: (data: PanelNameEvent['data']) => void;

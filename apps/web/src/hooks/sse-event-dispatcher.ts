@@ -18,6 +18,7 @@ import type {
   PanelSparkEvent,
   PanelComponentEvent,
   PanelFramesEvent,
+  PanelFrameSelectedEvent,
   PanelSceneArcsEvent,
   PanelSceneArcEvent,
   PanelNameEvent,
@@ -130,6 +131,9 @@ export function dispatchEvent(
       break;
     case 'panel:frames':
       callbacks.onPanelFrames?.(data as PanelFramesEvent['data']);
+      break;
+    case 'panel:frame_selected':
+      callbacks.onPanelFrameSelected?.(data as PanelFrameSelectedEvent['data']);
       break;
     case 'panel:scene_arcs':
       callbacks.onPanelSceneArcs?.(data as PanelSceneArcsEvent['data']);

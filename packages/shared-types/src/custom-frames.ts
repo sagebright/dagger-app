@@ -5,7 +5,7 @@
  * Includes wizard state management, API contracts, and validation helpers.
  */
 
-import type { DaggerheartCustomFrame } from './database.js';
+import type { DaggerheartFrame } from './database.js';
 
 // ============================================================================
 // WIZARD STEP DEFINITIONS
@@ -235,7 +235,7 @@ export const INITIAL_WIZARD_STATE: CustomFrameWizardState = {
  * Create custom frame request payload
  */
 export interface CreateCustomFrameRequest {
-  title: string;
+  name: string;
   concept: string;
   pitch: string;
   tone_feel: string[];
@@ -264,7 +264,7 @@ export interface UpdateCustomFrameRequest extends Partial<CreateCustomFrameReque
  */
 export interface CustomFrameResponse {
   success: boolean;
-  data?: DaggerheartCustomFrame;
+  data?: DaggerheartFrame;
   error?: string;
 }
 
@@ -273,7 +273,7 @@ export interface CustomFrameResponse {
  */
 export interface ListCustomFramesResponse {
   success: boolean;
-  data?: DaggerheartCustomFrame[];
+  data?: DaggerheartFrame[];
   total?: number;
   error?: string;
 }
@@ -406,7 +406,7 @@ export function wizardStateToRequest(state: CustomFrameWizardState): CreateCusto
   }
 
   return {
-    title: state.identity.title!,
+    name: state.identity.title!,
     concept: state.identity.concept!,
     pitch: state.identity.pitch!,
     tone_feel: state.tone.tone_feel!,
@@ -425,19 +425,20 @@ export function wizardStateToRequest(state: CustomFrameWizardState): CreateCusto
 }
 
 /**
- * Converts a DaggerheartCustomFrame to wizard state for editing
+ * Converts a DaggerheartFrame to wizard state for editing.
+ * Maps the unified frame's `name` field to the wizard's `title` identity field.
  */
-export function frameToWizardState(frame: DaggerheartCustomFrame): CustomFrameWizardState {
+export function frameToWizardState(frame: DaggerheartFrame): CustomFrameWizardState {
   return {
     currentStep: 'review',
     identity: {
-      title: frame.title,
-      concept: frame.concept,
-      pitch: frame.pitch,
+      title: frame.name,
+      concept: frame.concept ?? '',
+      pitch: frame.pitch ?? '',
     },
     tone: {
-      tone_feel: frame.tone_feel,
-      themes: frame.themes,
+      tone_feel: frame.tone_feel ?? [],
+      themes: frame.themes ?? [],
     },
     details: {
       complexity_rating: frame.complexity_rating ?? undefined,

@@ -102,6 +102,22 @@ export function BindingPage({ sessionId, onNavigate }: BindingPageProps) {
         setActiveFrameId(data.activeFrameId);
       }
     },
+    onPanelFrameSelected: (data) => {
+      setActiveFrameId(data.frameId);
+      // Also update adventure store if the frame is in the gallery
+      const selectedFrame = frames.find((f) => f.id === data.frameId);
+      if (selectedFrame) {
+        setFrame({
+          id: selectedFrame.id,
+          name: selectedFrame.name,
+          description: selectedFrame.pitch,
+          themes: selectedFrame.themes,
+          typicalAdversaries: [],
+          lore: '',
+          isCustom: false,
+        });
+      }
+    },
     onUIReady: () => {
       setIsReady(true);
     },
@@ -220,7 +236,7 @@ export function BindingPage({ sessionId, onNavigate }: BindingPageProps) {
           frames={frames}
           exploringFrameId={exploringFrameId}
           activeFrameId={activeFrameId}
-          isReady={isReady && activeFrameId !== null}
+          isReady={activeFrameId !== null}
           onExploreFrame={handleExploreFrame}
           onBackToGallery={handleBackToGallery}
           onSelectFrame={handleSelectFrame}

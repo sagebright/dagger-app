@@ -27,9 +27,27 @@ export type Database = {
           themes: string[] | null;
           typical_adversaries: string[] | null;
           lore: string | null;
+          // Rich schema fields (unified from daggerheart_custom_frames)
+          source: 'official' | 'sage' | 'user';
+          concept: string | null;
+          pitch: string | null;
+          tone_feel: string[] | null;
+          complexity_rating: number | null;
+          touchstones: string[] | null;
+          overview: string | null;
+          heritage_classes: Json | null;
+          player_principles: string[] | null;
+          gm_principles: string[] | null;
+          distinctions: Json | null;
+          inciting_incident: string | null;
+          custom_mechanics: Json | null;
+          session_zero_questions: string[] | null;
+          user_id: string | null;
+          // Metadata
           embedding: string | null;
           source_book: string | null;
           created_at: string | null;
+          updated_at: string | null;
         };
         Insert: {
           id?: string;
@@ -38,9 +56,25 @@ export type Database = {
           themes?: string[] | null;
           typical_adversaries?: string[] | null;
           lore?: string | null;
+          source?: 'official' | 'sage' | 'user';
+          concept?: string | null;
+          pitch?: string | null;
+          tone_feel?: string[] | null;
+          complexity_rating?: number | null;
+          touchstones?: string[] | null;
+          overview?: string | null;
+          heritage_classes?: Json | null;
+          player_principles?: string[] | null;
+          gm_principles?: string[] | null;
+          distinctions?: Json | null;
+          inciting_incident?: string | null;
+          custom_mechanics?: Json | null;
+          session_zero_questions?: string[] | null;
+          user_id?: string | null;
           embedding?: string | null;
           source_book?: string | null;
           created_at?: string | null;
+          updated_at?: string | null;
         };
         Update: {
           id?: string;
@@ -49,9 +83,25 @@ export type Database = {
           themes?: string[] | null;
           typical_adversaries?: string[] | null;
           lore?: string | null;
+          source?: 'official' | 'sage' | 'user';
+          concept?: string | null;
+          pitch?: string | null;
+          tone_feel?: string[] | null;
+          complexity_rating?: number | null;
+          touchstones?: string[] | null;
+          overview?: string | null;
+          heritage_classes?: Json | null;
+          player_principles?: string[] | null;
+          gm_principles?: string[] | null;
+          distinctions?: Json | null;
+          inciting_incident?: string | null;
+          custom_mechanics?: Json | null;
+          session_zero_questions?: string[] | null;
+          user_id?: string | null;
           embedding?: string | null;
           source_book?: string | null;
           created_at?: string | null;
+          updated_at?: string | null;
         };
         Relationships: [];
       };
@@ -709,87 +759,8 @@ export type Database = {
         };
         Relationships: [];
       };
-      daggerheart_custom_frames: {
-        Row: {
-          id: string;
-          user_id: string | null;
-          // Required fields
-          title: string;
-          concept: string;
-          pitch: string;
-          tone_feel: string[];
-          themes: string[];
-          // Optional fields
-          complexity_rating: number | null;
-          touchstones: string[] | null;
-          overview: string | null;
-          heritage_classes: Json | null;
-          player_principles: string[] | null;
-          gm_principles: string[] | null;
-          distinctions: Json | null;
-          inciting_incident: string | null;
-          custom_mechanics: Json | null;
-          session_zero_questions: string[] | null;
-          // Metadata
-          source_book: string | null;
-          embedding: string | null;
-          created_at: string | null;
-          updated_at: string | null;
-        };
-        Insert: {
-          id?: string;
-          user_id?: string | null;
-          // Required fields
-          title: string;
-          concept: string;
-          pitch: string;
-          tone_feel: string[];
-          themes: string[];
-          // Optional fields
-          complexity_rating?: number | null;
-          touchstones?: string[] | null;
-          overview?: string | null;
-          heritage_classes?: Json | null;
-          player_principles?: string[] | null;
-          gm_principles?: string[] | null;
-          distinctions?: Json | null;
-          inciting_incident?: string | null;
-          custom_mechanics?: Json | null;
-          session_zero_questions?: string[] | null;
-          // Metadata
-          source_book?: string | null;
-          embedding?: string | null;
-          created_at?: string | null;
-          updated_at?: string | null;
-        };
-        Update: {
-          id?: string;
-          user_id?: string | null;
-          // Required fields
-          title?: string;
-          concept?: string;
-          pitch?: string;
-          tone_feel?: string[];
-          themes?: string[];
-          // Optional fields
-          complexity_rating?: number | null;
-          touchstones?: string[] | null;
-          overview?: string | null;
-          heritage_classes?: Json | null;
-          player_principles?: string[] | null;
-          gm_principles?: string[] | null;
-          distinctions?: Json | null;
-          inciting_incident?: string | null;
-          custom_mechanics?: Json | null;
-          session_zero_questions?: string[] | null;
-          // Metadata
-          source_book?: string | null;
-          embedding?: string | null;
-          created_at?: string | null;
-          updated_at?: string | null;
-        };
-        Relationships: [];
-      };
+      // daggerheart_custom_frames has been unified into daggerheart_frames
+      // (migration 20260222000002). Use DaggerheartFrame with source='user'.
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
@@ -817,7 +788,11 @@ export type DaggerheartCommunity = Database['public']['Tables']['daggerheart_com
 export type DaggerheartLocation = Database['public']['Tables']['daggerheart_locations']['Row'];
 export type DaggerheartNPC = Database['public']['Tables']['daggerheart_npcs']['Row'];
 export type DaggerheartAdventure = Database['public']['Tables']['daggerheart_adventures']['Row'];
-export type DaggerheartCustomFrame = Database['public']['Tables']['daggerheart_custom_frames']['Row'];
+/**
+ * @deprecated Use DaggerheartFrame with source='user' | 'sage' instead.
+ * Alias kept for backward compatibility during migration period.
+ */
+export type DaggerheartCustomFrame = DaggerheartFrame;
 
 /**
  * List of all Daggerheart content table names
@@ -839,7 +814,6 @@ export const DAGGERHEART_TABLES = [
   'daggerheart_locations',
   'daggerheart_npcs',
   'daggerheart_adventures',
-  'daggerheart_custom_frames',
 ] as const;
 
 export type DaggerheartTableName = (typeof DAGGERHEART_TABLES)[number];
