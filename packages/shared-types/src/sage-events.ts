@@ -569,6 +569,8 @@ export interface SageChatRequest {
   message: string;
   /** The active session ID */
   sessionId: string;
+  /** When true, message is a system-triggered context note (not shown as user bubble) */
+  isSystemTrigger?: boolean;
 }
 
 /** A stored message record from sage_messages */

@@ -28,6 +28,8 @@ export interface ChatMessage {
   isStreaming: boolean;
   /** Tool calls made during this message */
   toolCalls: ToolCallInfo[];
+  /** When true, this is a system-triggered message (hidden from chat display) */
+  isSystemTriggered?: boolean;
 }
 
 export interface ToolCallInfo {
@@ -65,8 +67,8 @@ export interface ChatStoreState {
 
   // ----- Actions -----
 
-  /** Add a user message to the chat */
-  addUserMessage: (content: string) => string;
+  /** Add a user message to the chat (optionally flagged as system-triggered) */
+  addUserMessage: (content: string, options?: { isSystemTriggered?: boolean }) => string;
 
   /** Start a new assistant message (from chat:start event) */
   startAssistantMessage: (messageId: string) => void;
@@ -115,7 +117,7 @@ export const useChatStore = create<ChatStoreState>((set) => ({
   error: null,
   hasAnimatedGreeting: false,
 
-  addUserMessage: (content) => {
+  addUserMessage: (content, options) => {
     const id = generateMessageId();
     set((prev) => ({
       messages: [
@@ -127,6 +129,7 @@ export const useChatStore = create<ChatStoreState>((set) => ({
           timestamp: new Date().toISOString(),
           isStreaming: false,
           toolCalls: [],
+          ...(options?.isSystemTriggered && { isSystemTriggered: true }),
         },
       ],
       error: null,
