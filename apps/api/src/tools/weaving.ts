@@ -13,6 +13,7 @@
 
 import { registerToolHandler } from '../services/tool-dispatcher.js';
 import type { ToolContext } from '../services/tool-dispatcher.js';
+import { getSupabase } from '../services/supabase.js';
 import type { SageEvent, SceneArcData } from '@sage-codex/shared-types';
 
 // =============================================================================
@@ -103,7 +104,7 @@ export function registerWeavingTools(): void {
  */
 async function handleSetAllSceneArcs(
   input: Record<string, unknown>,
-  _context: ToolContext
+  context: ToolContext
 ): Promise<{ result: unknown; isError: boolean }> {
   const arcsInput = input as unknown as SetAllSceneArcsInput;
 
@@ -132,6 +133,14 @@ async function handleSetAllSceneArcs(
     },
   });
 
+  // Persist all scene arcs to DB (best effort)
+  try {
+    await persistAllSceneArcs(context.sessionId, sceneArcData);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    console.warn(`Failed to persist scene arcs: ${message}`);
+  }
+
   // Return summary for Claude
   const arcSummary = sceneArcData.map((arc) => ({
     id: arc.id,
@@ -157,7 +166,7 @@ async function handleSetAllSceneArcs(
  */
 async function handleSetSceneArc(
   input: Record<string, unknown>,
-  _context: ToolContext
+  context: ToolContext
 ): Promise<{ result: unknown; isError: boolean }> {
   const arcInput = input as unknown as SetSceneArcInput;
 
@@ -186,6 +195,18 @@ async function handleSetSceneArc(
       streaming: false,
     },
   });
+
+  // Persist the updated scene arc to DB (best effort)
+  try {
+    await persistSingleSceneArc(
+      context.sessionId,
+      arcInput.sceneIndex,
+      sceneArcData
+    );
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    console.warn(`Failed to persist scene arc: ${message}`);
+  }
 
   return {
     result: {
@@ -267,4 +288,89 @@ async function handleSuggestName(
     },
     isError: false,
   };
+}
+
+// =============================================================================
+// Persistence
+// =============================================================================
+
+/**
+ * Persist all scene arcs to the adventure state in Supabase.
+ *
+ * Reads the current state JSONB, sets state.sceneArcs, and writes back.
+ * Best-effort; callers catch and log failures.
+ */
+async function persistAllSceneArcs(
+  sessionId: string,
+  sceneArcs: SceneArcData[]
+): Promise<void> {
+  const supabase = getSupabase();
+
+  const { data: stateRow, error: fetchError } = await supabase
+    .from('sage_adventure_state')
+    .select('id, state')
+    .eq('session_id', sessionId)
+    .single();
+
+  if (fetchError || !stateRow) {
+    console.warn(`Adventure state not found for session ${sessionId}`);
+    return;
+  }
+
+  const currentState = (stateRow.state as Record<string, unknown>) ?? {};
+  const updatedState = { ...currentState, sceneArcs };
+
+  const { error: updateError } = await supabase
+    .from('sage_adventure_state')
+    .update({ state: updatedState })
+    .eq('id', stateRow.id);
+
+  if (updateError) {
+    console.warn(`Failed to update scene arcs state: ${updateError.message}`);
+  }
+}
+
+/**
+ * Persist a single scene arc update to the adventure state in Supabase.
+ *
+ * Reads the current state JSONB, updates the entry at the given index,
+ * and writes back. Best-effort; callers catch and log failures.
+ */
+async function persistSingleSceneArc(
+  sessionId: string,
+  sceneIndex: number,
+  sceneArc: SceneArcData
+): Promise<void> {
+  const supabase = getSupabase();
+
+  const { data: stateRow, error: fetchError } = await supabase
+    .from('sage_adventure_state')
+    .select('id, state')
+    .eq('session_id', sessionId)
+    .single();
+
+  if (fetchError || !stateRow) {
+    console.warn(`Adventure state not found for session ${sessionId}`);
+    return;
+  }
+
+  const currentState = (stateRow.state as Record<string, unknown>) ?? {};
+  const sceneArcs = [...((currentState.sceneArcs as SceneArcData[]) ?? [])];
+
+  // Grow array if needed and set the updated arc at the given index
+  while (sceneArcs.length <= sceneIndex) {
+    sceneArcs.push({} as SceneArcData);
+  }
+  sceneArcs[sceneIndex] = sceneArc;
+
+  const updatedState = { ...currentState, sceneArcs };
+
+  const { error: updateError } = await supabase
+    .from('sage_adventure_state')
+    .update({ state: updatedState })
+    .eq('id', stateRow.id);
+
+  if (updateError) {
+    console.warn(`Failed to update scene arc state: ${updateError.message}`);
+  }
 }

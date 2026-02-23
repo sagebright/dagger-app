@@ -3,13 +3,16 @@
  *
  * Verifies:
  * - set_all_scene_arcs populates all scenes and queues panel:scene_arcs event
+ * - set_all_scene_arcs persists sceneArcs to DB state
  * - set_scene_arc updates a single scene and queues panel:scene_arc event
+ * - set_scene_arc persists the updated scene arc to DB state
  * - reorder_scenes validates input and returns reorder confirmation
  * - suggest_adventure_name queues panel:name event
  * - drainWeavingEvents returns and clears pending events
+ * - Persistence failures are logged but do not block tool results
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   registerWeavingTools,
   drainWeavingEvents,
@@ -17,6 +20,37 @@ import {
 import { clearToolHandlers, dispatchToolCalls } from '../services/tool-dispatcher.js';
 import type { ToolContext } from '../services/tool-dispatcher.js';
 import type { CollectedToolUse } from '../services/stream-parser.js';
+
+// =============================================================================
+// Supabase Mock
+// =============================================================================
+
+const {
+  mockUpdateEq,
+  mockUpdate,
+  mockSingle,
+  mockSelectEq,
+  mockSelect,
+  mockFrom,
+} = vi.hoisted(() => {
+  const mockUpdateEq = vi.fn().mockResolvedValue({ error: null });
+  const mockUpdate = vi.fn().mockReturnValue({ eq: mockUpdateEq });
+  const mockSingle = vi.fn().mockResolvedValue({
+    data: { id: 'state-1', state: {} },
+    error: null,
+  });
+  const mockSelectEq = vi.fn().mockReturnValue({ single: mockSingle });
+  const mockSelect = vi.fn().mockReturnValue({ eq: mockSelectEq });
+  const mockFrom = vi.fn().mockReturnValue({
+    select: mockSelect,
+    update: mockUpdate,
+  });
+  return { mockUpdateEq, mockUpdate, mockSingle, mockSelectEq, mockSelect, mockFrom };
+});
+
+vi.mock('../services/supabase.js', () => ({
+  getSupabase: vi.fn().mockReturnValue({ from: mockFrom }),
+}));
 
 const mockContext: ToolContext = { sessionId: 'test-session-id' };
 
@@ -28,6 +62,17 @@ beforeEach(() => {
   clearToolHandlers();
   drainWeavingEvents();
   registerWeavingTools();
+  vi.clearAllMocks();
+  // Re-wire mock chain after clearAllMocks
+  mockFrom.mockReturnValue({ select: mockSelect, update: mockUpdate });
+  mockSelect.mockReturnValue({ eq: mockSelectEq });
+  mockSelectEq.mockReturnValue({ single: mockSingle });
+  mockSingle.mockResolvedValue({
+    data: { id: 'state-1', state: {} },
+    error: null,
+  });
+  mockUpdate.mockReturnValue({ eq: mockUpdateEq });
+  mockUpdateEq.mockResolvedValue({ error: null });
 });
 
 // =============================================================================
@@ -104,6 +149,43 @@ describe('set_all_scene_arcs handler', () => {
     const toolResult = result.toolResults[0];
     expect(toolResult.is_error).toBe(true);
     expect(toolResult.content).toContain('at least one scene');
+  });
+
+  it('persists sceneArcs to DB state', async () => {
+    await dispatchToolCalls([
+      { id: 'tool-1', name: 'set_all_scene_arcs', input: validInput } as CollectedToolUse,
+    ], mockContext);
+
+    // Verify Supabase was called to read state
+    expect(mockFrom).toHaveBeenCalledWith('sage_adventure_state');
+    expect(mockSelect).toHaveBeenCalledWith('id, state');
+    expect(mockSelectEq).toHaveBeenCalledWith('session_id', 'test-session-id');
+
+    // Verify Supabase was called to write state with sceneArcs
+    expect(mockUpdate).toHaveBeenCalled();
+    const updatedState = mockUpdate.mock.calls[0][0].state;
+    expect(updatedState.sceneArcs).toHaveLength(2);
+    expect(updatedState.sceneArcs[0].id).toBe('arc-1');
+    expect(updatedState.sceneArcs[0].title).toBe('The Overgrown Road');
+    expect(updatedState.sceneArcs[0].confirmed).toBe(false);
+    expect(updatedState.sceneArcs[1].id).toBe('arc-2');
+  });
+
+  it('still succeeds when DB persistence fails', async () => {
+    mockSingle.mockResolvedValueOnce({
+      data: null,
+      error: { message: 'Connection lost' },
+    });
+
+    const result = await dispatchToolCalls([
+      { id: 'tool-1', name: 'set_all_scene_arcs', input: validInput } as CollectedToolUse,
+    ], mockContext);
+
+    // Tool result should still succeed
+    const toolResult = result.toolResults[0];
+    expect(toolResult.is_error).toBeUndefined();
+    const parsed = JSON.parse(toolResult.content);
+    expect(parsed.status).toBe('scene_arcs_populated');
   });
 });
 
@@ -201,6 +283,74 @@ describe('set_scene_arc handler', () => {
     const toolResult = result.toolResults[0];
     expect(toolResult.is_error).toBe(true);
     expect(toolResult.content).toContain('sceneArc with title is required');
+  });
+
+  it('persists updated scene arc to DB state', async () => {
+    // Existing state already has sceneArcs
+    mockSingle.mockResolvedValueOnce({
+      data: {
+        id: 'state-1',
+        state: {
+          sceneArcs: [
+            { id: 'arc-1', sceneNumber: 1, title: 'Old Title', confirmed: false },
+            { id: 'arc-2', sceneNumber: 2, title: 'Scene Two', confirmed: false },
+          ],
+        },
+      },
+      error: null,
+    });
+
+    await dispatchToolCalls([
+      {
+        id: 'tool-2',
+        name: 'set_scene_arc',
+        input: {
+          sceneIndex: 0,
+          sceneArc: {
+            id: 'arc-1',
+            sceneNumber: 1,
+            title: 'Updated Title',
+            description: 'Updated desc.',
+          },
+        },
+      } as CollectedToolUse,
+    ], mockContext);
+
+    // Verify Supabase update was called
+    expect(mockUpdate).toHaveBeenCalled();
+    const updatedState = mockUpdate.mock.calls[0][0].state;
+    expect(updatedState.sceneArcs[0].title).toBe('Updated Title');
+    // Scene at index 1 should be unchanged
+    expect(updatedState.sceneArcs[1].title).toBe('Scene Two');
+  });
+
+  it('still succeeds when DB persistence fails', async () => {
+    mockSingle.mockResolvedValueOnce({
+      data: null,
+      error: { message: 'Connection lost' },
+    });
+
+    const result = await dispatchToolCalls([
+      {
+        id: 'tool-2',
+        name: 'set_scene_arc',
+        input: {
+          sceneIndex: 0,
+          sceneArc: {
+            id: 'arc-1',
+            sceneNumber: 1,
+            title: 'The Burning Caravan',
+            description: 'Test desc.',
+          },
+        },
+      } as CollectedToolUse,
+    ], mockContext);
+
+    // Tool result should still succeed
+    const toolResult = result.toolResults[0];
+    expect(toolResult.is_error).toBeUndefined();
+    const parsed = JSON.parse(toolResult.content);
+    expect(parsed.status).toBe('scene_arc_updated');
   });
 });
 
