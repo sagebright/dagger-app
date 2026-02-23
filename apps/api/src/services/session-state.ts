@@ -11,6 +11,7 @@
 
 import { getSupabase } from './supabase.js';
 import { hasCredits, deductCredit } from './credits.js';
+import { ATTUNING_DEFAULTS } from '@sage-codex/shared-types';
 import type { Stage } from '@sage-codex/shared-types';
 
 // =============================================================================
@@ -394,6 +395,30 @@ export async function advanceStage(
 
   if (error || !data) {
     return { data: null, error: error?.message ?? 'Failed to advance stage' };
+  }
+
+  // Pre-load default component values when entering the Attuning stage
+  if (nextStage === 'attuning') {
+    try {
+      const { data: stateRow } = await supabase
+        .from('sage_adventure_state')
+        .select('id, state')
+        .eq('session_id', sessionId)
+        .single();
+
+      if (stateRow) {
+        const currentState = (stateRow.state as Record<string, unknown>) ?? {};
+        const updatedState = { ...currentState, components: { ...ATTUNING_DEFAULTS } };
+
+        await supabase
+          .from('sage_adventure_state')
+          .update({ state: updatedState })
+          .eq('id', stateRow.id);
+      }
+    } catch (err) {
+      // Best-effort: don't block stage advancement if defaults fail to persist
+      console.warn('Failed to write attuning defaults:', err);
+    }
   }
 
   return { data: data as SageSession, error: null };

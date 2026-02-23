@@ -25,6 +25,22 @@ vi.mock('../services/daggerheart-queries.js', () => ({
         themes: ['nature', 'conflict'],
         typical_adversaries: ['beast', 'plant'],
         lore: 'Ancient forest lore',
+        source: 'official',
+        pitch: 'A stolen relic triggers endless spring.',
+        overview: 'A stolen relic triggers endless spring. The nation of Haven invaded.',
+        inciting_incident: 'A sacred relic is stolen from the forest shrine.',
+        tone_feel: ['mysterious', 'urgent'],
+        touchstones: ['Princess Mononoke', 'Horizon Zero Dawn'],
+        distinctions: null,
+        heritage_classes: null,
+        player_principles: ['Protect the wild places'],
+        gm_principles: ['Nature reclaims what was taken'],
+        custom_mechanics: null,
+        session_zero_questions: ['What is your connection to the forest?'],
+        complexity_rating: 2,
+        concept: 'Endless spring consuming the land',
+        user_id: null,
+        updated_at: null,
       },
       {
         id: 'frame-2',
@@ -33,6 +49,22 @@ vi.mock('../services/daggerheart-queries.js', () => ({
         themes: ['honor', 'duty'],
         typical_adversaries: ['humanoid'],
         lore: null,
+        source: 'official',
+        pitch: null,
+        overview: null,
+        inciting_incident: null,
+        tone_feel: null,
+        touchstones: null,
+        distinctions: null,
+        heritage_classes: null,
+        player_principles: null,
+        gm_principles: null,
+        custom_mechanics: null,
+        session_zero_questions: null,
+        complexity_rating: null,
+        concept: null,
+        user_id: null,
+        updated_at: null,
       },
     ],
     error: null,
@@ -189,6 +221,27 @@ describe('select_frame handler', () => {
 
     const toolResult = result.toolResults[0];
     expect(toolResult.is_error).toBe(true);
+  });
+
+  it('queues a panel:frame_selected event', async () => {
+    await dispatchToolCalls([
+      {
+        id: 'tool-5',
+        name: 'select_frame',
+        input: {
+          frameId: 'frame-1',
+          name: 'The Witherwild',
+          description: 'A stolen relic triggers endless spring.',
+        },
+      } as CollectedToolUse,
+    ], mockContext);
+
+    const events = drainBindingEvents();
+    expect(events.length).toBe(1);
+    expect(events[0].type).toBe('panel:frame_selected');
+
+    const data = events[0].data as { frameId: string };
+    expect(data.frameId).toBe('frame-1');
   });
 });
 

@@ -72,12 +72,16 @@ export function formatComponentValue(
 
 function formatThreadsValue(threads: string[]): string {
   if (threads.length === 0) return UNSET_DISPLAY;
+  return `${threads.length} thread${threads.length === 1 ? '' : 's'}`;
+}
 
-  const titles = threads.map((value) =>
-    findChoiceTitle('threads', value)
-  );
-
-  return titles.join(', ');
+/**
+ * Get the full thread names for tooltip display.
+ * Returns null if no threads are selected.
+ */
+export function getThreadsTooltip(threads: string[]): string | null {
+  if (threads.length === 0) return null;
+  return threads.map((value) => findChoiceTitle('threads', value)).join(', ');
 }
 
 function findChoiceTitle(

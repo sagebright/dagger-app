@@ -12,6 +12,7 @@
  */
 
 import type { Stage, ComponentsState } from './stages.js';
+import type { FrameDetailSection } from './sage-events.js';
 
 // =============================================================================
 // Spark (Invoking Stage)
@@ -45,6 +46,8 @@ export interface BoundFrame {
   lore: string;
   /** Whether this frame was user-created */
   isCustom: boolean;
+  /** Accordion sections for the frame detail view */
+  sections: FrameDetailSection[];
 }
 
 // =============================================================================
@@ -278,6 +281,19 @@ const DEFAULT_SERIALIZABLE_COMPONENTS: SerializableComponentsState = {
   chorus: null,
   threads: [],
   confirmedComponents: [],
+};
+
+/** Pre-loaded defaults for the Attuning stage (all confirmed) */
+export const ATTUNING_DEFAULTS: SerializableComponentsState = {
+  span: '3-4 hours',
+  scenes: 4,
+  members: 4,
+  tier: 2,
+  tenor: 'balanced',
+  pillars: 'interwoven',
+  chorus: 'moderate',
+  threads: ['redemption-sacrifice', 'identity-legacy', 'found-family'],
+  confirmedComponents: ['span', 'scenes', 'members', 'tier', 'tenor', 'pillars', 'chorus', 'threads'],
 };
 
 /** Create a fresh adventure state for a new session */

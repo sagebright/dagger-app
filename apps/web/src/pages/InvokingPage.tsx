@@ -16,6 +16,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useSageStream } from '@/hooks/useSageStream';
 import { useChatStore } from '@/stores/chatStore';
 import { useAdventureStore } from '@/stores/adventureStore';
+import { ATTUNING_DEFAULTS } from '@sage-codex/shared-types';
 import { AppShell } from '@/components/layout/AppShell';
 import { ChatPanel } from '@/components/chat/ChatPanel';
 import { SparkPanel } from '@/components/panels/SparkPanel';
@@ -134,6 +135,7 @@ export function InvokingPage({ sessionId }: InvokingPageProps) {
 
       useChatStore.getState().clearMessages();
       useAdventureStore.getState().setStage('attuning');
+      useAdventureStore.getState().setComponents(ATTUNING_DEFAULTS);
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : 'Failed to advance';

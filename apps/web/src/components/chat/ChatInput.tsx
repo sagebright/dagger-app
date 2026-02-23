@@ -43,11 +43,15 @@ export function ChatInput({
   placeholder = 'What path shall we take?',
 }: ChatInputProps) {
   const [value, setValue] = useState('');
+  const [submitPulse, setSubmitPulse] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const handleSubmit = useCallback(() => {
     const trimmed = value.trim();
     if (!trimmed || isDisabled) return;
+
+    // Trigger submit feedback animation
+    setSubmitPulse(true);
 
     onSubmit(trimmed);
     setValue('');
@@ -57,6 +61,13 @@ export function ChatInput({
       textareaRef.current.style.height = 'auto';
     }
   }, [value, isDisabled, onSubmit]);
+
+  // Clear pulse animation after it completes
+  useEffect(() => {
+    if (!submitPulse) return;
+    const timer = setTimeout(() => setSubmitPulse(false), 400);
+    return () => clearTimeout(timer);
+  }, [submitPulse]);
 
   const handleKeyDown = useCallback(
     (event: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -94,8 +105,12 @@ export function ChatInput({
 
   const hasContent = value.trim().length > 0;
 
+  const inputAreaClass = submitPulse
+    ? 'input-area input-area--submit-pulse'
+    : 'input-area';
+
   return (
-    <div className="input-area">
+    <div className={inputAreaClass}>
       <form
         onSubmit={handleFormSubmit}
         className="relative max-w-[720px] mx-auto"

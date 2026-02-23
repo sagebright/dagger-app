@@ -22,7 +22,7 @@ import type {
   ComponentGroup,
   SerializableComponentsState,
 } from '@sage-codex/shared-types';
-import { formatComponentValue } from './component-display';
+import { formatComponentValue, getThreadsTooltip } from './component-display';
 
 // =============================================================================
 // Types
@@ -147,6 +147,9 @@ function ComponentRow({ componentId, components, onClick }: ComponentRowProps) {
   const metadata = COMPONENT_METADATA.find((m) => m.id === componentId);
   const isConfirmed = components.confirmedComponents.includes(componentId);
   const displayValue = formatComponentValue(componentId, components);
+  const tooltip = componentId === 'threads'
+    ? getThreadsTooltip(components.threads) ?? undefined
+    : undefined;
 
   const rowClass = isConfirmed
     ? 'component-row component-row--confirmed'
@@ -162,7 +165,7 @@ function ComponentRow({ componentId, components, onClick }: ComponentRowProps) {
       <span className="component-label">
         {metadata?.label ?? componentId}
       </span>
-      <span className="component-value">
+      <span className="component-value" title={tooltip}>
         {displayValue}
       </span>
     </button>

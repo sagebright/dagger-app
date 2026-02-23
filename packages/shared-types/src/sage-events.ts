@@ -100,6 +100,14 @@ export interface PanelFramesEvent {
   };
 }
 
+/** Frame selection confirmed via chat (sets active frame without replacing gallery) */
+export interface PanelFrameSelectedEvent {
+  type: 'panel:frame_selected';
+  data: {
+    frameId: string;
+  };
+}
+
 /** All scene arcs populated by set_all_scene_arcs tool (Weaving entry) */
 export interface PanelSceneArcsEvent {
   type: 'panel:scene_arcs';
@@ -510,6 +518,7 @@ export type SageEvent =
   | PanelSparkEvent
   | PanelComponentEvent
   | PanelFramesEvent
+  | PanelFrameSelectedEvent
   | PanelSceneArcsEvent
   | PanelSceneArcEvent
   | PanelNameEvent

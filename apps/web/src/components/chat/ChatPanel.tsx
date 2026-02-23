@@ -68,12 +68,13 @@ export function ChatPanel({
         aria-relevant="additions"
       >
         <div className="flex flex-col gap-[var(--message-gap)] message-stagger">
-          {messages.map((msg) => (
+          {messages.map((msg, index) => (
             <MessageBubble
               key={msg.id}
               role={msg.role}
               content={msg.content}
               isStreaming={msg.isStreaming}
+              isGreeting={index === 0 && msg.role === 'assistant'}
             />
           ))}
           {isThinking && <ThinkingIndicator />}
