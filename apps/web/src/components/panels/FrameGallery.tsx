@@ -30,6 +30,8 @@ export interface FrameGalleryProps {
   onAdvance: () => void;
   /** Whether the stage is ready for advancement */
   isReady: boolean;
+  /** Error message shown when frame persistence fails */
+  persistError?: string | null;
 }
 
 // =============================================================================
@@ -43,6 +45,7 @@ export function FrameGallery({
   onExploreFrame,
   onAdvance,
   isReady,
+  persistError,
 }: FrameGalleryProps) {
   return (
     <div className="flex flex-col min-h-0 h-full">
@@ -74,6 +77,20 @@ export function FrameGallery({
           />
         ))}
       </div>
+
+      {/* Persistence error notice */}
+      {persistError && (
+        <div
+          className="flex-shrink-0 text-[12px] text-center py-2"
+          style={{
+            color: 'var(--text-error, #b91c1c)',
+            padding: '4px var(--panel-padding)',
+          }}
+          role="alert"
+        >
+          {persistError}
+        </div>
+      )}
 
       {/* Fixed footer */}
       <StageFooter

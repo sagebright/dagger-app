@@ -69,6 +69,8 @@ export function BindingPage({ sessionId, onNavigate }: BindingPageProps) {
   const [frames, setFrames] = useState<FrameCardData[]>([]);
   const [exploringFrameId, setExploringFrameId] = useState<string | null>(null);
   const [activeFrameId, setActiveFrameId] = useState<string | null>(null);
+  const [isFramePersisted, setIsFramePersisted] = useState(false);
+  const [persistError, setPersistError] = useState<string | null>(null);
   const [isReady, setIsReady] = useState(false);
   const [isThinking, setIsThinking] = useState(false);
 
@@ -100,10 +102,14 @@ export function BindingPage({ sessionId, onNavigate }: BindingPageProps) {
       setFrames(data.frames);
       if (data.activeFrameId) {
         setActiveFrameId(data.activeFrameId);
+        setIsFramePersisted(true);
+        setPersistError(null);
       }
     },
     onPanelFrameSelected: (data) => {
       setActiveFrameId(data.frameId);
+      setIsFramePersisted(true);
+      setPersistError(null);
       // Also update adventure store if the frame is in the gallery
       const selectedFrame = frames.find((f) => f.id === data.frameId);
       if (selectedFrame) {
@@ -147,6 +153,8 @@ export function BindingPage({ sessionId, onNavigate }: BindingPageProps) {
   const handleSelectFrame = useCallback(
     async (frameId: string) => {
       setActiveFrameId(frameId);
+      setIsFramePersisted(false);
+      setPersistError(null);
       setExploringFrameId(null);
       setPanelView('gallery');
 
@@ -157,11 +165,13 @@ export function BindingPage({ sessionId, onNavigate }: BindingPageProps) {
         setFrame(bound);
       }
 
-      // Persist selection to the backend
+      // Persist selection to the backend -- gate Continue button on success
       try {
         await persistFrameSelection(sessionId, accessToken, frameId, bound);
+        setIsFramePersisted(true);
       } catch {
-        // Best-effort persistence; local state is authoritative
+        setIsFramePersisted(false);
+        setPersistError('Frame selection could not be saved. Please try again.');
       }
     },
     [frames, setFrame, sessionId, accessToken]
@@ -220,7 +230,8 @@ export function BindingPage({ sessionId, onNavigate }: BindingPageProps) {
           frames={frames}
           exploringFrameId={exploringFrameId}
           activeFrameId={activeFrameId}
-          isReady={activeFrameId !== null}
+          isReady={activeFrameId !== null && isFramePersisted}
+          persistError={persistError}
           onExploreFrame={handleExploreFrame}
           onBackToGallery={handleBackToGallery}
           onSelectFrame={handleSelectFrame}
@@ -243,6 +254,7 @@ interface BindingPanelProps {
   exploringFrameId: string | null;
   activeFrameId: string | null;
   isReady: boolean;
+  persistError: string | null;
   onExploreFrame: (frameId: string) => void;
   onBackToGallery: () => void;
   onSelectFrame: (frameId: string) => void;
@@ -257,6 +269,7 @@ function BindingPanel({
   exploringFrameId,
   activeFrameId,
   isReady,
+  persistError,
   onExploreFrame,
   onBackToGallery,
   onSelectFrame,
@@ -291,6 +304,7 @@ function BindingPanel({
           onExploreFrame={onExploreFrame}
           onAdvance={onAdvance}
           isReady={isReady}
+          persistError={persistError}
         />
       )}
     </div>
@@ -327,7 +341,7 @@ async function persistFrameSelection(
   frameId: string,
   frame: import('@sage-codex/shared-types').BoundFrame | null
 ): Promise<void> {
-  await fetch('/api/frame/select', {
+  const response = await fetch('/api/frame/select', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -335,4 +349,8 @@ async function persistFrameSelection(
     },
     body: JSON.stringify({ sessionId, frameId, frame }),
   });
+
+  if (!response.ok) {
+    throw new Error(`Frame persistence failed (${response.status})`);
+  }
 }
