@@ -139,6 +139,15 @@ When calling draft_custom_frames, you MUST provide ALL fields for each frame:
 - complexityRating (1-4, where 1=low, 4=very high)
 Each field populates an accordion section in the frame detail panel. Omitting fields results in empty sections.
 
+CRITICAL — Spark alignment:
+The Spark captured in Invoking contains the storyteller's core premise and vision.
+Every frame you generate MUST:
+- Ground the incitingIncident in the Spark's premise — the Spark IS the story seed
+- Incorporate specific details, themes, and conflicts from the Spark's vision
+- Treat the Spark as the foundation, not just a tonal reference
+If the Spark describes a specific event, threat, or situation, the frame's inciting incident
+must directly reflect or elaborate on it — do NOT replace it with an unrelated catalyst.
+
 Focus areas:
 - Call query_frames first to see what the database has
 - Assess whether database frames align with the storyteller's spark and components
