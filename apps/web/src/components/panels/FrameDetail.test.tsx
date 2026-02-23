@@ -115,10 +115,11 @@ describe('FrameDetail', () => {
       />
     );
 
-    // Overview section is expanded by default
-    expect(
-      screen.getByText('The nation of Haven invaded the forest realm.')
-    ).toBeInTheDocument();
+    // Overview section is expanded by default (text split across word-reveal spans)
+    const matches = screen.getAllByText((_content, element) =>
+      element?.textContent === 'The nation of Haven invaded the forest realm.'
+    );
+    expect(matches.length).toBeGreaterThan(0);
   });
 
   it('renders collapsed sections that expand on click', async () => {
@@ -132,17 +133,19 @@ describe('FrameDetail', () => {
       />
     );
 
-    // Lore section is collapsed by default
-    expect(
-      screen.queryByText('The Reaping Eye was stolen from Nikta.')
-    ).not.toBeInTheDocument();
+    // Lore section is collapsed by default (text split across word-reveal spans)
+    const collapsedMatches = screen.queryAllByText((_content, element) =>
+      element?.textContent === 'The Reaping Eye was stolen from Nikta.'
+    );
+    expect(collapsedMatches).toHaveLength(0);
 
     // Click to expand
     await user.click(screen.getByText('Lore'));
 
-    expect(
-      screen.getByText('The Reaping Eye was stolen from Nikta.')
-    ).toBeInTheDocument();
+    const expandedMatches = screen.getAllByText((_content, element) =>
+      element?.textContent === 'The Reaping Eye was stolen from Nikta.'
+    );
+    expect(expandedMatches.length).toBeGreaterThan(0);
   });
 
   it('renders pills for theme sections', async () => {

@@ -15,6 +15,7 @@
 
 import { useState, useCallback } from 'react';
 import type { FrameCardData, FrameDetailSection } from '@sage-codex/shared-types';
+import { RevealHTML } from '../ui/RevealHTML';
 
 // =============================================================================
 // Types
@@ -145,7 +146,7 @@ function AccordionSection({ section }: AccordionSectionProps) {
               ))}
             </div>
           ) : (
-            <span dangerouslySetInnerHTML={{ __html: section.content }} />
+            <RevealHTML key={section.content} text={section.content} />
           )}
         </div>
       )}

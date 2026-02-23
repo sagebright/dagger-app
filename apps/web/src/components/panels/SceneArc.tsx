@@ -11,6 +11,7 @@
  */
 
 import type { SceneArcData } from '@sage-codex/shared-types';
+import { RevealText } from '../ui/RevealText';
 
 // =============================================================================
 // Types
@@ -117,7 +118,11 @@ function DescriptionParagraphs({
               marginTop: index > 0 ? '12px' : '0',
             }}
           >
-            {paragraph}
+            {isStreaming ? (
+              paragraph
+            ) : (
+              <RevealText key={paragraph} text={paragraph} />
+            )}
           </p>
         );
       })}

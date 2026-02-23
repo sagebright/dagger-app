@@ -72,7 +72,8 @@ export function WeavingPage({ sessionId, onNavigate }: WeavingPageProps) {
   const [suggestedName, setSuggestedName] = useState<string | null>(null);
   const [isNameApproved, setIsNameApproved] = useState(false);
   const [isArcStreaming, setIsArcStreaming] = useState(false);
-  const [isReady, setIsReady] = useState(false);
+  // isReady kept for future use (wired to onUIReady SSE handler)
+  const [_isReady, setIsReady] = useState(false);
   const [isThinking, setIsThinking] = useState(false);
 
   // SSE streaming
@@ -155,13 +156,21 @@ export function WeavingPage({ sessionId, onNavigate }: WeavingPageProps) {
       setActiveSceneIndex(nextUnconfirmedIndex);
     }
 
+    // When all scenes are now confirmed, trigger the Sage to suggest an adventure name
+    const allNowConfirmed = updatedArcs.every((arc) => arc.confirmed);
+    if (allNowConfirmed) {
+      addUserMessage('All scenes have been confirmed.', { isSystemTriggered: true });
+      setIsThinking(true);
+      sendMessage('All scenes have been confirmed.', { isSystemTrigger: true });
+    }
+
     // Persist to backend (best effort)
     try {
       await persistSceneConfirmation(sessionId, accessToken, currentArc.id);
     } catch {
       // Best-effort persistence; local state is authoritative
     }
-  }, [sceneArcs, activeSceneIndex, sessionId, accessToken]);
+  }, [sceneArcs, activeSceneIndex, sessionId, accessToken, addUserMessage, sendMessage]);
 
   // Approve adventure name
   const handleApproveName = useCallback(
@@ -213,10 +222,8 @@ export function WeavingPage({ sessionId, onNavigate }: WeavingPageProps) {
   const currentSceneConfirmed = sceneArcs[activeSceneIndex]?.confirmed ?? false;
   const footerLabel = determineFooterLabel(isLastScene, allConfirmed);
   const footerReady = determineFooterReady(
-    isLastScene,
     allConfirmed,
     isNameApproved,
-    isReady,
     currentSceneConfirmed
   );
 
@@ -373,20 +380,17 @@ function determineFooterLabel(isLastScene: boolean, allConfirmed: boolean): stri
 
 /** Determine whether the footer button should be enabled */
 function determineFooterReady(
-  isLastScene: boolean,
   allConfirmed: boolean,
   isNameApproved: boolean,
-  isReady: boolean,
   currentSceneConfirmed: boolean
 ): boolean {
   if (allConfirmed) {
-    // Final advance requires name approval
-    return isNameApproved && isReady;
+    // Final advance requires name approval only
+    return isNameApproved;
   }
   // Don't allow confirming an already-confirmed scene
   if (currentSceneConfirmed) return false;
-  // Last scene requires name to be approved
-  if (isLastScene) return isNameApproved;
+  // Any unconfirmed scene is always confirmable
   return true;
 }
 

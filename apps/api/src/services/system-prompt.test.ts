@@ -110,4 +110,28 @@ describe('getStageAugment', () => {
       expect(augment).toContain('Constraint');
     }
   });
+
+  describe('binding stage Spark alignment', () => {
+    it('should include CRITICAL Spark alignment block', () => {
+      const augment = getStageAugment('binding');
+      expect(augment).toContain('CRITICAL — Spark alignment');
+    });
+
+    it('should instruct grounding incitingIncident in the Spark premise', () => {
+      const augment = getStageAugment('binding');
+      expect(augment).toContain('incitingIncident');
+      expect(augment).toContain('Spark');
+      expect(augment).toContain('story seed');
+    });
+
+    it('should prohibit replacing the Spark with unrelated catalysts', () => {
+      const augment = getStageAugment('binding');
+      expect(augment).toContain('unrelated catalyst');
+    });
+
+    it('should require incorporating Spark details into frames', () => {
+      const augment = getStageAugment('binding');
+      expect(augment).toContain('themes, and conflicts from the Spark');
+    });
+  });
 });

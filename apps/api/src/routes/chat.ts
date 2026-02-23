@@ -71,11 +71,11 @@ function initializeSSEResponse(res: Response): void {
 /**
  * Validate the chat request body.
  *
- * Returns an error message string if invalid, or null if valid.
+ * Returns the validated fields if valid, or an error if invalid.
  */
 function validateChatRequest(
   body: unknown
-): { message: string; sessionId: string } | { error: string } {
+): { message: string; sessionId: string; isSystemTrigger: boolean } | { error: string } {
   const req = body as Partial<SageChatRequest>;
 
   if (!req.message || typeof req.message !== 'string') {
@@ -86,7 +86,11 @@ function validateChatRequest(
     return { error: 'sessionId is required and must be a string' };
   }
 
-  return { message: req.message.trim(), sessionId: req.sessionId };
+  return {
+    message: req.message.trim(),
+    sessionId: req.sessionId,
+    isSystemTrigger: req.isSystemTrigger === true,
+  };
 }
 
 // =============================================================================
@@ -290,7 +294,7 @@ router.post('/', async (req: Request, res: Response) => {
     return;
   }
 
-  const { message, sessionId } = validation;
+  const { message, sessionId, isSystemTrigger } = validation;
 
   try {
     // Load session to get the current stage
@@ -308,8 +312,20 @@ router.post('/', async (req: Request, res: Response) => {
     const history = historyResult.data ?? [];
     const adventureState = await loadAdventureState(sessionId, stage);
 
+    // Format system-triggered messages as bracketed context notes for Claude
+    const llmMessage = isSystemTrigger
+      ? `[System context: ${message}]`
+      : message;
+
     // Store the user's message (after loading history so it's excluded naturally)
-    const userStoreResult = await storeMessage({ sessionId, role: 'user', content: message, stage });
+    // System-triggered messages are flagged in metadata so the frontend can filter them
+    const userStoreResult = await storeMessage({
+      sessionId,
+      role: 'user',
+      content: message,
+      stage,
+      isSystemTrigger,
+    });
     if (userStoreResult.error) {
       console.error(`Failed to store user message: ${userStoreResult.error}`);
     }
@@ -320,7 +336,7 @@ router.post('/', async (req: Request, res: Response) => {
       state: adventureState,
       stage,
       conversationHistory: history,
-      userMessage: message,
+      userMessage: llmMessage,
     });
 
     // Initialize SSE response and run streaming loop

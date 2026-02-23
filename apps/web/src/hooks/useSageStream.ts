@@ -105,8 +105,14 @@ export interface UseSageStreamOptions extends SageStreamCallbacks {
   requestTimeoutMs?: number;
 }
 
+/** Options for sendMessage */
+export interface SendMessageOptions {
+  /** When true, message is sent as system context (not shown as user bubble) */
+  isSystemTrigger?: boolean;
+}
+
 export interface UseSageStreamReturn {
-  sendMessage: (message: string) => Promise<void>;
+  sendMessage: (message: string, options?: SendMessageOptions) => Promise<void>;
   requestGreeting: () => Promise<void>;
   isStreaming: boolean;
   error: StreamError | null;
@@ -137,7 +143,7 @@ export function useSageStream(
    * Execute a chat request with timeout and error classification.
    */
   const executeRequest = useCallback(
-    async (message: string): Promise<void> => {
+    async (message: string, sendOptions?: SendMessageOptions): Promise<void> => {
       const timeoutMs = options.requestTimeoutMs ?? DEFAULT_REQUEST_TIMEOUT_MS;
       const controller = new AbortController();
       abortControllerRef.current = controller;
@@ -157,6 +163,7 @@ export function useSageStream(
           body: JSON.stringify({
             message,
             sessionId: options.sessionId,
+            ...(sendOptions?.isSystemTrigger && { isSystemTrigger: true }),
           }),
           signal: controller.signal,
         });
@@ -197,7 +204,7 @@ export function useSageStream(
    * If all attempts fail, surfaces the error to the user.
    */
   const attemptReconnect = useCallback(
-    async (message: string): Promise<boolean> => {
+    async (message: string, sendOptions?: SendMessageOptions): Promise<boolean> => {
       while (reconnectAttemptsRef.current < MAX_RECONNECT_ATTEMPTS) {
         const attempt = reconnectAttemptsRef.current;
         reconnectAttemptsRef.current += 1;
@@ -206,7 +213,7 @@ export function useSageStream(
         await delay(waitMs);
 
         try {
-          await executeRequest(message);
+          await executeRequest(message, sendOptions);
           return true;
         } catch {
           // Continue to next attempt
@@ -219,7 +226,7 @@ export function useSageStream(
   );
 
   const sendMessage = useCallback(
-    async (message: string): Promise<void> => {
+    async (message: string, sendOptions?: SendMessageOptions): Promise<void> => {
       if (isStreaming) return;
 
       setIsStreaming(true);
@@ -228,7 +235,7 @@ export function useSageStream(
       reconnectAttemptsRef.current = 0;
 
       try {
-        await executeRequest(message);
+        await executeRequest(message, sendOptions);
       } catch (err) {
         if ((err as Error).name === 'AbortError') {
           // Check if this was a timeout (AbortError from our timeout)
@@ -256,7 +263,7 @@ export function useSageStream(
         const classified = classifyError(err);
 
         if (classified.code === 'NETWORK_ERROR' || classified.code === 'STREAM_DISCONNECTED') {
-          const reconnected = await attemptReconnect(message);
+          const reconnected = await attemptReconnect(message, sendOptions);
           if (reconnected) return;
         }
 

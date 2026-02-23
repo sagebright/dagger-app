@@ -20,6 +20,8 @@ export interface StoreMessageParams {
   stage: Stage;
   toolCalls?: Record<string, unknown>[] | null;
   tokenCount?: number | null;
+  /** When true, marks the message as a system-triggered context note */
+  isSystemTrigger?: boolean;
 }
 
 export interface MessageStoreResult<T> {
@@ -44,15 +46,14 @@ export async function storeMessage(
 
     // Build metadata JSONB from optional fields
     // The sage_messages table has a `metadata` JSONB column (not discrete columns)
-    const metadata =
-      params.toolCalls || params.tokenCount != null
-        ? {
-            ...(params.toolCalls && { tool_calls: params.toolCalls }),
-            ...(params.tokenCount != null && {
-              token_count: params.tokenCount,
-            }),
-          }
-        : null;
+    const hasMetadata = params.toolCalls || params.tokenCount != null || params.isSystemTrigger;
+    const metadata = hasMetadata
+      ? {
+          ...(params.toolCalls && { tool_calls: params.toolCalls }),
+          ...(params.tokenCount != null && { token_count: params.tokenCount }),
+          ...(params.isSystemTrigger && { is_system_trigger: true }),
+        }
+      : null;
 
     const { data, error } = await supabase
       .from('sage_messages')
