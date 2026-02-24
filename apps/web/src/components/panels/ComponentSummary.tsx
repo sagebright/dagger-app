@@ -37,6 +37,8 @@ export interface ComponentSummaryProps {
   onAdvance: () => void;
   /** Whether the stage is ready for advancement */
   isReady: boolean;
+  /** When true, hides the StageFooter and disables row interaction */
+  readOnly?: boolean;
 }
 
 // =============================================================================
@@ -48,6 +50,7 @@ export function ComponentSummary({
   onSelectComponent,
   onAdvance,
   isReady,
+  readOnly = false,
 }: ComponentSummaryProps) {
   const confirmedCount = components.confirmedComponents.length;
 
@@ -94,12 +97,14 @@ export function ComponentSummary({
         ))}
       </div>
 
-      {/* Fixed footer */}
-      <StageFooter
-        label="Continue to Binding"
-        isReady={isReady}
-        onAdvance={onAdvance}
-      />
+      {/* Fixed footer (hidden in read-only mode) */}
+      {!readOnly && (
+        <StageFooter
+          label="Continue to Binding"
+          isReady={isReady}
+          onAdvance={onAdvance}
+        />
+      )}
     </div>
   );
 }

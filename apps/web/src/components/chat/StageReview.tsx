@@ -5,11 +5,17 @@
  * and renders them in a read-only ChatPanel. A "Return to [current stage]"
  * button at the top lets the user navigate back to the active stage.
  *
+ * When a `panelSlot` is provided, renders via AppShell with the 65/35
+ * layout (chat on left, panel on right). When no panelSlot is given,
+ * falls back to full-width chat-only layout (e.g., Invoking has no panel).
+ *
  * Used by AdventurePage when `viewingStage` is set.
  */
 
 import { useState, useEffect, useCallback } from 'react';
+import type { ReactNode } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { AppShell } from '@/components/layout/AppShell';
 import { ChatPanel } from './ChatPanel';
 import { STAGES } from '@sage-codex/shared-types';
 import type { Stage } from '@sage-codex/shared-types';
@@ -28,6 +34,12 @@ export interface StageReviewProps {
   currentStage: Stage;
   /** Called when the user clicks "Return to [current stage]" */
   onReturn: () => void;
+  /** Optional right-side panel content for 65/35 layout */
+  panelSlot?: ReactNode;
+  /** Adventure name for the AppShell header */
+  adventureName?: string | null;
+  /** Called when the home button is clicked */
+  onHomeClick?: () => void;
 }
 
 // =============================================================================
@@ -80,6 +92,9 @@ export function StageReview({
   stage,
   currentStage,
   onReturn,
+  panelSlot,
+  adventureName,
+  onHomeClick,
 }: StageReviewProps) {
   const { session: authSession } = useAuth();
   const accessToken = authSession?.access_token ?? '';
@@ -157,16 +172,14 @@ export function StageReview({
     );
   }
 
-  return (
+  // Build the chat column content (ReturnBanner + read-only ChatPanel)
+  const chatContent = (
     <div className="flex flex-col h-full">
-      {/* Return banner */}
       <ReturnBanner
         currentStageLabel={currentStageLabel}
         stageLabel={stageLabel}
         onReturn={onReturn}
       />
-
-      {/* Read-only chat */}
       <div className="flex-1 min-h-0">
         <ChatPanel
           messages={messages}
@@ -179,6 +192,21 @@ export function StageReview({
       </div>
     </div>
   );
+
+  // When panelSlot is provided, use AppShell for 65/35 layout
+  if (panelSlot) {
+    return (
+      <AppShell
+        chatSlot={chatContent}
+        panelSlot={panelSlot}
+        adventureName={adventureName}
+        onHomeClick={onHomeClick}
+      />
+    );
+  }
+
+  // No panel: full-width chat-only layout (e.g., Invoking)
+  return chatContent;
 }
 
 // =============================================================================

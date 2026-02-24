@@ -28,13 +28,20 @@ export interface FrameDetailProps {
   onBack: () => void;
   /** Called when "Select Frame" is clicked */
   onSelectFrame: (frameId: string) => void;
+  /** When true, hides the back button and select footer */
+  readOnly?: boolean;
 }
 
 // =============================================================================
 // Component
 // =============================================================================
 
-export function FrameDetail({ frame, onBack, onSelectFrame }: FrameDetailProps) {
+export function FrameDetail({
+  frame,
+  onBack,
+  onSelectFrame,
+  readOnly = false,
+}: FrameDetailProps) {
   return (
     <div className="flex flex-col min-h-0 h-full">
       {/* Fixed header */}
@@ -42,25 +49,27 @@ export function FrameDetail({ frame, onBack, onSelectFrame }: FrameDetailProps) 
         className="flex-shrink-0"
         style={{ padding: '8px var(--panel-padding) 4px' }}
       >
-        <button
-          className="back-link"
-          onClick={onBack}
-          type="button"
-        >
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+        {!readOnly && (
+          <button
+            className="back-link"
+            onClick={onBack}
+            type="button"
           >
-            <polyline points="15 18 9 12 15 6" />
-          </svg>
-          Back to Frames
-        </button>
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+            Back to Frames
+          </button>
+        )}
         <div
           className="font-serif text-[16px] font-semibold mt-2"
           style={{ color: 'var(--text-primary)' }}
@@ -85,22 +94,24 @@ export function FrameDetail({ frame, onBack, onSelectFrame }: FrameDetailProps) 
         ))}
       </div>
 
-      {/* Fixed footer */}
-      <div
-        className="flex-shrink-0"
-        style={{
-          padding: '12px var(--panel-padding) 32px',
-          borderTop: '1px solid var(--border-subtle)',
-        }}
-      >
-        <button
-          className="btn-select-frame"
-          onClick={() => onSelectFrame(frame.id)}
-          type="button"
+      {/* Fixed footer (hidden in read-only mode) */}
+      {!readOnly && (
+        <div
+          className="flex-shrink-0"
+          style={{
+            padding: '12px var(--panel-padding) 32px',
+            borderTop: '1px solid var(--border-subtle)',
+          }}
         >
-          Select Frame
-        </button>
-      </div>
+          <button
+            className="btn-select-frame"
+            onClick={() => onSelectFrame(frame.id)}
+            type="button"
+          >
+            Select Frame
+          </button>
+        </div>
+      )}
     </div>
   );
 }

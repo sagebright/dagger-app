@@ -57,6 +57,8 @@ export interface InscribingPanelProps {
   onBackToScene: () => void;
   onFooterAction: () => void;
   onNavigate?: (stage: import('@sage-codex/shared-types').Stage) => void;
+  /** When true, replaces StageDropdown with static label and hides StageFooter */
+  readOnly?: boolean;
 }
 
 // =============================================================================
@@ -80,6 +82,7 @@ export function InscribingPanel({
   onBackToScene,
   onFooterAction,
   onNavigate,
+  readOnly = false,
 }: InscribingPanelProps) {
   const detailSection = detailSectionId
     ? sceneState.sections.find((s) => s.id === detailSectionId)
@@ -87,12 +90,21 @@ export function InscribingPanel({
 
   return (
     <div className="flex flex-col min-h-0 h-full">
-      {/* Panel header with stage dropdown and wave indicator */}
+      {/* Panel header with stage dropdown (or static label in read-only) and wave indicator */}
       <div
         className="flex-shrink-0 flex items-center justify-between"
         style={{ padding: '12px var(--panel-padding) 4px' }}
       >
-        <StageDropdown currentStage="inscribing" onNavigate={onNavigate} />
+        {readOnly ? (
+          <span
+            className="text-[13px] font-medium"
+            style={{ color: 'var(--accent-gold)' }}
+          >
+            Inscribing
+          </span>
+        ) : (
+          <StageDropdown currentStage="inscribing" onNavigate={onNavigate} />
+        )}
         <WaveIndicator
           populatedWaves={populatedWaves}
           isWave3Dimmed={isWave3Dimmed}
@@ -147,12 +159,14 @@ export function InscribingPanel({
         />
       )}
 
-      {/* Fixed footer */}
-      <StageFooter
-        label={footerLabel}
-        isReady={footerReady}
-        onAdvance={onFooterAction}
-      />
+      {/* Fixed footer (hidden in read-only mode) */}
+      {!readOnly && (
+        <StageFooter
+          label={footerLabel}
+          isReady={footerReady}
+          onAdvance={onFooterAction}
+        />
+      )}
     </div>
   );
 }

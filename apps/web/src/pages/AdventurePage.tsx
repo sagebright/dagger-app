@@ -12,6 +12,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
+import type { ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useAdventureStore } from '@/stores/adventureStore';
@@ -23,6 +24,12 @@ import { WeavingPage } from './WeavingPage';
 import { InscribingPage } from './InscribingPage';
 import { DeliveringPage } from './DeliveringPage';
 import { StageReview } from '@/components/chat/StageReview';
+import {
+  ReviewComponentSummary,
+  ReviewFrameDetail,
+  ReviewWeavingPanel,
+  ReviewInscribingPanel,
+} from '@/components/panels/ReviewPanels';
 import type { AdventureState, Stage } from '@sage-codex/shared-types';
 import { createEmptyAdventureState } from '@sage-codex/shared-types';
 
@@ -176,6 +183,11 @@ export function AdventurePage() {
     setViewingStage(null);
   }, []);
 
+  /** Navigate home */
+  const handleHomeClick = useCallback(() => {
+    navigate('/');
+  }, [navigate]);
+
   // Loading state
   if (isLoading) {
     return (
@@ -222,14 +234,20 @@ export function AdventurePage() {
     return null;
   }
 
-  // Stage review mode: show read-only past stage conversation
+  // Stage review mode: show read-only past stage conversation + panel
   if (viewingStage) {
+    const adventure = useAdventureStore.getState().adventure;
+    const reviewPanel = getReviewPanel(viewingStage, adventure);
+
     return (
       <StageReview
         sessionId={sessionId}
         stage={viewingStage}
         currentStage={stage}
         onReturn={handleReturnFromReview}
+        panelSlot={reviewPanel}
+        adventureName={adventure.adventureName}
+        onHomeClick={handleHomeClick}
       />
     );
   }
@@ -248,6 +266,46 @@ export function AdventurePage() {
       return <InscribingPage sessionId={sessionId} onNavigate={handleStageNavigate} />;
     case 'delivering':
       return <DeliveringPage sessionId={sessionId} onNavigate={handleStageNavigate} />;
+    default:
+      return null;
+  }
+}
+
+// =============================================================================
+// Helpers
+// =============================================================================
+
+/**
+ * Build the appropriate read-only review panel for a given stage.
+ *
+ * Returns null for stages that have no panel (e.g., Invoking).
+ * The panel renders in the right 35% column via AppShell.
+ */
+function getReviewPanel(
+  reviewStage: Stage,
+  adventure: AdventureState
+): ReactNode {
+  switch (reviewStage) {
+    case 'attuning':
+      return <ReviewComponentSummary components={adventure.components} />;
+
+    case 'binding':
+      if (!adventure.frame) return null;
+      return <ReviewFrameDetail frame={adventure.frame} />;
+
+    case 'weaving':
+      if (adventure.sceneArcs.length === 0) return null;
+      return <ReviewWeavingPanel sceneArcs={adventure.sceneArcs} />;
+
+    case 'inscribing':
+      if (adventure.sceneArcs.length === 0) return null;
+      return (
+        <ReviewInscribingPanel
+          sceneArcs={adventure.sceneArcs}
+          inscribingSections={adventure.inscribingSections}
+        />
+      );
+
     default:
       return null;
   }
