@@ -51,6 +51,7 @@ export function WaveIndicator({
 
   return (
     <div className="wave-indicator" aria-label="Wave progress">
+      <span className="wave-indicator__label">Waves</span>
       {waves.map((wave) => {
         const isFilled = populatedWaves.has(wave);
         const isActive = activeWave === wave;
