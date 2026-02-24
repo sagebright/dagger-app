@@ -74,6 +74,24 @@ describe('POST /api/stripe/webhook', () => {
     expect(res.body.error).toContain('signature');
   });
 
+  it('logs error when signature verification fails', async () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.mocked(constructWebhookEvent).mockImplementation(() => {
+      throw new Error('Invalid signature');
+    });
+
+    const app = createTestApp();
+    await request(app)
+      .post('/api/stripe/webhook')
+      .set('Content-Type', 'application/json')
+      .set('stripe-signature', 'invalid_sig')
+      .send('{}');
+
+    expect(errorSpy).toHaveBeenCalledWith(
+      expect.stringContaining('[stripe-webhook] Signature verification failed')
+    );
+  });
+
   it('fulfills credits on checkout.session.completed', async () => {
     const mockEvent = {
       type: 'checkout.session.completed',
@@ -109,6 +127,40 @@ describe('POST /api/stripe/webhook', () => {
       'cs_test_123',
       'Credit purchase: 3 credits',
       'stripe_cs_test_123'
+    );
+  });
+
+  it('logs successful credit fulfillment', async () => {
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const mockEvent = {
+      type: 'checkout.session.completed',
+      id: 'evt_test_456',
+      data: {
+        object: {
+          id: 'cs_test_789',
+          metadata: {
+            userId: 'user-456',
+            credits: '10',
+          },
+        },
+      },
+    };
+
+    vi.mocked(constructWebhookEvent).mockReturnValue(mockEvent as never);
+    vi.mocked(addCredits).mockResolvedValue({
+      data: { success: true, new_balance: 10, transaction_id: 'tx-2' },
+      error: null,
+    });
+
+    const app = createTestApp();
+    await request(app)
+      .post('/api/stripe/webhook')
+      .set('Content-Type', 'application/json')
+      .set('stripe-signature', 'valid_sig')
+      .send(JSON.stringify(mockEvent));
+
+    expect(logSpy).toHaveBeenCalledWith(
+      expect.stringContaining('[stripe-webhook] Credits fulfilled: user=user-456 credits=10 session=cs_test_789')
     );
   });
 

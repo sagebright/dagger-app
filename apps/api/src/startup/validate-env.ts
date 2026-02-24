@@ -104,4 +104,10 @@ export function validateEnv(): void {
       `[env] ${warningCount} environment variable warning(s) found — check apps/api/.env`
     );
   }
+
+  // Log webhook secret prefix so devs can compare against `stripe listen` output
+  const whsec = process.env.STRIPE_WEBHOOK_SECRET;
+  if (whsec) {
+    console.log(`[env] Webhook secret: ${whsec.substring(0, 12)}...`);
+  }
 }

@@ -113,12 +113,15 @@ router.post('/', async (req: Request, res: Response) => {
   let event;
   try {
     event = constructWebhookEvent(req.body, signature);
-  } catch {
+  } catch (err) {
+    console.error(`[stripe-webhook] Signature verification failed: ${err instanceof Error ? err.message : 'unknown error'}`);
     res
       .status(400)
       .json({ error: 'Webhook signature verification failed' });
     return;
   }
+
+  console.log(`[stripe-webhook] Received event: ${event.type} (${event.id})`);
 
   // Handle supported event types
   if (event.type === 'checkout.session.completed') {
@@ -129,6 +132,7 @@ router.post('/', async (req: Request, res: Response) => {
 
     const validation = validateCheckoutMetadata(session.metadata);
     if (!validation.valid) {
+      console.warn(`[stripe-webhook] Invalid metadata for session ${session.id}: ${validation.error}`);
       res.status(400).json({ error: validation.error });
       return;
     }
@@ -140,11 +144,14 @@ router.post('/', async (req: Request, res: Response) => {
     );
 
     if (!fulfillment.success) {
+      console.error(`[stripe-webhook] Credit fulfillment failed for user=${validation.data.userId} credits=${validation.data.credits} session=${session.id}: ${fulfillment.error}`);
       res
         .status(500)
         .json({ error: `Credit fulfillment failed: ${fulfillment.error}` });
       return;
     }
+
+    console.log(`[stripe-webhook] Credits fulfilled: user=${validation.data.userId} credits=${validation.data.credits} session=${session.id}`);
   }
 
   // Log unhandled event types for debugging
