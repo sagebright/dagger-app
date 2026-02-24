@@ -199,6 +199,10 @@ export function InscribingPage({ sessionId, onNavigate }: InscribingPageProps) {
   const [isReady, setIsReady] = useState(false);
   const [isThinking, setIsThinking] = useState(false);
 
+  // Derive active scene identifiers early so callbacks can reference them
+  const activeArc = sceneArcs[activeSceneIndex];
+  const activeSceneId = activeArc?.id ?? '';
+
   // Hydrate sceneStates from persisted inscribingSections on mount
   useEffect(() => {
     if (!inscribingSections || Object.keys(inscribingSections).length === 0) return;
@@ -352,14 +356,14 @@ export function InscribingPage({ sessionId, onNavigate }: InscribingPageProps) {
 
   useSageGreeting(messages.length, requestGreeting, setIsThinking);
 
-  // Send message handler
+  // Send message handler — includes activeSceneId for inscribing T2 context
   const handleSendMessage = useCallback(
     (message: string) => {
       addUserMessage(message);
       setIsThinking(true);
-      sendMessage(message);
+      sendMessage(message, { activeSceneId });
     },
-    [addUserMessage, sendMessage]
+    [addUserMessage, sendMessage, activeSceneId]
   );
 
   // Tab click handler
@@ -444,8 +448,6 @@ export function InscribingPage({ sessionId, onNavigate }: InscribingPageProps) {
   }, [navigate]);
 
   // Derive panel state from current scene
-  const activeArc = sceneArcs[activeSceneIndex];
-  const activeSceneId = activeArc?.id ?? '';
   const currentSceneState = getSceneState(activeSceneId);
   const populatedWaves = getPopulatedWaves(currentSceneState.sections);
   const isWave3Dimmed = !areWaves1And2Settled(currentSceneState.sections);

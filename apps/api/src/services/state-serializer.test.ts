@@ -179,6 +179,13 @@ describe('serializeForLLM', () => {
       expect(result.text).toContain('exploration');
     });
 
+    it('should include arc IDs in outline briefs', () => {
+      const state = createMidWeavingState();
+      const result = serializeForLLM(state, 'weaving');
+      expect(result.text).toContain('[id=arc-1]');
+      expect(result.text).toContain('[id=arc-2]');
+    });
+
     it('should NOT include T2 during weaving', () => {
       const state = createMidWeavingState();
       const result = serializeForLLM(state, 'weaving');

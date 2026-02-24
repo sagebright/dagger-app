@@ -109,6 +109,8 @@ export interface UseSageStreamOptions extends SageStreamCallbacks {
 export interface SendMessageOptions {
   /** When true, message is sent as system context (not shown as user bubble) */
   isSystemTrigger?: boolean;
+  /** The scene arc ID currently being worked on (used during inscribing for T2 context) */
+  activeSceneId?: string;
 }
 
 export interface UseSageStreamReturn {
@@ -164,6 +166,7 @@ export function useSageStream(
             message,
             sessionId: options.sessionId,
             ...(sendOptions?.isSystemTrigger && { isSystemTrigger: true }),
+            ...(sendOptions?.activeSceneId && { activeSceneId: sendOptions.activeSceneId }),
           }),
           signal: controller.signal,
         });

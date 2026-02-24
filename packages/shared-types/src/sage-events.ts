@@ -571,6 +571,8 @@ export interface SageChatRequest {
   sessionId: string;
   /** When true, message is a system-triggered context note (not shown as user bubble) */
   isSystemTrigger?: boolean;
+  /** The scene arc ID currently being worked on (used during inscribing for T2 context) */
+  activeSceneId?: string;
 }
 
 /** A stored message record from sage_messages */

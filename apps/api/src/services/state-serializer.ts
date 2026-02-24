@@ -233,7 +233,7 @@ function serializeTier2(
 // =============================================================================
 
 function serializeSceneArcBrief(arc: SceneArc): string {
-  return `  ${arc.sceneNumber}. "${arc.title}" (${arc.sceneType}) — ${arc.description}`;
+  return `  ${arc.sceneNumber}. "${arc.title}" [id=${arc.id}] (${arc.sceneType}) — ${arc.description}`;
 }
 
 function serializeConfirmedSceneBrief(scene: InscribedScene): string {

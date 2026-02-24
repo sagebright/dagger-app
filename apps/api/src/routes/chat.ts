@@ -75,7 +75,7 @@ function initializeSSEResponse(res: Response): void {
  */
 function validateChatRequest(
   body: unknown
-): { message: string; sessionId: string; isSystemTrigger: boolean } | { error: string } {
+): { message: string; sessionId: string; isSystemTrigger: boolean; activeSceneId?: string } | { error: string } {
   const req = body as Partial<SageChatRequest>;
 
   if (!req.message || typeof req.message !== 'string') {
@@ -90,6 +90,7 @@ function validateChatRequest(
     message: req.message.trim(),
     sessionId: req.sessionId,
     isSystemTrigger: req.isSystemTrigger === true,
+    ...(typeof req.activeSceneId === 'string' && { activeSceneId: req.activeSceneId }),
   };
 }
 
@@ -294,7 +295,7 @@ router.post('/', async (req: Request, res: Response) => {
     return;
   }
 
-  const { message, sessionId, isSystemTrigger } = validation;
+  const { message, sessionId, isSystemTrigger, activeSceneId } = validation;
 
   try {
     // Load session to get the current stage
@@ -337,6 +338,7 @@ router.post('/', async (req: Request, res: Response) => {
       stage,
       conversationHistory: history,
       userMessage: llmMessage,
+      activeSceneId,
     });
 
     // Initialize SSE response and run streaming loop
@@ -428,12 +430,18 @@ router.post('/greet', async (req: Request, res: Response) => {
       console.error(`Failed to store session-start marker: ${startResult.error}`);
     }
 
+    // For inscribing stage, default to the first scene arc for T2 context
+    const greetActiveSceneId = stage === 'inscribing'
+      ? adventureState.sceneArcs[0]?.id
+      : undefined;
+
     // Assemble context with the synthetic greeting trigger
     const { streamOptions } = assembleAnthropicPayload({
       state: adventureState,
       stage,
       conversationHistory: [],
       userMessage: GREETING_TRIGGER,
+      activeSceneId: greetActiveSceneId,
     });
 
     // Initialize SSE response and run streaming loop
