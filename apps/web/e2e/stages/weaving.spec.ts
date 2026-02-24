@@ -86,15 +86,16 @@ test.describe('Weaving Stage', () => {
     await chatInput.fill('These look great, confirm all scenes');
     await chatInput.press('Enter');
 
-    // The adventure name should appear
-    await expect(page.getByText(MOCK_ADVENTURE_NAME)).toBeVisible({
-      timeout: 10000,
-    });
+    // The adventure name should appear in the adventure panel
+    await expect(
+      page.getByLabel('Adventure panel').getByText(MOCK_ADVENTURE_NAME)
+    ).toBeVisible({ timeout: 10000 });
   });
 
   test('should enable advancement after name approval', async ({ page }) => {
     const controller = await setupMockAPI(page, 'weaving');
-    controller.setGreetResponse(buildWeavingSceneArcsSSE());
+    // Send scene arcs as pre-confirmed so allConfirmed = true
+    controller.setGreetResponse(buildWeavingSceneArcsSSE({ confirmed: true }));
     controller.setChatResponse(buildWeavingNameSSE());
     await injectAuth(page);
 
@@ -105,6 +106,15 @@ test.describe('Weaving Stage', () => {
     const chatInput = page.getByLabel('Chat message input');
     await chatInput.fill('Confirm all scenes');
     await chatInput.press('Enter');
+
+    // Wait for the adventure name to appear in the panel
+    await expect(
+      page.getByLabel('Adventure panel').getByText(MOCK_ADVENTURE_NAME)
+    ).toBeVisible({ timeout: 10000 });
+
+    // Approve the name to enable advancement
+    const approveButton = page.getByRole('button', { name: 'Approve' });
+    await approveButton.click();
 
     // Advance button should become enabled
     const advanceButton = page.getByRole('button', {

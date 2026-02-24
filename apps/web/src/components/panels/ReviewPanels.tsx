@@ -7,9 +7,7 @@
  * - ReviewWeavingPanel: Scene tabs + scene arc content (all confirmed)
  * - ReviewInscribingPanel: Section accordion (no footer, static stage label)
  *
- * Also exports mapping helpers:
- * - boundFrameToCardData: BoundFrame -> FrameCardData
- * - inscribingSectionsToSceneState: InscribingSectionData[] -> SceneInscriptionState
+ * Mapping helpers live in ./review-helpers.ts (split for react-refresh).
  */
 
 import { useState, useCallback } from 'react';
@@ -18,74 +16,16 @@ import { FrameDetail } from './FrameDetail';
 import { SceneTabs } from './SceneTabs';
 import { SceneArc } from './SceneArc';
 import { InscribingPanel } from './InscribingPanel';
-import type { SceneInscriptionState } from './InscribingPanel';
+import { boundFrameToCardData, inscribingSectionsToSceneState } from './review-helpers';
 import type {
   SerializableComponentsState,
   BoundFrame,
   SceneArc as SceneArcType,
-  FrameCardData,
   SceneArcData,
   InscribingSectionData,
   InscribingSectionId,
 } from '@sage-codex/shared-types';
-import { WAVE_SECTIONS, SECTION_LABELS } from '@sage-codex/shared-types';
 import type { WaveNumber } from '@sage-codex/shared-types';
-
-// =============================================================================
-// Mapping Helpers
-// =============================================================================
-
-/** Convert a BoundFrame (adventure store) to FrameCardData (panel display) */
-export function boundFrameToCardData(frame: BoundFrame): FrameCardData {
-  return {
-    id: frame.id,
-    name: frame.name,
-    pitch: frame.description,
-    themes: frame.themes,
-    sections: frame.sections,
-  };
-}
-
-/** Convert persisted inscribing sections to SceneInscriptionState for the panel */
-export function inscribingSectionsToSceneState(
-  sections: InscribingSectionData[]
-): SceneInscriptionState {
-  // Build a complete 9-section array, merging persisted data with defaults
-  const fullSections = buildFullSections(sections);
-
-  return {
-    sections: fullSections,
-    confirmed: true,
-    wave3Invalidated: false,
-    invalidationReason: null,
-    balanceWarning: null,
-  };
-}
-
-/** Build all 9 sections, merging persisted data with empty defaults */
-function buildFullSections(
-  persisted: InscribingSectionData[]
-): InscribingSectionData[] {
-  const fullSections: InscribingSectionData[] = [];
-
-  for (const [waveStr, sectionIds] of Object.entries(WAVE_SECTIONS)) {
-    const wave = Number(waveStr) as WaveNumber;
-    for (const sectionId of sectionIds) {
-      const existing = persisted.find((s) => s.id === sectionId);
-      fullSections.push(
-        existing ?? {
-          id: sectionId,
-          label: SECTION_LABELS[sectionId],
-          content: '',
-          wave,
-          hasDetail: ['setup', 'developments', 'transitions'].includes(sectionId),
-        }
-      );
-    }
-  }
-
-  return fullSections;
-}
 
 // =============================================================================
 // ReviewComponentSummary — Attuning stage review

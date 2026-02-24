@@ -99,7 +99,7 @@ test.describe('Invoking Stage', () => {
     await advanceButton.click();
 
     // Stage should advance — session PATCH will update the controller stage
-    // The panel should now show Attuning content
-    await expect(page.getByText(/attuning/i)).toBeVisible({ timeout: 10000 });
+    // Verify Attuning content by checking for component group labels
+    await expect(page.getByText('Session')).toBeVisible({ timeout: 10000 });
   });
 });

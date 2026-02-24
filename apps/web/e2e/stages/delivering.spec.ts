@@ -41,9 +41,10 @@ test.describe('Delivering Stage', () => {
     await page.waitForLoadState('networkidle');
 
     // Adventure title should appear in the celebration panel
-    // (from adventure state in session response)
+    // (from adventure state in session response; scoped to panel to avoid
+    // ambiguity with the Header banner)
     await expect(
-      page.getByText(MOCK_ADVENTURE_NAME)
+      page.getByLabel('Adventure panel').getByText(MOCK_ADVENTURE_NAME)
     ).toBeVisible({ timeout: 10000 });
   });
 

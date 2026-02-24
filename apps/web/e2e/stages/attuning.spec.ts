@@ -17,6 +17,7 @@ import { setupMockAPI } from '../helpers/mock-api';
 import {
   buildAttuningSSE,
   buildAttuningAllComponentsSSE,
+  buildBindingFramesSSE,
 } from '../helpers/sse-builders';
 
 test.describe('Attuning Stage', () => {
@@ -91,6 +92,10 @@ test.describe('Attuning Stage', () => {
     await chatInput.fill('Set all defaults');
     await chatInput.press('Enter');
 
+    // Set up Binding greet before advancing
+    controller.resetGreet();
+    controller.setGreetResponse(buildBindingFramesSSE());
+
     // Wait for advance button and click
     const advanceButton = page.getByRole('button', {
       name: /continue to binding/i,
@@ -98,9 +103,10 @@ test.describe('Attuning Stage', () => {
     await expect(advanceButton).toBeEnabled({ timeout: 10000 });
     await advanceButton.click();
 
-    // Should show Binding stage content
-    await expect(
-      page.getByText(/available adventure frames/i)
-    ).toBeVisible({ timeout: 10000 });
+    // Should show Binding stage frame gallery (aria-label on listbox)
+    const gallery = page.getByRole('listbox', {
+      name: /available adventure frames/i,
+    });
+    await expect(gallery).toBeVisible({ timeout: 10000 });
   });
 });

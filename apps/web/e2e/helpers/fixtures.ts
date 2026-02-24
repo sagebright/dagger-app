@@ -332,6 +332,9 @@ export function buildSessionResponse(
         sceneArcs: ['inscribing', 'delivering'].includes(stage)
           ? MOCK_SCENE_ARCS.map((a) => ({ ...a, confirmed: true }))
           : [],
+        adventureName: ['inscribing', 'delivering'].includes(stage)
+          ? MOCK_ADVENTURE_NAME
+          : null,
       },
       components: stage !== 'invoking' ? MOCK_COMPONENTS : {},
       frame: null,

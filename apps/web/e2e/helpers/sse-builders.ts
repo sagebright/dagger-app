@@ -267,13 +267,19 @@ export function buildBindingSelectSSE(
  *
  * Tool flow: set_all_scene_arcs -> panel:scene_arcs
  */
-export function buildWeavingSceneArcsSSE(): string {
+export function buildWeavingSceneArcsSSE(
+  options: { confirmed?: boolean } = {}
+): string {
+  const arcs = options.confirmed
+    ? MOCK_SCENE_ARCS.map((a) => ({ ...a, confirmed: true }))
+    : MOCK_SCENE_ARCS;
+
   const toolEvents = wrapToolCall(
     'set_all_scene_arcs',
-    { sceneArcs: MOCK_SCENE_ARCS },
+    { sceneArcs: arcs },
     [
       sseEvent('panel:scene_arcs', {
-        sceneArcs: MOCK_SCENE_ARCS,
+        sceneArcs: arcs,
         activeSceneIndex: 0,
       }),
     ]
@@ -281,7 +287,9 @@ export function buildWeavingSceneArcsSSE(): string {
 
   return wrapChatEnvelope(
     toolEvents,
-    'I have drafted 4 scene arcs. Review each one and confirm when ready.'
+    options.confirmed
+      ? 'All 4 scene arcs are confirmed. Let us name this adventure.'
+      : 'I have drafted 4 scene arcs. Review each one and confirm when ready.'
   );
 }
 
@@ -358,15 +366,21 @@ export function buildInscribingWaveSSE(
  * Tool flow: confirm_scene -> panel:scene_confirmed + ui:ready
  */
 export function buildInscribingConfirmSSE(
-  options: { sceneArcId?: string; isLastScene?: boolean } = {}
+  options: { sceneArcId?: string; isLastScene?: boolean; allSceneArcIds?: string[] } = {}
 ): string {
   const sceneArcId = options.sceneArcId ?? 'arc-001';
   const isLastScene = options.isLastScene ?? false;
 
+  // Build panel:scene_confirmed events — confirm all arcs if provided
+  const confirmIds = options.allSceneArcIds ?? [sceneArcId];
+  const panelEvents = confirmIds.map((id) =>
+    sseEvent('panel:scene_confirmed', { sceneArcId: id })
+  );
+
   const toolEvents = wrapToolCall(
     'confirm_scene',
     { sceneArcId },
-    [sseEvent('panel:scene_confirmed', { sceneArcId })]
+    panelEvents
   );
 
   const extraEvents: string[] = [];

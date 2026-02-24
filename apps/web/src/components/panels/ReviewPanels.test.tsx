@@ -16,9 +16,11 @@ import {
   ReviewFrameDetail,
   ReviewWeavingPanel,
   ReviewInscribingPanel,
+} from './ReviewPanels';
+import {
   boundFrameToCardData,
   inscribingSectionsToSceneState,
-} from './ReviewPanels';
+} from './review-helpers';
 import type { BoundFrame, SerializableComponentsState, InscribingSectionData } from '@sage-codex/shared-types';
 
 // =============================================================================

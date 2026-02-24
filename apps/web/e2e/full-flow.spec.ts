@@ -134,7 +134,7 @@ test.describe('Full Adventure Flow', () => {
     // Stage 4: Weaving — Scene arcs + name approval
     // =========================================================================
     controller.resetGreet();
-    controller.setGreetResponse(buildWeavingSceneArcsSSE());
+    controller.setGreetResponse(buildWeavingSceneArcsSSE({ confirmed: true }));
     controller.setChatResponse(buildWeavingNameSSE());
 
     // Verify scene arcs appear
@@ -145,10 +145,14 @@ test.describe('Full Adventure Flow', () => {
     // Confirm scenes and get name
     await sendMessage(page, 'Confirm all scenes');
 
-    // Verify adventure name appears
-    await expect(page.getByText(MOCK_ADVENTURE_NAME)).toBeVisible({
-      timeout: 10000,
-    });
+    // Verify adventure name appears in the adventure panel
+    await expect(
+      page.getByLabel('Adventure panel').getByText(MOCK_ADVENTURE_NAME)
+    ).toBeVisible({ timeout: 10000 });
+
+    // Approve the name to enable advancement
+    const approveNameButton = page.getByRole('button', { name: 'Approve' });
+    await approveNameButton.click();
 
     // Advance to Inscribing
     await clickAdvance(page, /continue to inscribing/i);
@@ -164,11 +168,12 @@ test.describe('Full Adventure Flow', () => {
     // Verify Wave 1 sections appear
     await expect(page.getByText('Overview')).toBeVisible({ timeout: 10000 });
 
-    // Trigger scene confirmation (last scene)
+    // Trigger scene confirmation (confirm all 4 scenes at once)
     controller.setChatResponse(
       buildInscribingConfirmSSE({
         sceneArcId: 'arc-001',
         isLastScene: true,
+        allSceneArcIds: ['arc-001', 'arc-002', 'arc-003', 'arc-004'],
       })
     );
     await sendMessage(page, 'Confirm this scene');
@@ -200,9 +205,9 @@ test.describe('Full Adventure Flow', () => {
       await page.waitForLoadState('networkidle');
     }
 
-    // The celebration message should appear (either from greet or from chat)
+    // The celebration message should appear
     await expect(
-      page.getByText(/your adventure is complete|bring this tale to life/i)
+      page.getByText(/your adventure is complete/i)
     ).toBeVisible({ timeout: 15000 });
   });
 });
