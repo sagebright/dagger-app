@@ -56,6 +56,7 @@ describe('mergeWithDefaults', () => {
       frame: null,
       sceneArcs: [{ id: 'arc-1', sceneNumber: 1, title: 'Opening', description: 'Start', keyElements: [], location: 'Town', sceneType: 'exploration' }],
       inscribedScenes: [],
+      inscribingSections: {},
       versionHistory: { spark: [] },
       adventureName: 'Test Adventure',
     };

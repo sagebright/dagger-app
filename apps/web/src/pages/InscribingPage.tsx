@@ -18,7 +18,7 @@
  * panel:balance_warning, and panel:scene_confirmed events.
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useSageGreeting } from '@/hooks/useSageGreeting';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -184,6 +184,7 @@ export function InscribingPage({ sessionId, onNavigate }: InscribingPageProps) {
   // Adventure state
   const adventureName = useAdventureStore((s) => s.adventure.adventureName);
   const sceneArcs = useAdventureStore((s) => s.adventure.sceneArcs);
+  const inscribingSections = useAdventureStore((s) => s.adventure.inscribingSections);
 
   // Panel state
   const [activeSceneIndex, setActiveSceneIndex] = useState(0);
@@ -197,6 +198,27 @@ export function InscribingPage({ sessionId, onNavigate }: InscribingPageProps) {
   const [isSectionStreaming, setIsSectionStreaming] = useState(false);
   const [isReady, setIsReady] = useState(false);
   const [isThinking, setIsThinking] = useState(false);
+
+  // Hydrate sceneStates from persisted inscribingSections on mount
+  useEffect(() => {
+    if (!inscribingSections || Object.keys(inscribingSections).length === 0) return;
+
+    setSceneStates((prev) => {
+      // Skip hydration if states are already populated (SSE has taken over)
+      if (prev.size > 0) return prev;
+
+      const hydrated = new Map<string, SceneInscriptionState>();
+      for (const [sceneArcId, sections] of Object.entries(inscribingSections)) {
+        const emptyState = createEmptySceneState();
+        const mergedSections = emptyState.sections.map((defaultSection) => {
+          const persisted = sections.find((s) => s.id === defaultSection.id);
+          return persisted ?? defaultSection;
+        });
+        hydrated.set(sceneArcId, { ...emptyState, sections: mergedSections });
+      }
+      return hydrated;
+    });
+  }, [inscribingSections]);
 
   // Get or initialize scene state
   const getSceneState = useCallback(

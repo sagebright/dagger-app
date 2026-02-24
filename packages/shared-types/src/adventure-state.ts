@@ -12,7 +12,7 @@
  */
 
 import type { Stage, ComponentsState } from './stages.js';
-import type { FrameDetailSection } from './sage-events.js';
+import type { FrameDetailSection, InscribingSectionData } from './sage-events.js';
 
 // =============================================================================
 // Spark (Invoking Stage)
@@ -256,6 +256,9 @@ export interface AdventureState {
   /** Inscribing: fully written scenes with all 9 sections */
   inscribedScenes: InscribedScene[];
 
+  /** Inscribing: persisted section data keyed by sceneArcId */
+  inscribingSections: Record<string, InscribingSectionData[]>;
+
   /** Version history for undo (section path -> version stack) */
   versionHistory: Record<string, VersionEntry[]>;
 
@@ -305,6 +308,7 @@ export function createEmptyAdventureState(): AdventureState {
     frame: null,
     sceneArcs: [],
     inscribedScenes: [],
+    inscribingSections: {},
     versionHistory: {},
     adventureName: null,
   };
@@ -319,6 +323,7 @@ export function mergeWithDefaults(partial: Partial<AdventureState>): AdventureSt
     components: { ...defaults.components, ...(partial.components ?? {}) },
     sceneArcs: partial.sceneArcs ?? defaults.sceneArcs,
     inscribedScenes: partial.inscribedScenes ?? defaults.inscribedScenes,
+    inscribingSections: partial.inscribingSections ?? defaults.inscribingSections,
     versionHistory: partial.versionHistory ?? defaults.versionHistory,
   };
 }

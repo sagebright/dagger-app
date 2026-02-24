@@ -17,6 +17,7 @@
 
 import { registerToolHandler } from '../services/tool-dispatcher.js';
 import type { ToolContext } from '../services/tool-dispatcher.js';
+import { getSupabase } from '../services/supabase.js';
 import type {
   SageEvent,
   InscribingSectionId,
@@ -173,7 +174,7 @@ export function registerInscribingTools(): void {
  */
 async function handleUpdateSection(
   input: Record<string, unknown>,
-  _context: ToolContext
+  context: ToolContext
 ): Promise<{ result: unknown; isError: boolean }> {
   const sectionInput = input as unknown as UpdateSectionInput;
 
@@ -215,6 +216,19 @@ async function handleUpdateSection(
     },
   });
 
+  // Persist section update to DB (best effort)
+  try {
+    await persistSectionUpdate(
+      context.sessionId,
+      sectionInput.sceneArcId,
+      sectionInput.sectionId,
+      sectionInput.content
+    );
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    console.warn(`Failed to persist section update: ${message}`);
+  }
+
   return {
     result: {
       status: 'section_updated',
@@ -233,7 +247,7 @@ async function handleUpdateSection(
  */
 async function handleSetWave(
   input: Record<string, unknown>,
-  _context: ToolContext
+  context: ToolContext
 ): Promise<{ result: unknown; isError: boolean }> {
   const waveInput = input as unknown as SetWaveInput;
 
@@ -275,6 +289,18 @@ async function handleSetWave(
       sections: sectionData,
     },
   });
+
+  // Persist sections to DB (best effort)
+  try {
+    await persistSectionsToState(
+      context.sessionId,
+      waveInput.sceneArcId,
+      sectionData
+    );
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    console.warn(`Failed to persist wave sections: ${message}`);
+  }
 
   return {
     result: {
@@ -369,7 +395,7 @@ async function handleWarnBalance(
 /** Handle the set_entity_npcs tool call. */
 async function handleSetEntityNPCs(
   input: Record<string, unknown>,
-  _context: ToolContext
+  context: ToolContext
 ): Promise<{ result: unknown; isError: boolean }> {
   const entityInput = input as unknown as SetEntityNPCsInput;
 
@@ -389,6 +415,20 @@ async function handleSetEntityNPCs(
     },
   });
 
+  // Persist entity data to DB (best effort)
+  try {
+    await persistEntityToState(
+      context.sessionId,
+      entityInput.sceneArcId,
+      'npcs_present',
+      'entityNPCs',
+      entityInput.npcs
+    );
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    console.warn(`Failed to persist NPC entities: ${message}`);
+  }
+
   return {
     result: {
       status: 'entity_npcs_set',
@@ -402,7 +442,7 @@ async function handleSetEntityNPCs(
 /** Handle the set_entity_adversaries tool call. */
 async function handleSetEntityAdversaries(
   input: Record<string, unknown>,
-  _context: ToolContext
+  context: ToolContext
 ): Promise<{ result: unknown; isError: boolean }> {
   const entityInput = input as unknown as SetEntityAdversariesInput;
 
@@ -422,6 +462,20 @@ async function handleSetEntityAdversaries(
     },
   });
 
+  // Persist entity data to DB (best effort)
+  try {
+    await persistEntityToState(
+      context.sessionId,
+      entityInput.sceneArcId,
+      'adversaries',
+      'entityAdversaries',
+      entityInput.adversaries
+    );
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    console.warn(`Failed to persist adversary entities: ${message}`);
+  }
+
   return {
     result: {
       status: 'entity_adversaries_set',
@@ -435,7 +489,7 @@ async function handleSetEntityAdversaries(
 /** Handle the set_entity_items tool call. */
 async function handleSetEntityItems(
   input: Record<string, unknown>,
-  _context: ToolContext
+  context: ToolContext
 ): Promise<{ result: unknown; isError: boolean }> {
   const entityInput = input as unknown as SetEntityItemsInput;
 
@@ -455,6 +509,20 @@ async function handleSetEntityItems(
     },
   });
 
+  // Persist entity data to DB (best effort)
+  try {
+    await persistEntityToState(
+      context.sessionId,
+      entityInput.sceneArcId,
+      'items',
+      'entityItems',
+      entityInput.items
+    );
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    console.warn(`Failed to persist item entities: ${message}`);
+  }
+
   return {
     result: {
       status: 'entity_items_set',
@@ -468,7 +536,7 @@ async function handleSetEntityItems(
 /** Handle the set_entity_portents tool call. */
 async function handleSetEntityPortents(
   input: Record<string, unknown>,
-  _context: ToolContext
+  context: ToolContext
 ): Promise<{ result: unknown; isError: boolean }> {
   const entityInput = input as unknown as SetEntityPortentsInput;
 
@@ -488,6 +556,20 @@ async function handleSetEntityPortents(
     },
   });
 
+  // Persist entity data to DB (best effort)
+  try {
+    await persistEntityToState(
+      context.sessionId,
+      entityInput.sceneArcId,
+      'portents',
+      'entityPortents',
+      entityInput.categories
+    );
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    console.warn(`Failed to persist portent entities: ${message}`);
+  }
+
   return {
     result: {
       status: 'entity_portents_set',
@@ -496,4 +578,146 @@ async function handleSetEntityPortents(
     },
     isError: false,
   };
+}
+
+// =============================================================================
+// Persistence
+// =============================================================================
+
+/**
+ * Fetch the current adventure state row from Supabase.
+ *
+ * Returns { id, state } or null if not found. Logs warnings on failure.
+ */
+async function fetchAdventureStateRow(
+  sessionId: string
+): Promise<{ id: string; state: Record<string, unknown> } | null> {
+  const supabase = getSupabase();
+
+  const { data: stateRow, error: fetchError } = await supabase
+    .from('sage_adventure_state')
+    .select('id, state')
+    .eq('session_id', sessionId)
+    .single();
+
+  if (fetchError || !stateRow) {
+    console.warn(`Adventure state not found for session ${sessionId}`);
+    return null;
+  }
+
+  return {
+    id: stateRow.id as string,
+    state: (stateRow.state as Record<string, unknown>) ?? {},
+  };
+}
+
+/**
+ * Write an updated state object back to the adventure state row.
+ */
+async function writeAdventureState(
+  rowId: string,
+  updatedState: Record<string, unknown>
+): Promise<void> {
+  const supabase = getSupabase();
+
+  const { error: updateError } = await supabase
+    .from('sage_adventure_state')
+    .update({ state: updatedState })
+    .eq('id', rowId);
+
+  if (updateError) {
+    console.warn(`Failed to persist inscribing state: ${updateError.message}`);
+  }
+}
+
+/**
+ * Persist sections from a set_wave call to the adventure state.
+ *
+ * Merges the new sections into `state.inscribingSections[sceneArcId]`,
+ * preserving sections for other scene arcs. Best-effort: failures
+ * are logged but don't block the tool result.
+ */
+async function persistSectionsToState(
+  sessionId: string,
+  sceneArcId: string,
+  sections: InscribingSectionData[]
+): Promise<void> {
+  const row = await fetchAdventureStateRow(sessionId);
+  if (!row) return;
+
+  const existing =
+    (row.state.inscribingSections as Record<string, InscribingSectionData[]>) ?? {};
+
+  const updatedState = {
+    ...row.state,
+    inscribingSections: { ...existing, [sceneArcId]: sections },
+  };
+
+  await writeAdventureState(row.id, updatedState);
+}
+
+/**
+ * Persist a single section update to the adventure state.
+ *
+ * Finds the matching section by ID within the scene's section array
+ * and updates its content. If the scene has no persisted sections yet,
+ * this is a no-op (sections must be created via set_wave first).
+ */
+async function persistSectionUpdate(
+  sessionId: string,
+  sceneArcId: string,
+  sectionId: InscribingSectionId,
+  content: string
+): Promise<void> {
+  const row = await fetchAdventureStateRow(sessionId);
+  if (!row) return;
+
+  const existing =
+    (row.state.inscribingSections as Record<string, InscribingSectionData[]>) ?? {};
+  const sceneSections = existing[sceneArcId];
+  if (!sceneSections) return;
+
+  const updatedSections = sceneSections.map((s) =>
+    s.id === sectionId ? { ...s, content } : s
+  );
+
+  const updatedState = {
+    ...row.state,
+    inscribingSections: { ...existing, [sceneArcId]: updatedSections },
+  };
+
+  await writeAdventureState(row.id, updatedState);
+}
+
+/**
+ * Persist entity data onto a specific section within the adventure state.
+ *
+ * Finds the target section by ID, merges the entity field, and writes back.
+ * If the scene or section doesn't exist yet, this is a no-op.
+ */
+async function persistEntityToState(
+  sessionId: string,
+  sceneArcId: string,
+  sectionId: string,
+  entityField: string,
+  entityData: unknown
+): Promise<void> {
+  const row = await fetchAdventureStateRow(sessionId);
+  if (!row) return;
+
+  const existing =
+    (row.state.inscribingSections as Record<string, InscribingSectionData[]>) ?? {};
+  const sceneSections = existing[sceneArcId];
+  if (!sceneSections) return;
+
+  const updatedSections = sceneSections.map((s) =>
+    s.id === sectionId ? { ...s, [entityField]: entityData } : s
+  );
+
+  const updatedState = {
+    ...row.state,
+    inscribingSections: { ...existing, [sceneArcId]: updatedSections },
+  };
+
+  await writeAdventureState(row.id, updatedState);
 }

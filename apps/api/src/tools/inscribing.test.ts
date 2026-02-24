@@ -4,14 +4,18 @@
  * Verifies:
  * - update_section updates a single section and queues panel:section event
  * - set_wave populates a wave of sections and queues panel:sections event
+ * - set_wave persists sections to DB state
+ * - update_section persists updated section to DB state
+ * - Entity handlers persist entity data to DB state
  * - invalidate_wave3 marks wave 3 for regeneration and queues event
  * - warn_balance sends a balance warning event
  * - drainInscribingEvents returns and clears pending events
  * - propagate_rename propagates name changes across cached sections
  * - propagate_semantic produces LLM hints for semantic changes
+ * - Persistence failures don't block tool results (best-effort)
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   registerInscribingTools,
   drainInscribingEvents,
@@ -21,6 +25,37 @@ import {
 import { clearToolHandlers, dispatchToolCalls } from '../services/tool-dispatcher.js';
 import type { ToolContext } from '../services/tool-dispatcher.js';
 import type { CollectedToolUse } from '../services/stream-parser.js';
+
+// =============================================================================
+// Supabase Mock
+// =============================================================================
+
+const {
+  mockUpdateEq,
+  mockUpdate,
+  mockSingle,
+  mockSelectEq,
+  mockSelect,
+  mockFrom,
+} = vi.hoisted(() => {
+  const mockUpdateEq = vi.fn().mockResolvedValue({ error: null });
+  const mockUpdate = vi.fn().mockReturnValue({ eq: mockUpdateEq });
+  const mockSingle = vi.fn().mockResolvedValue({
+    data: { id: 'state-1', state: {} },
+    error: null,
+  });
+  const mockSelectEq = vi.fn().mockReturnValue({ single: mockSingle });
+  const mockSelect = vi.fn().mockReturnValue({ eq: mockSelectEq });
+  const mockFrom = vi.fn().mockReturnValue({
+    select: mockSelect,
+    update: mockUpdate,
+  });
+  return { mockUpdateEq, mockUpdate, mockSingle, mockSelectEq, mockSelect, mockFrom };
+});
+
+vi.mock('../services/supabase.js', () => ({
+  getSupabase: vi.fn().mockReturnValue({ from: mockFrom }),
+}));
 
 const mockContext: ToolContext = { sessionId: 'test-session-id' };
 
@@ -33,6 +68,17 @@ beforeEach(() => {
   drainInscribingEvents();
   clearSectionCache();
   registerInscribingTools();
+  vi.clearAllMocks();
+  // Re-wire mock chain after clearAllMocks
+  mockFrom.mockReturnValue({ select: mockSelect, update: mockUpdate });
+  mockSelect.mockReturnValue({ eq: mockSelectEq });
+  mockSelectEq.mockReturnValue({ single: mockSingle });
+  mockSingle.mockResolvedValue({
+    data: { id: 'state-1', state: {} },
+    error: null,
+  });
+  mockUpdate.mockReturnValue({ eq: mockUpdateEq });
+  mockUpdateEq.mockResolvedValue({ error: null });
 });
 
 // =============================================================================
@@ -951,5 +997,348 @@ describe('propagate_semantic handler', () => {
     const toolResult = result.toolResults[0];
     expect(toolResult.is_error).toBe(true);
     expect(toolResult.content).toContain('changeType is required');
+  });
+});
+
+// =============================================================================
+// Persistence: set_wave
+// =============================================================================
+
+describe('set_wave persistence', () => {
+  const validWaveInput = {
+    sceneArcId: 'arc-1',
+    wave: 1,
+    sections: [
+      { sectionId: 'overview', content: 'Scene overview content.' },
+      { sectionId: 'setup', content: 'Scene setup content.' },
+      { sectionId: 'developments', content: 'Scene developments.' },
+    ],
+  };
+
+  it('persists sections to inscribingSections in DB state', async () => {
+    await dispatchToolCalls([
+      { id: 'tool-p1', name: 'set_wave', input: validWaveInput } as CollectedToolUse,
+    ], mockContext);
+
+    expect(mockFrom).toHaveBeenCalledWith('sage_adventure_state');
+    expect(mockSelect).toHaveBeenCalledWith('id, state');
+    expect(mockSelectEq).toHaveBeenCalledWith('session_id', 'test-session-id');
+
+    expect(mockUpdate).toHaveBeenCalled();
+    const updatedState = mockUpdate.mock.calls[0][0].state;
+    expect(updatedState.inscribingSections).toBeDefined();
+    expect(updatedState.inscribingSections['arc-1']).toHaveLength(3);
+    expect(updatedState.inscribingSections['arc-1'][0].id).toBe('overview');
+    expect(updatedState.inscribingSections['arc-1'][0].content).toBe('Scene overview content.');
+  });
+
+  it('merges with existing inscribingSections for other scenes', async () => {
+    mockSingle.mockResolvedValueOnce({
+      data: {
+        id: 'state-1',
+        state: {
+          inscribingSections: {
+            'arc-2': [{ id: 'overview', label: 'Overview', content: 'Other scene.', wave: 1, hasDetail: false }],
+          },
+        },
+      },
+      error: null,
+    });
+
+    await dispatchToolCalls([
+      { id: 'tool-p2', name: 'set_wave', input: validWaveInput } as CollectedToolUse,
+    ], mockContext);
+
+    const updatedState = mockUpdate.mock.calls[0][0].state;
+    // Existing scene data is preserved
+    expect(updatedState.inscribingSections['arc-2']).toHaveLength(1);
+    // New scene data is added
+    expect(updatedState.inscribingSections['arc-1']).toHaveLength(3);
+  });
+
+  it('still succeeds when DB persistence fails', async () => {
+    mockSingle.mockResolvedValueOnce({
+      data: null,
+      error: { message: 'Connection lost' },
+    });
+
+    const result = await dispatchToolCalls([
+      { id: 'tool-p3', name: 'set_wave', input: validWaveInput } as CollectedToolUse,
+    ], mockContext);
+
+    const toolResult = result.toolResults[0];
+    expect(toolResult.is_error).toBeUndefined();
+    const parsed = JSON.parse(toolResult.content);
+    expect(parsed.status).toBe('wave_populated');
+  });
+});
+
+// =============================================================================
+// Persistence: update_section
+// =============================================================================
+
+describe('update_section persistence', () => {
+  it('persists updated section to inscribingSections in DB state', async () => {
+    // Pre-existing sections for arc-1
+    mockSingle.mockResolvedValueOnce({
+      data: {
+        id: 'state-1',
+        state: {
+          inscribingSections: {
+            'arc-1': [
+              { id: 'overview', label: 'Overview', content: 'Old overview.', wave: 1, hasDetail: false },
+              { id: 'setup', label: 'Setup', content: 'Old setup.', wave: 1, hasDetail: true },
+            ],
+          },
+        },
+      },
+      error: null,
+    });
+
+    await dispatchToolCalls([
+      {
+        id: 'tool-p4',
+        name: 'update_section',
+        input: {
+          sceneArcId: 'arc-1',
+          sectionId: 'overview',
+          content: 'New overview content.',
+        },
+      } as CollectedToolUse,
+    ], mockContext);
+
+    expect(mockUpdate).toHaveBeenCalled();
+    const updatedState = mockUpdate.mock.calls[0][0].state;
+    const sections = updatedState.inscribingSections['arc-1'];
+    const overview = sections.find((s: { id: string }) => s.id === 'overview');
+    expect(overview.content).toBe('New overview content.');
+    // Other sections unchanged
+    const setup = sections.find((s: { id: string }) => s.id === 'setup');
+    expect(setup.content).toBe('Old setup.');
+  });
+
+  it('still succeeds when DB persistence fails', async () => {
+    mockSingle.mockResolvedValueOnce({
+      data: null,
+      error: { message: 'Connection lost' },
+    });
+
+    const result = await dispatchToolCalls([
+      {
+        id: 'tool-p5',
+        name: 'update_section',
+        input: {
+          sceneArcId: 'arc-1',
+          sectionId: 'overview',
+          content: 'New content.',
+        },
+      } as CollectedToolUse,
+    ], mockContext);
+
+    const toolResult = result.toolResults[0];
+    expect(toolResult.is_error).toBeUndefined();
+    const parsed = JSON.parse(toolResult.content);
+    expect(parsed.status).toBe('section_updated');
+  });
+});
+
+// =============================================================================
+// Persistence: entity handlers
+// =============================================================================
+
+describe('entity handler persistence', () => {
+  const validNPCs = [
+    {
+      id: 'npc-1',
+      name: 'Elder Mira',
+      role: 'quest-giver',
+      description: 'A wise elder.',
+      sceneAppearances: ['Scene 1'],
+      isEnriched: true,
+    },
+  ];
+
+  it('set_entity_npcs persists entity data to DB state', async () => {
+    mockSingle.mockResolvedValueOnce({
+      data: {
+        id: 'state-1',
+        state: {
+          inscribingSections: {
+            'arc-1': [
+              { id: 'npcs_present', label: 'NPCs', content: '', wave: 2, hasDetail: false },
+            ],
+          },
+        },
+      },
+      error: null,
+    });
+
+    await dispatchToolCalls([
+      {
+        id: 'tool-pe1',
+        name: 'set_entity_npcs',
+        input: { sceneArcId: 'arc-1', npcs: validNPCs },
+      } as CollectedToolUse,
+    ], mockContext);
+
+    expect(mockUpdate).toHaveBeenCalled();
+    const updatedState = mockUpdate.mock.calls[0][0].state;
+    const section = updatedState.inscribingSections['arc-1'].find(
+      (s: { id: string }) => s.id === 'npcs_present'
+    );
+    expect(section.entityNPCs).toEqual(validNPCs);
+  });
+
+  it('set_entity_adversaries persists entity data to DB state', async () => {
+    const validAdversaries = [
+      {
+        id: 'adv-1',
+        name: 'Shadow Creeper',
+        type: 'minion',
+        difficulty: 2,
+        quantity: 3,
+        sceneAppearances: ['Scene 1'],
+        stats: { hp: 4, stress: 2, attack: '+3', damage: '1d6' },
+      },
+    ];
+
+    mockSingle.mockResolvedValueOnce({
+      data: {
+        id: 'state-1',
+        state: {
+          inscribingSections: {
+            'arc-1': [
+              { id: 'adversaries', label: 'Adversaries', content: '', wave: 2, hasDetail: false },
+            ],
+          },
+        },
+      },
+      error: null,
+    });
+
+    await dispatchToolCalls([
+      {
+        id: 'tool-pe2',
+        name: 'set_entity_adversaries',
+        input: { sceneArcId: 'arc-1', adversaries: validAdversaries },
+      } as CollectedToolUse,
+    ], mockContext);
+
+    expect(mockUpdate).toHaveBeenCalled();
+    const updatedState = mockUpdate.mock.calls[0][0].state;
+    const section = updatedState.inscribingSections['arc-1'].find(
+      (s: { id: string }) => s.id === 'adversaries'
+    );
+    expect(section.entityAdversaries).toEqual(validAdversaries);
+  });
+
+  it('set_entity_items persists entity data to DB state', async () => {
+    const validItems = [
+      {
+        id: 'item-1',
+        name: 'Flame Tongue Dagger',
+        category: 'weapon',
+        tier: 2,
+        statLine: '1d8+2 fire damage',
+        sceneAppearances: ['Scene 2'],
+      },
+    ];
+
+    mockSingle.mockResolvedValueOnce({
+      data: {
+        id: 'state-1',
+        state: {
+          inscribingSections: {
+            'arc-1': [
+              { id: 'items', label: 'Items', content: '', wave: 2, hasDetail: false },
+            ],
+          },
+        },
+      },
+      error: null,
+    });
+
+    await dispatchToolCalls([
+      {
+        id: 'tool-pe3',
+        name: 'set_entity_items',
+        input: { sceneArcId: 'arc-1', items: validItems },
+      } as CollectedToolUse,
+    ], mockContext);
+
+    expect(mockUpdate).toHaveBeenCalled();
+    const updatedState = mockUpdate.mock.calls[0][0].state;
+    const section = updatedState.inscribingSections['arc-1'].find(
+      (s: { id: string }) => s.id === 'items'
+    );
+    expect(section.entityItems).toEqual(validItems);
+  });
+
+  it('set_entity_portents persists entity data to DB state', async () => {
+    const validPortents = [
+      {
+        category: 'items_clues',
+        label: 'Items & Clues',
+        entries: [
+          {
+            id: 'echo-1',
+            title: "The Merchant's Ledger",
+            sceneBadge: 'Scene 1',
+            trigger: 'Search the cart',
+            benefit: 'Find a ledger',
+            complication: 'Coded messages',
+          },
+        ],
+      },
+    ];
+
+    mockSingle.mockResolvedValueOnce({
+      data: {
+        id: 'state-1',
+        state: {
+          inscribingSections: {
+            'arc-1': [
+              { id: 'portents', label: 'Portents', content: '', wave: 3, hasDetail: false },
+            ],
+          },
+        },
+      },
+      error: null,
+    });
+
+    await dispatchToolCalls([
+      {
+        id: 'tool-pe4',
+        name: 'set_entity_portents',
+        input: { sceneArcId: 'arc-1', categories: validPortents },
+      } as CollectedToolUse,
+    ], mockContext);
+
+    expect(mockUpdate).toHaveBeenCalled();
+    const updatedState = mockUpdate.mock.calls[0][0].state;
+    const section = updatedState.inscribingSections['arc-1'].find(
+      (s: { id: string }) => s.id === 'portents'
+    );
+    expect(section.entityPortents).toEqual(validPortents);
+  });
+
+  it('entity handler still succeeds when DB persistence fails', async () => {
+    mockSingle.mockResolvedValueOnce({
+      data: null,
+      error: { message: 'Connection lost' },
+    });
+
+    const result = await dispatchToolCalls([
+      {
+        id: 'tool-pe5',
+        name: 'set_entity_npcs',
+        input: { sceneArcId: 'arc-1', npcs: validNPCs },
+      } as CollectedToolUse,
+    ], mockContext);
+
+    const toolResult = result.toolResults[0];
+    expect(toolResult.is_error).toBeUndefined();
+    const parsed = JSON.parse(toolResult.content);
+    expect(parsed.status).toBe('entity_npcs_set');
   });
 });

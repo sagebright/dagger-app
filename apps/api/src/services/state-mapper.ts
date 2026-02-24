@@ -59,6 +59,8 @@ export function mapRawStateToAdventureState(
     inscribedScenes: Array.isArray(state.inscribedScenes)
       ? state.inscribedScenes
       : [],
+    inscribingSections:
+      (state.inscribingSections as AdventureState['inscribingSections']) ?? {},
     versionHistory: (state.versionHistory as AdventureState['versionHistory']) ?? {},
     adventureName: typeof state.adventureName === 'string'
       ? state.adventureName

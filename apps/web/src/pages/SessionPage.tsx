@@ -127,6 +127,7 @@ function mapApiState(
       : null,
     sceneArcs: [],
     inscribedScenes: [],
+    inscribingSections: {},
     versionHistory: {},
     adventureName: session.title,
   };
