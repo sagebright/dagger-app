@@ -102,8 +102,9 @@ test.describe('Full Adventure Flow', () => {
     controller.resetGreet();
     controller.setChatResponse(buildAttuningAllComponentsSSE());
 
-    // Verify Attuning panel is visible
-    await expect(page.getByText('Attuning')).toBeVisible({ timeout: 10000 });
+    // Verify Attuning panel is visible (use .first() since StageDropdown
+    // trigger also shows the stage name)
+    await expect(page.getByText('Attuning').first()).toBeVisible({ timeout: 10000 });
 
     // Set all components at once
     await sendMessage(page, 'Use recommended defaults for everything');

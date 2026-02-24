@@ -59,11 +59,18 @@ export interface MockController {
   getStage: () => string;
   /** Reset the greet-called flag so greet returns SSE again */
   resetGreet: () => void;
+  /** Update mock options (e.g., componentsPreConfirmed) */
+  setOptions: (opts: Partial<SetupMockOptions>) => void;
 }
 
 // =============================================================================
 // Setup
 // =============================================================================
+
+export interface SetupMockOptions {
+  /** When true, pre-populate all 8 components as confirmed in session state */
+  componentsPreConfirmed?: boolean;
+}
 
 /**
  * Install all API route mocks and return a MockController.
@@ -73,9 +80,11 @@ export interface MockController {
  */
 export async function setupMockAPI(
   page: Page,
-  initialStage: string = 'invoking'
+  initialStage: string = 'invoking',
+  options: SetupMockOptions = {}
 ): Promise<MockController> {
   let currentStage = initialStage;
+  let currentOptions: SetupMockOptions = { ...options };
   let chatBody = buildSimpleChatSSE('The Sage responds.');
   let greetBody = buildSimpleChatSSE('Welcome, storyteller.');
   let greetCalled = false;
@@ -92,6 +101,7 @@ export async function setupMockAPI(
     },
     getStage: () => currentStage,
     resetGreet: () => { greetCalled = false; },
+    setOptions: (opts) => { currentOptions = { ...currentOptions, ...opts }; },
   };
 
   // ---- Auth routes ----
@@ -112,7 +122,7 @@ export async function setupMockAPI(
       status: 200,
       contentType: JSON_CONTENT_TYPE,
       body: JSON.stringify({
-        sessions: [buildSessionResponse(currentStage).session],
+        sessions: [buildSessionResponse(currentStage, currentOptions).session],
       }),
     });
   });
@@ -123,11 +133,11 @@ export async function setupMockAPI(
 
     if (method === 'PATCH') {
       controller.advanceStage();
-      await fulfillSession(route, currentStage);
+      await fulfillSession(route, currentStage, currentOptions);
       return;
     }
 
-    await fulfillSession(route, currentStage);
+    await fulfillSession(route, currentStage, currentOptions);
   });
 
   // ---- Chat SSE ----
@@ -208,10 +218,14 @@ export async function setupMockAPI(
 // Helpers
 // =============================================================================
 
-async function fulfillSession(route: Route, stage: string): Promise<void> {
+async function fulfillSession(
+  route: Route,
+  stage: string,
+  opts: SetupMockOptions = {}
+): Promise<void> {
   await route.fulfill({
     status: 200,
     contentType: JSON_CONTENT_TYPE,
-    body: JSON.stringify(buildSessionResponse(stage)),
+    body: JSON.stringify(buildSessionResponse(stage, opts)),
   });
 }

@@ -300,7 +300,15 @@ export const MOCK_ALL_SECTIONS = [
 /**
  * Build a mock session response object for a given stage.
  */
-export function buildSessionResponse(stage: string) {
+export function buildSessionResponse(
+  stage: string,
+  options: { componentsPreConfirmed?: boolean } = {}
+) {
+  // Include components if past attuning, or if explicitly pre-confirmed
+  const includeComponents =
+    (stage !== 'invoking' && stage !== 'attuning') ||
+    (stage === 'attuning' && options.componentsPreConfirmed);
+
   return {
     session: {
       id: MOCK_SESSION_ID,
@@ -317,9 +325,7 @@ export function buildSessionResponse(stage: string) {
       state: {
         stage,
         spark: stage !== 'invoking' ? MOCK_SPARK : null,
-        components: stage !== 'invoking' && stage !== 'attuning'
-          ? MOCK_COMPONENTS
-          : {},
+        components: includeComponents ? MOCK_COMPONENTS : {},
         frame: ['weaving', 'inscribing', 'delivering'].includes(stage)
           ? MOCK_FRAMES[0]
           : null,

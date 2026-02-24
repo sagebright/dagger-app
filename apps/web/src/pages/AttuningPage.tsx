@@ -112,11 +112,14 @@ export function AttuningPage({ sessionId, onNavigate }: AttuningPageProps) {
 
   useSageGreeting(messages.length, requestGreeting, setIsThinking);
 
-  /** Apply a component update from the set_component tool */
+  /** Apply a component update from the set_component tool.
+   * Reads fresh state from the store to avoid stale closures when
+   * multiple panel:component events arrive in the same React batch. */
   const applyComponentUpdate = useCallback(
     (data: PanelComponentEvent['data']) => {
       const componentId = data.componentId as ComponentId;
-      const updated: SerializableComponentsState = { ...components };
+      const current = useAdventureStore.getState().adventure.components;
+      const updated: SerializableComponentsState = { ...current };
 
       applyValueToComponents(updated, componentId, data.value);
 
@@ -128,7 +131,7 @@ export function AttuningPage({ sessionId, onNavigate }: AttuningPageProps) {
 
       setComponents(updated);
     },
-    [components, setComponents]
+    [setComponents]
   );
 
   // Send message handler

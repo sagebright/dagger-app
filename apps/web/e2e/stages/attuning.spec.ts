@@ -27,8 +27,9 @@ test.describe('Attuning Stage', () => {
     await page.goto('/adventure');
     await page.waitForLoadState('networkidle');
 
-    // The panel should show the Attuning label
-    await expect(page.getByText('Attuning')).toBeVisible({ timeout: 10000 });
+    // The panel heading should show the Attuning label (use .first() since
+    // StageDropdown trigger also shows the stage name)
+    await expect(page.getByText('Attuning').first()).toBeVisible({ timeout: 10000 });
 
     // Should show component group labels
     await expect(page.getByText('Session')).toBeVisible();
