@@ -13,7 +13,7 @@
 
 import { test, expect } from '@playwright/test';
 import { signInTestUser, signOutTestUser, type AuthSession } from './helpers/auth';
-import { createTestSession, deleteTestSession, loadTestSession } from './helpers/test-data';
+import { cleanupActiveSessions, createTestSession, deleteTestSession, fetchWithRetry, loadTestSession } from './helpers/test-data';
 import {
   installAnthropicMock,
   buildSimpleSSE,
@@ -37,7 +37,7 @@ async function advanceToInscribing(
   const advanceCount = 4;
 
   for (let i = 0; i < advanceCount; i++) {
-    const response = await fetch(
+    const response = await fetchWithRetry(
       `${API_BASE_URL}/api/session/${sessionId}/advance`,
       {
         method: 'POST',
@@ -68,6 +68,7 @@ test.describe('Inscribing Stage (Tier 2)', () => {
 
   test.beforeEach(async ({ page }) => {
     auth = await signInTestUser();
+    await cleanupActiveSessions(auth.accessToken);
     const { session } = await createTestSession({ accessToken: auth.accessToken });
     sessionId = session.id;
 
@@ -84,7 +85,7 @@ test.describe('Inscribing Stage (Tier 2)', () => {
       { token: auth.accessToken, refresh: auth.refreshToken }
     );
 
-    /* Install Anthropic mock with inscribing-appropriate responses */
+    /* Install Anthropic mock with inscribing-appropriate responses (includes auth session mock) */
     mock = await installAnthropicMock(page, {
       initialGreetBody: buildSimpleSSE(
         'Wave 1 is inscribed. Review the sections and let me know if changes are needed.'
@@ -92,6 +93,7 @@ test.describe('Inscribing Stage (Tier 2)', () => {
       initialChatBody: buildSimpleSSE(
         'Wave 2 entities are inscribed: NPCs, adversaries, and items.'
       ),
+      authUser: { id: auth.userId, email: auth.email },
     });
   });
 

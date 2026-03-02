@@ -15,6 +15,51 @@
 import { API_BASE_URL } from '../env';
 
 // =============================================================================
+// Rate-Limit Aware Fetch
+// =============================================================================
+
+/**
+ * Fetch wrapper that retries on HTTP 429 (Too Many Requests).
+ *
+ * The API enforces a 100-req/min general rate limit and a 10-req/min auth
+ * rate limit. When running 27 integration tests sequentially, the beforeEach
+ * setup (cleanup + create + advance) can exceed these limits. This wrapper
+ * reads the server's `retryAfterMs` hint and backs off automatically.
+ */
+export async function fetchWithRetry(
+  url: string,
+  init?: RequestInit,
+  maxRetries = 3
+): Promise<Response> {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    const response = await fetch(url, init);
+
+    if (response.status !== 429 || attempt === maxRetries) {
+      return response;
+    }
+
+    /* Parse the retry delay from the response body or Retry-After header */
+    let delayMs = 2000 * (attempt + 1); // default backoff
+    try {
+      const body = await response.clone().json();
+      if (body.retryAfterMs && typeof body.retryAfterMs === 'number') {
+        delayMs = body.retryAfterMs + 200; // add small buffer
+      }
+    } catch {
+      const retryAfter = response.headers.get('Retry-After');
+      if (retryAfter) {
+        delayMs = parseInt(retryAfter, 10) * 1000 + 200;
+      }
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, delayMs));
+  }
+
+  /* Unreachable, but satisfies TypeScript */
+  throw new Error('fetchWithRetry: exhausted retries');
+}
+
+// =============================================================================
 // Types
 // =============================================================================
 
@@ -64,7 +109,7 @@ export async function createTestSession(
 ): Promise<SessionResponse> {
   const { title = 'E2E Integration Test Session', accessToken } = options;
 
-  const response = await fetch(`${API_BASE_URL}/api/session`, {
+  const response = await fetchWithRetry(`${API_BASE_URL}/api/session`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -98,7 +143,7 @@ export async function deleteTestSession(
 ): Promise<void> {
   const { sessionId, accessToken } = options;
 
-  const response = await fetch(
+  const response = await fetchWithRetry(
     `${API_BASE_URL}/api/session/${sessionId}`,
     {
       method: 'DELETE',
@@ -118,6 +163,37 @@ export async function deleteTestSession(
 }
 
 // =============================================================================
+// Cleanup Active Sessions
+// =============================================================================
+
+/**
+ * Clean up any active sessions for the test user.
+ *
+ * Call this in beforeEach **before** createTestSession to avoid 409 conflicts
+ * from leftover sessions of previous test runs. Best-effort: swallows errors
+ * so a failed cleanup doesn't mask the real test failure.
+ */
+export async function cleanupActiveSessions(
+  accessToken: string
+): Promise<void> {
+  const response = await fetchWithRetry(`${API_BASE_URL}/api/sessions`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+
+  if (!response.ok) return; // Best-effort cleanup
+
+  const body = (await response.json()) as {
+    sessions: Array<{ id: string; is_active: boolean }>;
+  };
+
+  for (const session of body.sessions) {
+    if (session.is_active) {
+      await deleteTestSession({ sessionId: session.id, accessToken });
+    }
+  }
+}
+
+// =============================================================================
 // Load Session
 // =============================================================================
 
@@ -131,7 +207,7 @@ export async function loadTestSession(
   sessionId: string,
   accessToken: string
 ): Promise<SessionResponse> {
-  const response = await fetch(
+  const response = await fetchWithRetry(
     `${API_BASE_URL}/api/session/${sessionId}`,
     {
       headers: {

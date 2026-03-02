@@ -12,7 +12,7 @@
 
 import { test, expect } from '@playwright/test';
 import { signInTestUser, signOutTestUser, type AuthSession } from './helpers/auth';
-import { createTestSession, deleteTestSession, loadTestSession } from './helpers/test-data';
+import { cleanupActiveSessions, createTestSession, deleteTestSession, fetchWithRetry, loadTestSession } from './helpers/test-data';
 import {
   installAnthropicMock,
   buildSimpleSSE,
@@ -36,7 +36,7 @@ async function advanceToWeaving(
   const advanceCount = 3;
 
   for (let i = 0; i < advanceCount; i++) {
-    const response = await fetch(
+    const response = await fetchWithRetry(
       `${API_BASE_URL}/api/session/${sessionId}/advance`,
       {
         method: 'POST',
@@ -67,6 +67,7 @@ test.describe('Weaving Stage (Tier 2)', () => {
 
   test.beforeEach(async ({ page }) => {
     auth = await signInTestUser();
+    await cleanupActiveSessions(auth.accessToken);
     const { session } = await createTestSession({ accessToken: auth.accessToken });
     sessionId = session.id;
 
@@ -83,7 +84,7 @@ test.describe('Weaving Stage (Tier 2)', () => {
       { token: auth.accessToken, refresh: auth.refreshToken }
     );
 
-    /* Install Anthropic mock with weaving-appropriate responses */
+    /* Install Anthropic mock with weaving-appropriate responses (includes auth session mock) */
     mock = await installAnthropicMock(page, {
       initialGreetBody: buildSimpleSSE(
         'I have drafted scene arcs. Review each one and confirm when ready.'
@@ -91,6 +92,7 @@ test.describe('Weaving Stage (Tier 2)', () => {
       initialChatBody: buildSimpleSSE(
         'All scenes confirmed. Let us name this adventure.'
       ),
+      authUser: { id: auth.userId, email: auth.email },
     });
   });
 
@@ -183,9 +185,10 @@ test.describe('Weaving Stage (Tier 2)', () => {
     await chatInput.fill('Confirm all scenes and name the adventure');
     await chatInput.press('Enter');
 
-    /* Verify the mock response appears */
+    /* Verify the mock response appears (use .last() to avoid strict-mode
+       violation — the greeting paragraph may contain concatenated text) */
     await expect(
-      page.getByText(/all scenes confirmed/i)
+      page.getByText('All scenes confirmed. Let us name this adventure.').last()
     ).toBeVisible({ timeout: 15000 });
 
     /* The session should still exist and be on weaving stage */

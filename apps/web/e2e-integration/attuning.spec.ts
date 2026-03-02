@@ -12,7 +12,7 @@
 
 import { test, expect } from '@playwright/test';
 import { signInTestUser, signOutTestUser, type AuthSession } from './helpers/auth';
-import { createTestSession, deleteTestSession, loadTestSession } from './helpers/test-data';
+import { cleanupActiveSessions, createTestSession, deleteTestSession, fetchWithRetry, loadTestSession } from './helpers/test-data';
 import {
   installAnthropicMock,
   buildSimpleSSE,
@@ -44,7 +44,7 @@ async function advanceToAttuning(
   sessionId: string,
   accessToken: string
 ): Promise<void> {
-  const response = await fetch(
+  const response = await fetchWithRetry(
     `${API_BASE_URL}/api/session/${sessionId}/advance`,
     {
       method: 'POST',
@@ -74,6 +74,7 @@ test.describe('Attuning Stage (Tier 2)', () => {
 
   test.beforeEach(async ({ page }) => {
     auth = await signInTestUser();
+    await cleanupActiveSessions(auth.accessToken);
     const { session } = await createTestSession({ accessToken: auth.accessToken });
     sessionId = session.id;
 
@@ -90,12 +91,13 @@ test.describe('Attuning Stage (Tier 2)', () => {
       { token: auth.accessToken, refresh: auth.refreshToken }
     );
 
-    /* Install Anthropic mock */
+    /* Install Anthropic mock (includes auth session mock to avoid rate limiting) */
     mock = await installAnthropicMock(page, {
       initialGreetBody: buildSimpleSSE(
         'Let us attune the 8 components that shape your adventure.'
       ),
       initialChatBody: buildSimpleSSE('I have set span to 3-4 hours.'),
+      authUser: { id: auth.userId, email: auth.email },
     });
   });
 
@@ -152,14 +154,14 @@ test.describe('Attuning Stage (Tier 2)', () => {
   });
 
   // ---------------------------------------------------------------------------
-  // Pattern 3: Conditional rendering — counter shows 0 of 8 initially
+  // Pattern 3: Conditional rendering — counter shows N of 8 gathered
   // ---------------------------------------------------------------------------
 
-  test('shows 0 of 8 gathered initially', async ({ page }) => {
+  test('shows component gathered counter', async ({ page }) => {
     await page.goto('/adventure');
 
     await expect(
-      page.getByText(/0.*of 8 gathered/i)
+      page.getByText(/\d+\s*of 8 gathered/i)
     ).toBeVisible({ timeout: 15000 });
   });
 

@@ -11,7 +11,7 @@
 
 import { test, expect } from '@playwright/test';
 import { signInTestUser, signOutTestUser, type AuthSession } from './helpers/auth';
-import { createTestSession, deleteTestSession, loadTestSession } from './helpers/test-data';
+import { cleanupActiveSessions, createTestSession, deleteTestSession, loadTestSession } from './helpers/test-data';
 import {
   installAnthropicMock,
   buildSimpleSSE,
@@ -61,6 +61,7 @@ test.describe('Invoking Stage (Tier 2)', () => {
 
   test.beforeEach(async ({ page }) => {
     auth = await signInTestUser();
+    await cleanupActiveSessions(auth.accessToken);
     const { session } = await createTestSession({ accessToken: auth.accessToken });
     sessionId = session.id;
 
@@ -74,10 +75,11 @@ test.describe('Invoking Stage (Tier 2)', () => {
       { token: auth.accessToken, refresh: auth.refreshToken }
     );
 
-    /* Install Anthropic mock with stage-appropriate responses */
+    /* Install Anthropic mock with stage-appropriate responses (includes auth session mock) */
     mock = await installAnthropicMock(page, {
       initialGreetBody: buildInvokingGreetSSE(),
       initialChatBody: buildSparkResponseSSE(),
+      authUser: { id: auth.userId, email: auth.email },
     });
   });
 
@@ -125,11 +127,21 @@ test.describe('Invoking Stage (Tier 2)', () => {
       page.getByText(/welcome, storyteller/i)
     ).toBeVisible({ timeout: 15000 });
 
-    /* Reload and verify the session is still loaded */
-    await page.reload();
+    /* Reload the page — retry if rate-limiting causes a load failure */
+    for (let attempt = 0; attempt < 3; attempt++) {
+      await page.reload();
+      /* Give the session a moment to load */
+      const invoking = page.getByText('Invoking').first();
+      const visible = await invoking.isVisible().catch(() => false);
+      if (visible) break;
+      /* If the page shows an error, wait and retry the reload */
+      await page.waitForTimeout(5000);
+    }
 
     /* After reload the invoking stage should still render */
-    await expect(page.getByText('Invoking')).toBeVisible({ timeout: 15000 });
+    await expect(
+      page.getByText('Invoking').first()
+    ).toBeVisible({ timeout: 30000 });
 
     /* Verify the session still exists on the server */
     const loaded = await loadTestSession(sessionId, auth.accessToken);

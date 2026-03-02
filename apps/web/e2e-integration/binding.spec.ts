@@ -11,7 +11,7 @@
 
 import { test, expect } from '@playwright/test';
 import { signInTestUser, signOutTestUser, type AuthSession } from './helpers/auth';
-import { createTestSession, deleteTestSession, loadTestSession } from './helpers/test-data';
+import { cleanupActiveSessions, createTestSession, deleteTestSession, fetchWithRetry, loadTestSession } from './helpers/test-data';
 import {
   installAnthropicMock,
   buildSimpleSSE,
@@ -35,7 +35,7 @@ async function advanceToBinding(
   const stages = ['attuning', 'binding'];
 
   for (const _stage of stages) {
-    const response = await fetch(
+    const response = await fetchWithRetry(
       `${API_BASE_URL}/api/session/${sessionId}/advance`,
       {
         method: 'POST',
@@ -66,6 +66,7 @@ test.describe('Binding Stage (Tier 2)', () => {
 
   test.beforeEach(async ({ page }) => {
     auth = await signInTestUser();
+    await cleanupActiveSessions(auth.accessToken);
     const { session } = await createTestSession({ accessToken: auth.accessToken });
     sessionId = session.id;
 
@@ -82,7 +83,7 @@ test.describe('Binding Stage (Tier 2)', () => {
       { token: auth.accessToken, refresh: auth.refreshToken }
     );
 
-    /* Install Anthropic mock with binding-appropriate responses */
+    /* Install Anthropic mock with binding-appropriate responses (includes auth session mock) */
     mock = await installAnthropicMock(page, {
       initialGreetBody: buildSimpleSSE(
         'I have found frames that match your vision. Explore them and select one.'
@@ -90,6 +91,7 @@ test.describe('Binding Stage (Tier 2)', () => {
       initialChatBody: buildSimpleSSE(
         'The frame is bound. Shall we weave the scenes?'
       ),
+      authUser: { id: auth.userId, email: auth.email },
     });
   });
 

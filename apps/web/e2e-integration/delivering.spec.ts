@@ -12,7 +12,7 @@
 
 import { test, expect } from '@playwright/test';
 import { signInTestUser, signOutTestUser, type AuthSession } from './helpers/auth';
-import { createTestSession, deleteTestSession, loadTestSession } from './helpers/test-data';
+import { cleanupActiveSessions, createTestSession, deleteTestSession, fetchWithRetry, loadTestSession } from './helpers/test-data';
 import {
   installAnthropicMock,
   buildSimpleSSE,
@@ -36,7 +36,7 @@ async function advanceToDelivering(
   const advanceCount = 5;
 
   for (let i = 0; i < advanceCount; i++) {
-    const response = await fetch(
+    const response = await fetchWithRetry(
       `${API_BASE_URL}/api/session/${sessionId}/advance`,
       {
         method: 'POST',
@@ -67,6 +67,7 @@ test.describe('Delivering Stage (Tier 2)', () => {
 
   test.beforeEach(async ({ page }) => {
     auth = await signInTestUser();
+    await cleanupActiveSessions(auth.accessToken);
     const { session } = await createTestSession({ accessToken: auth.accessToken });
     sessionId = session.id;
 
@@ -83,7 +84,7 @@ test.describe('Delivering Stage (Tier 2)', () => {
       { token: auth.accessToken, refresh: auth.refreshToken }
     );
 
-    /* Install Anthropic mock with delivering-appropriate responses */
+    /* Install Anthropic mock with delivering-appropriate responses (includes auth session mock) */
     mock = await installAnthropicMock(page, {
       initialGreetBody: buildSimpleSSE(
         'Your adventure is complete. Download your adventure below ' +
@@ -92,6 +93,7 @@ test.describe('Delivering Stage (Tier 2)', () => {
       initialChatBody: buildSimpleSSE(
         'The tale has been delivered. May it bring joy to your table.'
       ),
+      authUser: { id: auth.userId, email: auth.email },
     });
   });
 

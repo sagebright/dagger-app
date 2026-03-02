@@ -1,4 +1,24 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { defineConfig, devices } from '@playwright/test';
+
+/* Load E2E-specific environment variables before anything else */
+try {
+  const envPath = resolve(import.meta.dirname ?? '.', '.env.e2e');
+  const raw = readFileSync(envPath, 'utf-8');
+  for (const line of raw.split('\n')) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+    const eqIdx = trimmed.indexOf('=');
+    if (eqIdx === -1) continue;
+    const key = trimmed.slice(0, eqIdx).trim();
+    if (!process.env[key]) {
+      process.env[key] = trimmed.slice(eqIdx + 1).trim();
+    }
+  }
+} catch {
+  /* .env.e2e is optional — env vars may come from CI secrets */
+}
 
 /**
  * Playwright Tier 2 integration test configuration
@@ -25,6 +45,9 @@ export default defineConfig({
   /* Run specs sequentially to avoid shared-backend race conditions */
   fullyParallel: false,
   workers: 1,
+
+  /* Allow extra time for rate-limit retries during test setup */
+  timeout: 60_000,
 
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
