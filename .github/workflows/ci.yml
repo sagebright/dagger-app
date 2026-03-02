@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - '**'
+  pull_request:
+    branches:
+      - main
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -138,8 +141,8 @@ jobs:
         env:
           NODE_ENV: test
 
-  e2e:
-    name: E2E Tests
+  e2e-ui:
+    name: E2E Tests (Tier 1 — UI)
     runs-on: ubuntu-latest
     needs: build
     continue-on-error: true
@@ -172,14 +175,60 @@ jobs:
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: playwright-report
+          name: playwright-report-ui
+          path: apps/web/playwright-report/
+          retention-days: 14
+
+  e2e-integration:
+    name: E2E Tests (Tier 2 — Integration)
+    runs-on: ubuntu-latest
+    needs: build
+    continue-on-error: true
+    if: >-
+      github.ref == 'refs/heads/main' ||
+      contains(github.event.pull_request.labels.*.name, 'e2e-integration')
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - uses: actions/cache/restore@v4
+        with:
+          path: |
+            node_modules
+            apps/*/node_modules
+            packages/*/node_modules
+          key: node-modules-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+      - uses: actions/cache/restore@v4
+        with:
+          path: |
+            packages/shared-types/dist
+            apps/*/dist
+          key: build-artifacts-${{ github.sha }}
+      - name: Install Playwright browsers
+        run: pnpm --filter @sage-codex/web exec playwright install --with-deps chromium
+      - name: Run Tier 2 E2E tests
+        run: pnpm --filter @sage-codex/web test:e2e:integration
+        env:
+          CI: true
+          SUPABASE_URL: ${{ secrets.E2E_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.E2E_SUPABASE_ANON_KEY }}
+          ANTHROPIC_API_KEY: mock-key-for-e2e
+          E2E_SUPABASE_URL: ${{ secrets.E2E_SUPABASE_URL }}
+          E2E_SUPABASE_ANON_KEY: ${{ secrets.E2E_SUPABASE_ANON_KEY }}
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report-integration
           path: apps/web/playwright-report/
           retention-days: 14
 
   ci-success:
     name: CI Success
     runs-on: ubuntu-latest
-    needs: [typecheck, lint, test, e2e]
+    needs: [typecheck, lint, test, e2e-ui, e2e-integration]
     if: always()
     steps:
       - name: Check all jobs passed
