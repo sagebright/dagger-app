@@ -59,7 +59,6 @@ async function clickAdvance(
   const button = page.getByRole('button', { name: buttonPattern });
   await expect(button).toBeEnabled({ timeout: 15000 });
   await button.click();
-  await page.waitForLoadState('networkidle');
 }
 
 // =============================================================================
@@ -78,7 +77,6 @@ test.describe('Full Adventure Flow', () => {
     await injectAuth(page);
 
     await page.goto('/adventure');
-    await page.waitForLoadState('networkidle');
 
     // Verify greeting appears
     await expect(page.getByText(/welcome, storyteller/i)).toBeVisible({
@@ -202,7 +200,6 @@ test.describe('Full Adventure Flow', () => {
 
     if (isAdvanceVisible) {
       await advanceButton.click();
-      await page.waitForLoadState('networkidle');
     }
 
     // The celebration message should appear

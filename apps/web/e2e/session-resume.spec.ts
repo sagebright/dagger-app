@@ -183,17 +183,15 @@ test.describe('Session Resume After Page Refresh', () => {
 
       // Navigate to adventure page
       await page.goto('/adventure');
-      await page.waitForLoadState('networkidle');
 
       // The page should load without errors (not redirected to login)
-      await expect(page).toHaveURL(/\/adventure/);
+      await expect(page).toHaveURL(/\/adventure/, { timeout: 10000 });
 
       // Simulate page refresh
       await page.reload();
-      await page.waitForLoadState('networkidle');
 
       // After refresh, should still be on the adventure page
-      await expect(page).toHaveURL(/\/adventure/);
+      await expect(page).toHaveURL(/\/adventure/, { timeout: 10000 });
     });
   }
 
@@ -202,7 +200,7 @@ test.describe('Session Resume After Page Refresh', () => {
     await injectAuthSession(page);
 
     await page.goto('/adventure');
-    await page.waitForLoadState('networkidle');
+    await expect(page).toHaveURL(/\/adventure/, { timeout: 10000 });
 
     // Verify auth token is still in localStorage
     const hasToken = await page.evaluate(() => {
@@ -255,7 +253,6 @@ test.describe('Session Resume After Page Refresh', () => {
 
     await injectAuthSession(page);
     await page.goto('/adventure');
-    await page.waitForLoadState('networkidle');
 
     // Should redirect to session picker since no active session exists
     await expect(page).not.toHaveURL(/\/adventure/, { timeout: 10000 });

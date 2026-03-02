@@ -28,7 +28,6 @@ test.describe('Invoking Stage', () => {
     await injectAuth(page);
 
     await page.goto('/adventure');
-    await page.waitForLoadState('networkidle');
 
     // The Sage's greeting should appear in the chat area
     await expect(page.getByText(/welcome, storyteller/i)).toBeVisible({
@@ -42,10 +41,10 @@ test.describe('Invoking Stage', () => {
     await injectAuth(page);
 
     await page.goto('/adventure');
-    await page.waitForLoadState('networkidle');
 
-    // Send a message describing the adventure vision
+    // Wait for chat input to be ready
     const chatInput = page.getByLabel('Chat message input');
+    await expect(chatInput).toBeVisible({ timeout: 10000 });
     await chatInput.fill('A lighthouse goes dark on a remote coast');
     await chatInput.press('Enter');
 
@@ -64,10 +63,10 @@ test.describe('Invoking Stage', () => {
     await injectAuth(page);
 
     await page.goto('/adventure');
-    await page.waitForLoadState('networkidle');
 
-    // Send a message to trigger spark extraction
+    // Wait for chat input to be ready
     const chatInput = page.getByLabel('Chat message input');
+    await expect(chatInput).toBeVisible({ timeout: 10000 });
     await chatInput.fill('Dark fantasy coastal mystery');
     await chatInput.press('Enter');
 
@@ -84,10 +83,10 @@ test.describe('Invoking Stage', () => {
     await injectAuth(page);
 
     await page.goto('/adventure');
-    await page.waitForLoadState('networkidle');
 
-    // Trigger spark extraction
+    // Wait for chat input to be ready
     const chatInput = page.getByLabel('Chat message input');
+    await expect(chatInput).toBeVisible({ timeout: 10000 });
     await chatInput.fill('Dark fantasy coastal mystery');
     await chatInput.press('Enter');
 

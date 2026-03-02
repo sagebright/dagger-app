@@ -32,7 +32,6 @@ test.describe('Inscribing Stage', () => {
     await injectAuth(page);
 
     await page.goto('/adventure');
-    await page.waitForLoadState('networkidle');
 
     // The scene sections region should be visible
     const accordion = page.getByRole('region', { name: /scene sections/i });
@@ -54,7 +53,6 @@ test.describe('Inscribing Stage', () => {
     await injectAuth(page);
 
     await page.goto('/adventure');
-    await page.waitForLoadState('networkidle');
 
     // Wave divider label should show
     await expect(
@@ -74,10 +72,10 @@ test.describe('Inscribing Stage', () => {
     await injectAuth(page);
 
     await page.goto('/adventure');
-    await page.waitForLoadState('networkidle');
 
-    // Trigger Wave 2
+    // Wait for chat input to be ready
     const chatInput = page.getByLabel('Chat message input');
+    await expect(chatInput).toBeVisible({ timeout: 10000 });
     await chatInput.fill('Continue with Wave 2');
     await chatInput.press('Enter');
 
@@ -100,10 +98,10 @@ test.describe('Inscribing Stage', () => {
     await injectAuth(page);
 
     await page.goto('/adventure');
-    await page.waitForLoadState('networkidle');
 
-    // Trigger Wave 3
+    // Wait for chat input to be ready
     const chatInput = page.getByLabel('Chat message input');
+    await expect(chatInput).toBeVisible({ timeout: 10000 });
     await chatInput.fill('Continue with Wave 3');
     await chatInput.press('Enter');
 
@@ -129,10 +127,10 @@ test.describe('Inscribing Stage', () => {
     await injectAuth(page);
 
     await page.goto('/adventure');
-    await page.waitForLoadState('networkidle');
 
-    // Confirm the scene
+    // Wait for chat input to be ready
     const chatInput = page.getByLabel('Chat message input');
+    await expect(chatInput).toBeVisible({ timeout: 10000 });
     await chatInput.fill('Confirm this scene');
     await chatInput.press('Enter');
 

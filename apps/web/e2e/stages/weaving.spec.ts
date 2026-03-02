@@ -28,7 +28,6 @@ test.describe('Weaving Stage', () => {
     await injectAuth(page);
 
     await page.goto('/adventure');
-    await page.waitForLoadState('networkidle');
 
     // Scene tabs should be visible
     const tablist = page.getByRole('tablist', { name: /scene tabs/i });
@@ -46,7 +45,6 @@ test.describe('Weaving Stage', () => {
     await injectAuth(page);
 
     await page.goto('/adventure');
-    await page.waitForLoadState('networkidle');
 
     // Each scene should have a tab
     for (const arc of MOCK_SCENE_ARCS) {
@@ -63,7 +61,6 @@ test.describe('Weaving Stage', () => {
     await injectAuth(page);
 
     await page.goto('/adventure');
-    await page.waitForLoadState('networkidle');
 
     // The first scene's description should appear
     const descriptionText = MOCK_SCENE_ARCS[0].description.slice(0, 40);
@@ -79,10 +76,10 @@ test.describe('Weaving Stage', () => {
     await injectAuth(page);
 
     await page.goto('/adventure');
-    await page.waitForLoadState('networkidle');
 
-    // Confirm scenes via chat
+    // Wait for chat input to be ready
     const chatInput = page.getByLabel('Chat message input');
+    await expect(chatInput).toBeVisible({ timeout: 10000 });
     await chatInput.fill('These look great, confirm all scenes');
     await chatInput.press('Enter');
 
@@ -100,10 +97,10 @@ test.describe('Weaving Stage', () => {
     await injectAuth(page);
 
     await page.goto('/adventure');
-    await page.waitForLoadState('networkidle');
 
-    // Trigger name suggestion
+    // Wait for chat input to be ready
     const chatInput = page.getByLabel('Chat message input');
+    await expect(chatInput).toBeVisible({ timeout: 10000 });
     await chatInput.fill('Confirm all scenes');
     await chatInput.press('Enter');
 

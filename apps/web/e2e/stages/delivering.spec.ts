@@ -25,7 +25,6 @@ test.describe('Delivering Stage', () => {
     await injectAuth(page);
 
     await page.goto('/adventure');
-    await page.waitForLoadState('networkidle');
 
     // The Sage's celebration message should appear
     await expect(
@@ -38,7 +37,6 @@ test.describe('Delivering Stage', () => {
     await injectAuth(page);
 
     await page.goto('/adventure');
-    await page.waitForLoadState('networkidle');
 
     // Adventure title should appear in the celebration panel
     // (from adventure state in session response; scoped to panel to avoid
@@ -53,7 +51,6 @@ test.describe('Delivering Stage', () => {
     await injectAuth(page);
 
     await page.goto('/adventure');
-    await page.waitForLoadState('networkidle');
 
     // The "Your Spark" section label should be visible
     await expect(page.getByText('Your Spark')).toBeVisible({
@@ -71,7 +68,6 @@ test.describe('Delivering Stage', () => {
     await injectAuth(page);
 
     await page.goto('/adventure');
-    await page.waitForLoadState('networkidle');
 
     // The send-off text should appear
     await expect(
@@ -84,7 +80,6 @@ test.describe('Delivering Stage', () => {
     await injectAuth(page);
 
     await page.goto('/adventure');
-    await page.waitForLoadState('networkidle');
 
     // The download button should be visible
     const downloadButton = page.getByRole('button', {

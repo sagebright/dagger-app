@@ -26,7 +26,6 @@ test.describe('Attuning Stage', () => {
     await injectAuth(page);
 
     await page.goto('/adventure');
-    await page.waitForLoadState('networkidle');
 
     // The panel heading should show the Attuning label (use .first() since
     // StageDropdown trigger also shows the stage name)
@@ -46,10 +45,10 @@ test.describe('Attuning Stage', () => {
     await injectAuth(page);
 
     await page.goto('/adventure');
-    await page.waitForLoadState('networkidle');
 
-    // Send a message about session length
+    // Wait for chat input to be ready
     const chatInput = page.getByLabel('Chat message input');
+    await expect(chatInput).toBeVisible({ timeout: 10000 });
     await chatInput.fill('I want a 3-4 hour session');
     await chatInput.press('Enter');
 
@@ -65,10 +64,10 @@ test.describe('Attuning Stage', () => {
     await injectAuth(page);
 
     await page.goto('/adventure');
-    await page.waitForLoadState('networkidle');
 
-    // Send a message that triggers all components being set
+    // Wait for chat input to be ready
     const chatInput = page.getByLabel('Chat message input');
+    await expect(chatInput).toBeVisible({ timeout: 10000 });
     await chatInput.fill('Set all defaults');
     await chatInput.press('Enter');
 
@@ -85,10 +84,10 @@ test.describe('Attuning Stage', () => {
     await injectAuth(page);
 
     await page.goto('/adventure');
-    await page.waitForLoadState('networkidle');
 
-    // Trigger all components being set
+    // Wait for chat input to be ready
     const chatInput = page.getByLabel('Chat message input');
+    await expect(chatInput).toBeVisible({ timeout: 10000 });
     await chatInput.fill('Set all defaults');
     await chatInput.press('Enter');
 

@@ -217,8 +217,7 @@ test.describe('Full Adventure Flow', () => {
     await page.goto('/adventure');
 
     // Should show the adventure page (not redirected to login)
-    // The page should load without errors
-    await page.waitForLoadState('networkidle');
+    await expect(page).toHaveURL(/\/adventure/, { timeout: 10000 });
   });
 
   test('should display session picker when no active session exists', async ({ page }) => {
@@ -255,7 +254,6 @@ test.describe('Full Adventure Flow', () => {
     });
 
     await page.goto('/');
-    await page.waitForLoadState('networkidle');
 
     // Should show the new session form
     await expect(
@@ -279,20 +277,19 @@ test.describe('Full Adventure Flow', () => {
     });
 
     await page.goto('/adventure');
-    await page.waitForLoadState('networkidle');
 
     // Look for a chat input area
-    const chatInput = page.locator(
-      'textarea[placeholder*="message"], input[placeholder*="message"], [data-testid="chat-input"]'
-    );
+    const chatInput = page.getByLabel('Chat message input');
 
     // If chat input is visible, try sending a message
     if (await chatInput.isVisible({ timeout: 5000 }).catch(() => false)) {
       await chatInput.fill('I want to create a dark fantasy adventure');
       await chatInput.press('Enter');
 
-      // Wait for streaming to complete
-      await page.waitForTimeout(1000);
+      // Wait for the Sage's response to appear
+      await expect(page.getByText(/the sage responds/i)).toBeVisible({
+        timeout: 10000,
+      });
     }
   });
 });
@@ -332,7 +329,6 @@ test.describe('Adventure Error Scenarios', () => {
     });
 
     await page.goto('/');
-    await page.waitForLoadState('networkidle');
 
     // Should show an error state
     await expect(page.getByRole('alert')).toBeVisible({ timeout: 10000 });
@@ -365,19 +361,16 @@ test.describe('Adventure Error Scenarios', () => {
     });
 
     await page.goto('/adventure');
-    await page.waitForLoadState('networkidle');
 
     // Attempt to find and use chat input
-    const chatInput = page.locator(
-      'textarea[placeholder*="message"], input[placeholder*="message"], [data-testid="chat-input"]'
-    );
+    const chatInput = page.getByLabel('Chat message input');
 
     if (await chatInput.isVisible({ timeout: 5000 }).catch(() => false)) {
       await chatInput.fill('test message');
       await chatInput.press('Enter');
 
-      // Wait for error handling
-      await page.waitForTimeout(2000);
+      // Wait for error alert to appear
+      await expect(page.getByRole('alert')).toBeVisible({ timeout: 10000 });
     }
 
     // Suppress the lint warning about unused mocks variable
@@ -405,6 +398,8 @@ test.describe('Adventure Error Scenarios', () => {
     });
 
     await page.goto('/adventure');
-    await page.waitForLoadState('networkidle');
+
+    // Should show the adventure page
+    await expect(page).toHaveURL(/\/adventure/, { timeout: 10000 });
   });
 });

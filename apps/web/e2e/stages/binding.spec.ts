@@ -27,7 +27,6 @@ test.describe('Binding Stage', () => {
     await injectAuth(page);
 
     await page.goto('/adventure');
-    await page.waitForLoadState('networkidle');
 
     // Frame gallery listbox should be visible
     const gallery = page.getByRole('listbox', {
@@ -47,7 +46,6 @@ test.describe('Binding Stage', () => {
     await injectAuth(page);
 
     await page.goto('/adventure');
-    await page.waitForLoadState('networkidle');
 
     // Verify first frame shows both name and pitch
     const firstFrame = MOCK_FRAMES[0];
@@ -68,7 +66,6 @@ test.describe('Binding Stage', () => {
     await injectAuth(page);
 
     await page.goto('/adventure');
-    await page.waitForLoadState('networkidle');
 
     // Wait for frames to load
     await expect(page.getByText(MOCK_FRAMES[0].name)).toBeVisible({
@@ -96,7 +93,6 @@ test.describe('Binding Stage', () => {
     await injectAuth(page);
 
     await page.goto('/adventure');
-    await page.waitForLoadState('networkidle');
 
     // Wait for frames, select one
     await expect(page.getByText(MOCK_FRAMES[0].name)).toBeVisible({
@@ -115,6 +111,6 @@ test.describe('Binding Stage', () => {
     await advanceButton.click();
 
     // Should transition to Weaving stage
-    await page.waitForLoadState('networkidle');
+    await expect(page).toHaveURL(/\/adventure/, { timeout: 10000 });
   });
 });
