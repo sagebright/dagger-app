@@ -1,26 +1,21 @@
 ---
 name: generate-frames
-description: Generate Daggerheart campaign frames using Homebrew Kit creation order (pp 23-26) and structural validation. Auto-activates when user mentions creating, generating, or designing campaign frames.
-activation:
-  - user mentions creating or generating campaign frames
-  - user mentions designing a campaign frame
-  - user says /generate-frames
-  - user asks to build a new frame for a Daggerheart campaign
+description: Use when user mentions creating, generating, or designing campaign frames, says /generate-frames, or asks to build a new frame for a Daggerheart campaign. Generates frames using Homebrew Kit creation order (pp 23-26) with structural validation.
 ---
 
 # Generate Daggerheart Campaign Frames
 
-Create narratively rich, structurally validated campaign frames for the `daggerheart_custom_frames` table. Follows the Daggerheart Homebrew Kit v1.0 (pp 23-26) creation order with structural validation. Inserts with `user_id = NULL` for system-generated content.
+Create narratively rich, structurally validated campaign frames for the `daggerheart_frames` table (with `source = 'sage'`). Follows the Daggerheart Homebrew Kit v1.0 (pp 23-26) creation order with structural validation.
 
 ## Creation Order
 
-Execute these 15 steps sequentially. Each step builds on the previous to create a coherent campaign frame.
+Execute these 17 steps sequentially. Each step builds on the previous to create a coherent campaign frame.
 
 ### Step 1: Title
 
 Choose a concise, evocative title that captures the campaign's identity.
 
-**Constraints:** 1-6 words. Must be unique across existing `daggerheart_custom_frames` titles.
+**Constraints:** 1-6 words. Must be unique across existing `daggerheart_frames` titles.
 
 **Examples:** "The Hollow Vigil", "Shattered Meridian", "Roots of the Old Growth", "Tide and Bone"
 
@@ -179,6 +174,67 @@ Write 5-8 questions designed for Session Zero -- the pre-campaign conversation w
 - "Which faction has your character already had dealings with, and did it end well?"
 - "What is one thing your character refuses to do, no matter the stakes?"
 
+### Step 16: Points of Interest
+
+Generate 3-6 lightweight narrative seeds -- specific places within the frame's world that players might explore. POIs are **not** full location sourcebooks (those live in `daggerheart_locations` and can be generated via `/generate-environments`). POIs are hooks that inspire future location generation.
+
+**Format:** JSON array of objects:
+
+```json
+[
+  {
+    "name": "Place Name",
+    "description": "1-2 sentences establishing the place.",
+    "significance": "Why PCs would go here -- the narrative hook.",
+    "danger_level": "low"
+  }
+]
+```
+
+**Constraints:**
+- 3-6 POIs per frame
+- `name`: 1-4 words, evocative place name
+- `description`: 1-2 sentences establishing the place's feel and atmosphere
+- `significance`: 1 sentence explaining the narrative hook -- why PCs would visit
+- `danger_level`: one of `low` | `moderate` | `high` | `extreme`
+- Each POI must connect to the frame's themes or inciting incident
+- No POI should duplicate concepts from the frame's overview
+- Spread danger levels across the set (not all the same)
+
+**Do NOT generate:** encounters, stat blocks, full maps, settlement details, faction rosters, or anything that belongs in a `daggerheart_locations` entry. Keep POIs as narrative seeds.
+
+**Cross-reference:** "For full location sourcebooks built from these seeds, use `/generate-environments`."
+
+### Step 17: Suggested Adversaries
+
+Query `daggerheart_adversaries` to find 3-5 existing adversaries that thematically fit this frame. This step happens **during generation** (before human review) so reviewers can evaluate the suggestions.
+
+**Format:** JSON array of objects:
+
+```json
+[
+  {
+    "name": "Adversary Name",
+    "rationale": "Why this adversary fits the frame's themes.",
+    "adversary_id": "uuid-from-daggerheart-adversaries-table"
+  }
+]
+```
+
+**Process:**
+1. Identify the frame's primary themes and tone
+2. Query `daggerheart_adversaries` for entries whose themes, type, or description align
+3. Select 3-5 diverse suggestions (vary type: standard, solo, leader, minion, etc.)
+4. Write a 1-sentence rationale for each explaining the thematic fit
+
+**Constraints:**
+- 3-5 suggested adversaries per frame
+- Each must reference a real `adversary_id` from the `daggerheart_adversaries` table
+- Rationale must connect the adversary to at least one of the frame's themes
+- Vary adversary types across the set
+
+**If the `daggerheart_adversaries` table is empty or inaccessible:** Skip this step and note "Adversary suggestions unavailable -- table empty or inaccessible" in the output.
+
 ## Batch Generation
 
 Generate multiple campaign frames per invocation. Default batch size is **5**. The user may request fewer (e.g., "generate 2 frames").
@@ -198,13 +254,13 @@ Auto-diversify **complexity_rating** and thematic focus across the batch:
 
 ### Per-Entry Creation
 
-Run the full 15-step creation order independently for each entry. Each frame gets its own title, concept, pitch, themes, overview, principles, distinctions, and all other fields. Ensure no duplicate titles within the batch or against existing DB entries.
+Run the full 17-step creation order independently for each entry. Each frame gets its own title, concept, pitch, themes, overview, principles, distinctions, and all other fields. Ensure no duplicate titles within the batch or against existing DB entries.
 
 ## Structural Invariants
 
 These rules must hold for every generated campaign frame:
 
-1. **Title length:** 1-6 words, unique across `daggerheart_custom_frames`
+1. **Title length:** 1-6 words, unique across `daggerheart_frames`
 2. **Concept format:** Exactly 1 sentence (contains exactly one terminal punctuation mark)
 3. **Complexity rating:** Integer from 1 to 4 inclusive
 4. **Pitch scope:** 1 paragraph (3-6 sentences), no GM secrets
@@ -215,14 +271,16 @@ These rules must hold for every generated campaign frame:
 9. **Principles count:** 3-5 player principles, 3-5 GM principles
 10. **Distinctions minimum:** 3 or more entries, each with name and description
 11. **source_book value:** Always set to `'Generated'`
+12. **POI count:** 3-6 entries, each with name (1-4 words), description (1-2 sentences), significance (1 sentence), and danger_level (low/moderate/high/extreme)
+13. **Suggested adversaries:** 3-5 entries, each with name, rationale (1 sentence), and valid adversary_id from `daggerheart_adversaries`
 
 ## Validation Checklist
 
-Before presenting the frame for review, verify all 11 items:
+Before presenting the frame for review, verify all 13 items:
 
 | # | Check | Rule |
 |---|-------|------|
-| 1 | Title length | 1-6 words, unique across existing custom_frames |
+| 1 | Title length | 1-6 words, unique across existing frames |
 | 2 | Concept format | Exactly 1 sentence |
 | 3 | Complexity range | Integer 1-4 |
 | 4 | Pitch scope | 1 paragraph (3-6 sentences), no GM secrets |
@@ -233,6 +291,8 @@ Before presenting the frame for review, verify all 11 items:
 | 9 | Principles count | 3-5 player principles AND 3-5 GM principles |
 | 10 | Distinctions minimum | 3+ entries with name and description |
 | 11 | source_book | Set to `'Generated'` |
+| 12 | POI count | 3-6 entries with name, description, significance, danger_level |
+| 13 | Suggested adversaries | 3-5 entries with name, rationale, valid adversary_id |
 
 ## Human Review Protocol
 
@@ -246,8 +306,8 @@ After generation and validation, present all campaign frames for batch review.
 |---|-------|-----------|-------------------|------------|
 | 1 | ... | 2 | faith, empire | Pass/Fail |
 
-2. **Full frame summary** for each entry as formatted JSON (title, concept, complexity_rating, pitch, tone_feel, themes, touchstones, overview, heritage_classes, player_principles, gm_principles, distinctions, inciting_incident, custom_mechanics, session_zero_questions)
-3. **Validation checklist** results per entry (all 11 items, pass/fail)
+2. **Full frame summary** for each entry as formatted JSON (title, concept, complexity_rating, pitch, tone_feel, themes, touchstones, overview, heritage_classes, player_principles, gm_principles, distinctions, inciting_incident, custom_mechanics, session_zero_questions, points_of_interest, suggested_adversaries)
+3. **Validation checklist** results per entry (all 13 items, pass/fail)
 
 ### Options
 
@@ -263,7 +323,7 @@ After human approval, insert each approved campaign frame into the database. Rep
 ### Step 1: Check Name Uniqueness
 
 ```sql
-SELECT title FROM daggerheart_custom_frames WHERE LOWER(title) = LOWER('FRAME TITLE');
+SELECT title FROM daggerheart_frames WHERE LOWER(title) = LOWER('FRAME TITLE');
 ```
 
 If a match is found, prompt the user to choose a different title before proceeding.
@@ -292,14 +352,16 @@ Call the `embed` Edge Function to generate the embedding vector:
 Use `execute_sql` (not `apply_migration` -- this is content data, not schema):
 
 ```sql
-INSERT INTO daggerheart_custom_frames (
-  user_id, title, concept, pitch, tone_feel, themes,
+INSERT INTO daggerheart_frames (
+  user_id, source, title, concept, pitch, tone_feel, themes,
   complexity_rating, touchstones, overview, heritage_classes,
   player_principles, gm_principles, distinctions,
   inciting_incident, custom_mechanics, session_zero_questions,
+  points_of_interest, suggested_adversaries,
   source_book, embedding
 ) VALUES (
   NULL,                                 -- user_id (system-generated)
+  'sage',                               -- source (AI-generated)
   'FRAME TITLE',                        -- title
   'One-sentence concept...',            -- concept
   'Pitch paragraph...',                 -- pitch
@@ -315,6 +377,8 @@ INSERT INTO daggerheart_custom_frames (
   'Inciting incident text...',          -- inciting_incident
   '[{"name": "...", "description": "...", "trigger": "...", "effect": "..."}]'::jsonb, -- custom_mechanics
   ARRAY['Question 1?', 'Question 2?'], -- session_zero_questions
+  '[{"name": "...", "description": "...", "significance": "...", "danger_level": "moderate"}]'::jsonb, -- points_of_interest
+  '[{"name": "...", "rationale": "...", "adversary_id": "uuid"}]'::jsonb, -- suggested_adversaries
   'Generated',                          -- source_book
   '[embedding vector]'::vector          -- embedding
 );
@@ -336,9 +400,9 @@ Pull an existing custom frame as a structural reference:
 SELECT title, concept, complexity_rating, pitch, tone_feel, themes,
        touchstones, overview, heritage_classes, player_principles,
        gm_principles, distinctions, inciting_incident, custom_mechanics,
-       session_zero_questions
-FROM daggerheart_custom_frames
-WHERE source_book IS NOT NULL
+       session_zero_questions, points_of_interest, suggested_adversaries
+FROM daggerheart_frames
+WHERE source = 'sage'
 ORDER BY created_at DESC
 LIMIT 1;
 ```

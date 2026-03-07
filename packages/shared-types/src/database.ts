@@ -42,6 +42,8 @@ export type Database = {
           inciting_incident: string | null;
           custom_mechanics: Json | null;
           session_zero_questions: string[] | null;
+          points_of_interest: Json | null;
+          suggested_adversaries: Json | null;
           user_id: string | null;
           // Metadata
           embedding: string | null;
@@ -70,6 +72,8 @@ export type Database = {
           inciting_incident?: string | null;
           custom_mechanics?: Json | null;
           session_zero_questions?: string[] | null;
+          points_of_interest?: Json | null;
+          suggested_adversaries?: Json | null;
           user_id?: string | null;
           embedding?: string | null;
           source_book?: string | null;
@@ -97,6 +101,8 @@ export type Database = {
           inciting_incident?: string | null;
           custom_mechanics?: Json | null;
           session_zero_questions?: string[] | null;
+          points_of_interest?: Json | null;
+          suggested_adversaries?: Json | null;
           user_id?: string | null;
           embedding?: string | null;
           source_book?: string | null;
