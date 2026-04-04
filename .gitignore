@@ -48,3 +48,4 @@ test-results/
 # Supabase CLI temp files
 supabase/.temp/
 .worktrees
+.vercel

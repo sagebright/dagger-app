@@ -391,4 +391,4 @@ Skipping this file. [N] remaining files analyzed.
 
 ---
 
-**Version:** 1.0.0 (sage-codex)
+**Version:** 1.0.0 (canonical)

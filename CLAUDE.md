@@ -253,6 +253,17 @@ The Supabase database contains 14 tables for Daggerheart content:
 | `daggerheart_communities` | Community backgrounds |
 | `daggerheart_adventures` | Saved adventure state |
 
+## Obsidian Integration
+
+Obsidian hub page: `~/Obsidian/Claude/repos/sage-codex.md`
+
+- `/session-summary` — capture session context to Obsidian before ending
+- `/sync-obsidian all` — push plans, skills, memory, docs to Obsidian
+- `/read-obsidian` — pull past session context into current session
+- Source of truth stays in this repo; Obsidian is the browsable copy
+
+Tip: Run `/loop 15m session-summary-reminder` for periodic reminders.
+
 ## Adventure Generation Phases
 
 **The Sage Codex** — a collection of infinite tales that unfold through collaboration between a Sage and a human storyteller. Each adventure emerges through 6 stages of the Unfolding:
