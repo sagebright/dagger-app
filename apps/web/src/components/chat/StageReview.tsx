@@ -13,6 +13,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
+import { apiUrl } from '@/services/api';
 import type { ReactNode } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { AppShell } from '@/components/layout/AppShell';
@@ -115,7 +116,7 @@ export function StageReview({
 
     try {
       const response = await fetch(
-        `/api/session/${sessionId}/messages?stage=${stage}`,
+        apiUrl(`/api/session/${sessionId}/messages?stage=${stage}`),
         { headers: { Authorization: `Bearer ${accessToken}` } }
       );
 

@@ -11,6 +11,7 @@
  */
 
 import { create } from 'zustand';
+import { apiUrl } from '@/services/api';
 import type {
   CreditBalanceResponse,
   CreditTransaction,
@@ -63,7 +64,7 @@ async function creditFetch<T>(
   options: RequestInit = {}
 ): Promise<{ data: T | null; error: string | null }> {
   try {
-    const response = await fetch(url, {
+    const response = await fetch(apiUrl(url), {
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`,

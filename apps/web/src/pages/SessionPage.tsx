@@ -11,6 +11,7 @@
 import { useState, useEffect, useCallback, type FormEvent } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { apiUrl } from '@/services/api';
 import { useCreditStore } from '@/stores/creditStore';
 import { useAdventureStore } from '@/stores/adventureStore';
 import { useChatStore } from '@/stores/chatStore';
@@ -54,7 +55,7 @@ async function apiFetch<T>(
   options: RequestInit = {}
 ): Promise<{ data: T | null; error: string | null; status: number }> {
   try {
-    const response = await fetch(url, {
+    const response = await fetch(apiUrl(url), {
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`,

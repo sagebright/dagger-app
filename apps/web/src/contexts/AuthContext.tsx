@@ -15,6 +15,7 @@ import {
   useMemo,
   type ReactNode,
 } from 'react';
+import { apiUrl } from '@/services/api';
 
 import {
   AuthContext,
@@ -41,7 +42,7 @@ async function authFetch(
   url: string,
   options: RequestInit = {}
 ): Promise<ApiAuthResponse> {
-  const response = await fetch(url, {
+  const response = await fetch(apiUrl(url), {
     headers: {
       'Content-Type': 'application/json',
       ...options.headers,

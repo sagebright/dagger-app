@@ -132,7 +132,7 @@ export function AdventurePage() {
       // If no messages exist, useSageGreeting will fire in the stage page.
       try {
         const msgRes = await fetch(
-          `/api/session/${detail.session.id}/messages?stage=${detail.session.stage}`,
+          apiUrl(`/api/session/${detail.session.id}/messages?stage=${detail.session.stage}`),
           { headers: { Authorization: `Bearer ${token}` } }
         );
         if (msgRes.ok) {
